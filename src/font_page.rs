@@ -26,7 +26,7 @@ impl FontPage {
         let url_hash = hasher.finish();
         if let Some(font_page) = cached_pages.get(&url_hash) {
             if args.options.verbose {
-                println!("Loading webpage from runtime cache: {url}");
+                println!("Loading from memory: {url} ({url_hash})");
             }
             return Ok(font_page.clone());
         }
@@ -47,7 +47,7 @@ impl FontPage {
             || system_time.wrapping_sub(cache.time) >= args.config.cache_timeout
         {
             if args.options.verbose {
-                println!("Updating cache: {url} ({cache_file})");
+                println!("Updating cache: {url} ({url_hash})");
             }
             let page = client
                 .get(url)
@@ -57,21 +57,17 @@ impl FontPage {
 
             cache.time = system_time;
             cache.contents = Some(page.text().map_err(|e| {
-                eprintln!("Could not determine the font archive URL",);
+                eprintln!("Could not retrieve page contents: {url}",);
                 e.to_string()
             })?);
 
             fs::write(
                 &cache_file,
-                &toml::to_string(&cache).map_err(|e| {
-                    eprintln!("Failed to serialize cache: {cache_file}");
-                    e.to_string()
-                })?,
+                &toml::to_string(&cache).map_err(|e| e.to_string())?,
             )
-            .map_err(|e| {
-                eprint!("Failed to write cache file to disk: {cache_file}");
-                e.to_string()
-            })?;
+            .map_err(|e| e.to_string())?;
+        } else if args.options.verbose {
+            println!("Loaded from disk: {url} ({url_hash})");
         }
 
         cached_pages.insert(url_hash, cache.clone());
