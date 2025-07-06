@@ -6,7 +6,6 @@ use crate::Args;
 use reqwest::header::USER_AGENT;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::env;
 use std::fs::{self, DirEntry};
 use std::io::{self, Read};
 use std::path::Path;
@@ -47,11 +46,7 @@ impl Installer {
         cached_pages: &mut HashMap<u64, FontPage>,
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
-            &fs::read_to_string(format!(
-                "{}/.config/fin/installers/{font_name}",
-                env::var("HOME").unwrap()
-            ))
-            .map_err(|err| {
+            &fs::read_to_string(installer_path!(&font_name)).map_err(|err| {
                 eprintln!("Error: Could not read the installer file for '{font_name}'");
                 err.to_string()
             })?,
@@ -74,7 +69,7 @@ impl Installer {
         }
 
         let reqwest_client = reqwest::blocking::Client::new();
-        installer.assign_direct_link(FontPage::get_font_page(
+        installer.url = installer.find_direct_link(FontPage::get_font_page(
             &installer.url.replace("$tag", &installer.tag),
             args,
             &reqwest_client,
@@ -104,7 +99,7 @@ impl Installer {
     }
 
     pub fn find_installers(filter: &[String]) -> Result<Vec<String>, String> {
-        let installers_dir = format!("{}/.config/fin/installers", env::var("HOME").unwrap());
+        let installers_dir = installers_dir_path!();
         if !Path::new(&installers_dir).exists() {
             return Err(format!(
                 "Installers directory does not exist: {installers_dir}"
@@ -141,11 +136,11 @@ impl Installer {
             .collect())
     }
 
-    /// Replaces `self.url` with a direct link to the font archive
-    /// Prior to calling this function, the URL is expected to lead to a webpage,
-    /// which has the direct link discoverable in plain text within its source.
-    fn assign_direct_link(&mut self, font_page: FontPage) -> Result<(), String> {
-        self.url = font_page
+    /// Returns a direct link to the font archive
+    /// Note: `self.url` is expected to lead to a webpage, which has the direct link
+    /// discoverable in plain text within its source.
+    fn find_direct_link(&mut self, font_page: FontPage) -> Result<String, String> {
+        let direct_link = font_page
             .contents
             .unwrap()
             .split('"')
@@ -156,7 +151,7 @@ impl Installer {
             .expect("Archive download link not found") // TODO: Error handling
             // .ok_or(String::from("Archive download link not found"))?
             .to_string();
-        Ok(())
+        Ok(direct_link)
     }
 
     pub fn download_font(&self) -> Result<&Installer, String> {
@@ -185,12 +180,7 @@ impl Installer {
         // TODO: Extract selectively (instead of selectively moving in `install_font()`)
         zip::ZipArchive::extract(
             &mut zip_archive,
-            format!(
-                "{}/.cache/fin/{}/{}/",
-                env::var("HOME").map_err(|e| e.to_string())?,
-                &self.name,
-                &self.tag
-            ),
+            format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag),
         )
         .map_err(|e| e.to_string())?;
         Ok(self)
@@ -202,12 +192,7 @@ impl Installer {
         installed_fonts: &mut InstalledFonts,
     ) -> Result<(), String> {
         // TODO: If already installed, remove it before installation?
-        let temp_dir = format!(
-            "{}/.cache/fin/{}/{}/",
-            env::var("HOME").map_err(|err| err.to_string())?,
-            &self.name,
-            &self.tag,
-        );
+        let temp_dir = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag,);
 
         let dest_dir = match installed_fonts.installed.get(&self.name) {
             Some(installed) => installed.dir.clone(),

@@ -1,7 +1,8 @@
+use crate::home_dir;
+use crate::installed_file_path;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::path::Path;
-use std::{env, fs};
+use std::{fs, path::Path};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct InstalledFont {
@@ -15,8 +16,10 @@ pub struct InstalledFonts {
 }
 
 impl InstalledFonts {
+    /// Reads from `~/.config/fin/installed` and builds an
+    /// instance of `InstalledFonts` from it
     pub fn read() -> Result<Self, String> {
-        let file = format!("{}/.config/fin/installed", env::var("HOME").unwrap());
+        let file = installed_file_path!();
         if !Path::new(&file).exists() {
             return Ok(Self {
                 installed: [].into(),
@@ -32,6 +35,8 @@ impl InstalledFonts {
         })
     }
 
+    /// Writes the `InstalledFonts` to disk in TOML format,
+    /// if there are any changes.
     pub fn write(&self) -> Result<(), String> {
         if !self.changed {
             return Ok(());
@@ -41,11 +46,7 @@ impl InstalledFonts {
             eprintln!("Failed to serialize installed fonts to TOML");
             e.to_string()
         })?;
-        fs::write(
-            format!("{}/.config/fin/installed", env::var("HOME").unwrap()),
-            contents,
-        )
-        .map_err(|e| e.to_string())?;
+        fs::write(installed_file_path!(), contents).map_err(|e| e.to_string())?;
 
         Ok(())
     }
@@ -55,7 +56,8 @@ impl InstalledFonts {
         self.installed.clone().into_keys().collect()
     }
 
-    /// Adds a new entry to the installed fonts, or modifies it if it already exists
+    /// Adds a new entry to the installed fonts
+    /// or modifies it if it already exists
     pub fn update_entry(&mut self, name: &str, data: InstalledFont) {
         match self.installed.get_mut(name) {
             Some(entry) => *entry = data,
@@ -66,6 +68,7 @@ impl InstalledFonts {
         self.changed = true;
     }
 
+    /// Removes an entry from the installed fonts
     pub fn remove_entry(&mut self, name: &str) -> Result<(), String> {
         self.installed.remove(name);
         self.changed = true;

@@ -7,20 +7,20 @@ use crate::installer::Installer;
 use std::io::{self, Write};
 
 pub mod args;
+pub mod config;
 pub mod font_page;
 pub mod installed;
+pub mod paths;
+pub mod wildcards;
 
-mod config;
 mod font;
 mod installer;
-mod tests;
-mod wildcards;
 
 pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
     match args.action {
         Action::Install => 'install: {
             if args.fonts.is_empty() {
-                println!("Nothing to do.");
+                println!("Nothing new to install.");
                 return Ok(());
             }
 
@@ -47,7 +47,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
         }
         Action::Update => 'update: {
             if args.fonts.is_empty() {
-                println!("Nothing to do.");
+                println!("Nothing to update.");
                 return Ok(());
             }
 
@@ -72,7 +72,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
         }
         Action::Remove => 'remove: {
             if args.fonts.is_empty() {
-                println!("No fonts were specified.");
+                println!("Nothing to remove.");
                 return Ok(());
             }
 

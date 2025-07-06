@@ -30,7 +30,7 @@ directory.
 # Default location for installing new fonts:
 install_dir = "~/.fonts"
 
-# Time (in minutes) until local cache is consedered outdated:
+# Time (in minutes) until local cache is considered outdated:
 cache_timeout = 60
 ```
 

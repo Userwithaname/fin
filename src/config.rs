@@ -1,7 +1,10 @@
-use serde::Deserialize;
-use std::{env, fs, path::Path};
+use crate::config_dir_path;
+use crate::config_file_path;
+use crate::home_dir;
+use serde::{Deserialize, Serialize};
+use std::{fs, path::Path};
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
     pub install_dir: String,
@@ -11,17 +14,29 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            install_dir: format!("{}/.fonts/", env::var("HOME").unwrap()),
+            install_dir: "~/.fonts".to_string(),
             cache_timeout: 90,
         }
     }
 }
 
+#[macro_export]
+macro_rules! default_config {
+    () => {
+        r#"# Default location for installing new fonts:
+# install_dir = "~/.fonts"
+
+# How long (in minutes) until cache is considered outdated:
+# cache_timeout = 90
+"#
+    };
+}
+
 impl Config {
     pub fn load() -> Result<Self, String> {
-        let config_file = format!("{}/.config/fin/config.toml", env::var("HOME").unwrap());
+        let config_file = config_file_path!();
         if !Path::new(&config_file).exists() {
-            return Ok(Self::default());
+            return Self::write_default_config();
         }
 
         let config: Self = toml::from_str(&fs::read_to_string(config_file).map_err(|err| {
@@ -33,5 +48,11 @@ impl Config {
             err.to_string()
         })?;
         Ok(config)
+    }
+
+    pub fn write_default_config() -> Result<Self, String> {
+        fs::create_dir_all(config_dir_path!()).map_err(|e| e.to_string())?;
+        fs::write(config_file_path!(), default_config!()).map_err(|e| e.to_string())?;
+        Ok(Self::default())
     }
 }

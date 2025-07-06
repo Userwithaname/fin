@@ -14,5 +14,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         })?,
     };
 
+    // TODO: Call `installed_fonts.write()` when cancelling with ^C
+    //       in case any changes have already been performed
+
     Ok(())
 }

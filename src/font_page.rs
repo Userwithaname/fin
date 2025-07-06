@@ -1,11 +1,13 @@
+use crate::cache_dir;
+use crate::home_dir;
 use crate::Args;
 
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, fs};
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -31,7 +33,7 @@ impl FontPage {
             return Ok(font_page.clone());
         }
 
-        let cache_file = format!("{}/.cache/fin/{}", env::var("HOME").unwrap(), &url_hash);
+        let cache_file = format!("{}{}", cache_dir!(), &url_hash);
         let mut cache: FontPage =
             toml::from_str(&fs::read_to_string(&cache_file).unwrap_or_default())
                 .unwrap_or_default();
@@ -56,10 +58,7 @@ impl FontPage {
                 .map_err(|e| e.to_string())?;
 
             cache.time = system_time;
-            cache.contents = Some(page.text().map_err(|e| {
-                eprintln!("Could not retrieve page contents: {url}",);
-                e.to_string()
-            })?);
+            cache.contents = Some(page.text().map_err(|e| e.to_string())?);
 
             fs::write(
                 &cache_file,

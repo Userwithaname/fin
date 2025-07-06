@@ -112,26 +112,57 @@ impl Font {
         let needs_installer;
         let actionable_fonts: Vec<String> = match args.action {
             Action::Install => {
+                if filter.is_empty() {
+                    println!("No fonts were specified.");
+                    return Ok(vec![]);
+                }
+
+                let fonts = Installer::find_installers(filter)
+                    .map_err(|e| FontParseError::Generic(e.to_string()))?;
+
+                if fonts.is_empty() {
+                    println!("Pattern did not match any installers.");
+                    return Ok(vec![]);
+                }
+
                 needs_installer = true;
-                Installer::find_installers(filter)
-                    .map_err(|e| FontParseError::Generic(e.to_string()))?
+                fonts
             }
             Action::Update => {
-                needs_installer = true;
                 let match_all = &["*".to_string()];
-                Installer::find_installed(
+                let fonts = Installer::find_installed(
                     match filter.is_empty() {
                         true => match_all,
                         false => filter,
                     },
                     installed_fonts,
                 )
-                .map_err(|e| FontParseError::Generic(e.to_string()))?
+                .map_err(|e| FontParseError::Generic(e.to_string()))?;
+
+                if fonts.is_empty() {
+                    println!("Pattern did not match any installed fonts.");
+                    return Ok(vec![]);
+                }
+
+                needs_installer = true;
+                fonts
             }
             Action::Remove => {
+                if filter.is_empty() {
+                    println!("No fonts were specified.");
+                    return Ok(vec![]);
+                }
+
+                let fonts = Installer::find_installed(filter, installed_fonts)
+                    .map_err(|e| FontParseError::Generic(e.to_string()))?;
+
+                if fonts.is_empty() {
+                    println!("Pattern did not match any installed fonts.");
+                    return Ok(vec![]);
+                }
+
                 needs_installer = false;
-                Installer::find_installed(filter, installed_fonts)
-                    .map_err(|e| FontParseError::Generic(e.to_string()))?
+                fonts
             }
             Action::Help => {
                 return Ok(vec![]);
@@ -139,6 +170,8 @@ impl Font {
         };
 
         let mut cached_pages = HashMap::<u64, FontPage>::new();
+        fs::create_dir_all(cache_dir!()).map_err(|e| FontParseError::Generic(e.to_string()))?;
+
         actionable_fonts
             .iter()
             .map(|font| Font::parse(args, font, needs_installer, &mut cached_pages))
