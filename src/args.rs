@@ -102,21 +102,11 @@ impl Args {
 }
 
 pub fn show_help() {
-    // When changing this, remember to update README.md
+    // Remember to update README.md
     print!(
         "\
 Usage:
     fin [action] [font]
-
-    The following formats are supported:
-        fin [action] font_name
-        fin [action] font_name:font_version (TODO!)
-
-    Multiple fonts can also be specified:
-        fin [action] font1 font2 font3
-
-    Matching fonts by wildcard:
-        fin [action] font*
 
 Actions:
     install               Install new fonts

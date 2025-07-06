@@ -5,7 +5,7 @@ mod config_tests {
     use fin::default_config;
 
     #[test]
-    fn valid_default_config() {
+    fn default_config_consistency() {
         let cmp_lines = toml::to_string(&Config::default()).unwrap();
         let cmp_lines = cmp_lines.lines();
 

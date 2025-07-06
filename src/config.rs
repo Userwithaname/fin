@@ -22,12 +22,13 @@ impl Default for Config {
 
 #[macro_export]
 macro_rules! default_config {
+    // Remember to update README.md
     () => {
         r#"# Default location for installing new fonts:
-# install_dir = "~/.fonts"
+install_dir = "~/.fonts"
 
 # How long (in minutes) until cache is considered outdated:
-# cache_timeout = 90
+cache_timeout = 90
 "#
     };
 }

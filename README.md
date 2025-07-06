@@ -31,7 +31,7 @@ directory.
 install_dir = "~/.fonts"
 
 # Time (in minutes) until local cache is considered outdated:
-cache_timeout = 60
+cache_timeout = 90
 ```
 
 # Installers
@@ -101,16 +101,6 @@ $ fin help
 Usage:
     fin [action] [font]
 
-    The following formats are supported:
-        fin [action] font_name
-        fin [action] font_name:font_version (TODO!)
-
-    Multiple fonts can also be specified:
-        fin [action] font1 font2 font3
-
-    Matching fonts by wildcard:
-        fin [action] font*
-
 Actions:
     install               Install new fonts
     update                Update installed fonts
@@ -139,5 +129,5 @@ and [`cargo run`](https://doc.rust-lang.org/cargo/commands/cargo-run.html).
 4. To run it, either:
     - Run `./target/debug/fin` from the `fin` directory, or
     - Put the program binary into a location within your `$PATH` (such as `~/.local/bin/`)
-    then run it from anywhere using the `fin` command, or
+    so you can run it from anywhere using the `fin` command, or
     - Run it using Cargo:  `cargo run -- [action] [font]`
