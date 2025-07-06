@@ -28,7 +28,7 @@ impl FontPage {
         let url_hash = hasher.finish();
         if let Some(font_page) = cached_pages.get(&url_hash) {
             if args.options.verbose {
-                println!("Loading from memory: {url} ({url_hash})");
+                println!("Loaded from memory: {url} ({url_hash})");
             }
             return Ok(font_page.clone());
         }
@@ -49,7 +49,7 @@ impl FontPage {
             || system_time.wrapping_sub(cache.time) >= args.config.cache_timeout
         {
             if args.options.verbose {
-                println!("Updating cache: {url} ({url_hash})");
+                println!("Updating cache:     {url} ({url_hash})");
             }
             let page = client
                 .get(url)
@@ -66,7 +66,7 @@ impl FontPage {
             )
             .map_err(|e| e.to_string())?;
         } else if args.options.verbose {
-            println!("Loaded from disk: {url} ({url_hash})");
+            println!("Loaded from disk:   {url} ({url_hash})");
         }
 
         cached_pages.insert(url_hash, cache.clone());

@@ -45,6 +45,6 @@ macro_rules! config_file_path {
 #[macro_export]
 macro_rules! installed_file_path {
     () => {
-        home_dir!() + "/.config/fin/installed"
+        home_dir!() + "/.config/fin/installed.toml"
     };
 }
