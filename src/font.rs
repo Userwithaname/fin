@@ -1,9 +1,11 @@
+use crate::font_page::FontPage;
 use crate::Action;
 use crate::Args;
 use crate::InstalledFonts;
 use crate::Installer;
 
 use std::collections::btree_map::Entry::{Occupied, Vacant};
+use std::collections::HashMap;
 use std::{fmt, fs};
 
 #[derive(Debug, PartialEq)]
@@ -46,7 +48,12 @@ impl fmt::Display for Font {
 }
 
 impl Font {
-    pub fn parse(args: &Args, name: &str, needs_installer: bool) -> Result<Self, FontParseError> {
+    pub fn parse(
+        args: &Args,
+        name: &str,
+        needs_installer: bool,
+        cached_pages: &mut HashMap<u64, FontPage>,
+    ) -> Result<Self, FontParseError> {
         if name.is_empty() {
             return Err(FontParseError::InvalidName);
         }
@@ -58,7 +65,7 @@ impl Font {
             return Ok(Self {
                 name: name.to_string(),
                 installer: match needs_installer {
-                    true => match Installer::parse(&args, name, version) {
+                    true => match Installer::parse(&args, name, version, cached_pages) {
                         Ok(installer) => Some(installer),
                         Err(e) => {
                             eprintln!("{}", e);
@@ -131,9 +138,10 @@ impl Font {
             }
         };
 
+        let mut cached_pages = HashMap::<u64, FontPage>::new();
         actionable_fonts
             .iter()
-            .map(|font| Font::parse(&args, &font, needs_installer))
+            .map(|font| Font::parse(&args, &font, needs_installer, &mut cached_pages))
             .filter(|font| match args.action {
                 Action::Update | Action::Install if !args.options.reinstall => font
                     .as_ref()

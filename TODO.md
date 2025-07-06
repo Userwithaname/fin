@@ -45,7 +45,7 @@
     [*] Extract to a temporary location
     [*] Follow the instructions in the installer to install the font (e.g. into `~/.fonts`)
     [*] Add the font info entry to a file on disk
-[-] Update fonts (`fin update` / `fin update [font]`):
+[*] Update fonts (`fin update` / `fin update [font]`):
     [*] Gather a list of installed fonts (or use only the fonts specified)
     [*] Exclude fonts with no available updates
     [*] Validate arguments and tell the user which actions will be performed

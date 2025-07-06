@@ -7,6 +7,7 @@ use crate::installer::Installer;
 use std::io::{self, Write};
 
 pub mod args;
+pub mod font_page;
 pub mod installed;
 
 mod config;

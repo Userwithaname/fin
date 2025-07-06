@@ -1,32 +1,16 @@
+use crate::font_page::FontPage;
 use crate::installed::{InstalledFont, InstalledFonts};
 use crate::wildcards::*;
 use crate::Args;
 
 use reqwest::header::USER_AGENT;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use std::collections::HashMap;
 use std::env;
 use std::fs::{self, DirEntry};
-use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::{self, Read};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
-
-#[derive(Serialize, Deserialize)]
-#[serde(default)]
-struct FontPage {
-    time: u64,
-    contents: Option<String>,
-}
-
-impl Default for FontPage {
-    fn default() -> Self {
-        Self {
-            time: 0,
-            contents: None,
-        }
-    }
-}
 
 #[derive(Deserialize)]
 #[serde(default)]
@@ -60,6 +44,7 @@ impl Installer {
         args: &Args,
         font_name: &str,
         override_version: Option<&str>,
+        cached_pages: &mut HashMap<u64, FontPage>,
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
             &fs::read_to_string(format!(
@@ -92,10 +77,14 @@ impl Installer {
                 font_name
             ));
         }
-        installer.url = installer.url.replace("$tag", &installer.tag);
 
         let reqwest_client = reqwest::blocking::Client::new();
-        installer.url_to_direct_link(&args, &reqwest_client)?;
+        installer.assign_direct_link(FontPage::get_font_page(
+            &installer.url.replace("$tag", &installer.tag),
+            &args,
+            &reqwest_client,
+            cached_pages,
+        )?)?;
 
         if !match_any_wildcard(&installer.archive, &["*.*".to_string()]) {
             return Err(format!(
@@ -162,72 +151,8 @@ impl Installer {
     /// Replaces `self.url` with a direct link to the font archive
     /// Prior to calling this function, the URL is expected to lead to a webpage,
     /// which has the direct link discoverable in plain text within its source.
-    pub fn url_to_direct_link(
-        &mut self,
-        args: &Args,
-        client: &reqwest::blocking::Client,
-    ) -> Result<(), String> {
-        let mut hasher = DefaultHasher::new();
-        self.url.hash(&mut hasher);
-        let cache_file = format!(
-            "{}/.cache/fin/{}",
-            env::var("HOME").unwrap(),
-            hasher.finish()
-        );
-
-        //TODO: Memory caching: remember cached files so they don't have to be
-        //      read from the disk multiple times, if installing multiple fonts
-        //      from the same source (and to avoid re-downloading and re-writing
-        //      the cache multiple times when using --refresh)
-        let mut cache: FontPage =
-            toml::from_str(&fs::read_to_string(&cache_file).unwrap_or_default())
-                .unwrap_or_default();
-        let system_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .div_f64(60.0)
-            .as_secs();
-
-        if cache.contents.is_none()
-            || args.options.refresh
-            || system_time.wrapping_sub(cache.time) >= args.config.cache_timeout
-        {
-            if args.options.verbose {
-                println!("Updating cache: {} ({})", cache_file, self.url);
-            }
-            let page = client
-                .get(&self.url)
-                .header(USER_AGENT, "fin")
-                .send()
-                .map_err(|e| {
-                    // eprintln!("Could not access the URL for '{}'", self.name);
-                    e.to_string()
-                })?;
-            // let page_url = page.url().clone();
-
-            cache.time = system_time;
-            cache.contents = Some(page.text().map_err(|e| {
-                eprintln!(
-                    "Could not determine the font archive URL for '{}'",
-                    self.name
-                );
-                e.to_string()
-            })?);
-
-            fs::write(
-                &cache_file,
-                &toml::to_string(&cache).map_err(|e| {
-                    eprintln!("Failed to serialize cache: {}", &cache_file);
-                    e.to_string()
-                })?,
-            )
-            .map_err(|e| {
-                eprint!("Failed to write cache file to disk: {}", &cache_file);
-                e.to_string()
-            })?;
-        }
-
-        self.url = cache
+    fn assign_direct_link(&mut self, font_page: FontPage) -> Result<(), String> {
+        self.url = font_page
             .contents
             .unwrap()
             .split('"')
@@ -238,7 +163,6 @@ impl Installer {
             .expect("Archive download link not found") // TODO: Error handling
             // .ok_or(String::from("Archive download link not found"))?
             .to_string();
-
         Ok(())
     }
 
