@@ -48,20 +48,16 @@ impl Installer {
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
             &fs::read_to_string(format!(
-                "{}/.config/fin/installers/{}",
-                env::var("HOME").unwrap(),
-                font_name
+                "{}/.config/fin/installers/{font_name}",
+                env::var("HOME").unwrap()
             ))
             .map_err(|err| {
-                eprintln!(
-                    "Error: Could not read the installer file for '{}'",
-                    font_name
-                );
+                eprintln!("Error: Could not read the installer file for '{font_name}'");
                 err.to_string()
             })?,
         )
         .map_err(|err| {
-            eprintln!("Could not parse the installer for '{}'", font_name);
+            eprintln!("Could not parse the installer for '{font_name}'");
             err.to_string()
         })?;
 
@@ -73,23 +69,21 @@ impl Installer {
 
         if !match_any_wildcard(&installer.url, &["*://*.*/*".to_string()]) {
             return Err(format!(
-                "Installer for '{}' did not specify a valid URL",
-                font_name
+                "Installer for '{font_name}' did not specify a valid URL"
             ));
         }
 
         let reqwest_client = reqwest::blocking::Client::new();
         installer.assign_direct_link(FontPage::get_font_page(
             &installer.url.replace("$tag", &installer.tag),
-            &args,
+            args,
             &reqwest_client,
             cached_pages,
         )?)?;
 
         if !match_any_wildcard(&installer.archive, &["*.*".to_string()]) {
             return Err(format!(
-                "Installer for '{}' did not specify a valid archive",
-                font_name
+                "Installer for '{font_name}' did not specify a valid archive"
             ));
         }
         installer.archive = installer.archive.replace("$tag", &installer.tag);
@@ -113,18 +107,17 @@ impl Installer {
         let installers_dir = format!("{}/.config/fin/installers", env::var("HOME").unwrap());
         if !Path::new(&installers_dir).exists() {
             return Err(format!(
-                "Installers directory does not exist: {}",
-                installers_dir
+                "Installers directory does not exist: {installers_dir}"
             ));
         }
         // TODO: Make the 'font-name:version' format work again
         let installers = fs::read_dir(installers_dir).map_err(|e| e.to_string())?;
         Ok(installers
             .filter_map(|installer| {
-                installer.ok().and_then(|e| {
-                    e.path()
+                installer.ok().and_then(|i| {
+                    i.path()
                         .file_name()
-                        .and_then(|n| n.to_str().map(|s| String::from(s)))
+                        .and_then(|n| n.to_str().map(String::from))
                 })
             })
             .filter(|installer| match_any_wildcard(installer, filter))
@@ -237,27 +230,30 @@ impl Installer {
                 return;
             }
 
-            print!("   {} ... ", partial_path);
+            print!("   {partial_path} ... ");
 
             // TODO: Option to preserve directory structure? (specified by the installer)
             // if let Err(e) = fs::create_dir_all(
-            //     Path::new(&format!("{}/{}", &dest_dir, &partial_path))
+            //     Path::new(&format!("{dest_dir}/{partial_path}"))
             //         .parent()
             //         .unwrap(),
             // ) {
-            //     println!("{}{}{}", "\x1b[91m", e.to_string(), "\x1b[0m");
+            //     println!("\x1b[91m{e}\x1b[0m");
             //     *errors.lock().unwrap() = true;
             //     return;
             // }
 
             match fs::rename(
-                format!("{}/{}", temp_dir, partial_path),
-                format!("{}/{}", dest_dir, partial_path.split('/').last().unwrap()),
-                // format!("{}/{}", dest_dir, partial_path), // <-- to preserve subdirectories
+                format!("{temp_dir}/{partial_path}"),
+                format!(
+                    "{dest_dir}/{}",
+                    partial_path.split('/').next_back().unwrap()
+                ),
+                // format!("{dest_dir}/{partial_path}"), // <-- to preserve subdirectories
             ) {
-                Ok(_) => println!("{}Done{}", "\x1b[92m", "\x1b[0m"),
+                Ok(_) => println!("\x1b[92mDone\x1b[0m"),
                 Err(e) => {
-                    println!("{}{}{}", "\x1b[91m", e.to_string(), "\x1b[0m");
+                    println!("\x1b[91m{e}\x1b[0m");
                     *errors.lock().unwrap() = true;
                 }
             };

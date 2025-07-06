@@ -7,20 +7,11 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, fs};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct FontPage {
     time: u64,
     pub contents: Option<String>,
-}
-
-impl Default for FontPage {
-    fn default() -> Self {
-        Self {
-            time: 0,
-            contents: None,
-        }
-    }
 }
 
 impl FontPage {
@@ -35,7 +26,7 @@ impl FontPage {
         let url_hash = hasher.finish();
         if let Some(font_page) = cached_pages.get(&url_hash) {
             if args.options.verbose {
-                println!("Loading webpage from runtime cache: {}", url);
+                println!("Loading webpage from runtime cache: {url}");
             }
             return Ok(font_page.clone());
         }
@@ -56,10 +47,10 @@ impl FontPage {
             || system_time.wrapping_sub(cache.time) >= args.config.cache_timeout
         {
             if args.options.verbose {
-                println!("Updating cache: {} ({})", url, cache_file);
+                println!("Updating cache: {url} ({cache_file})");
             }
             let page = client
-                .get(&*url)
+                .get(url)
                 .header(USER_AGENT, "fin")
                 .send()
                 .map_err(|e| e.to_string())?;
@@ -73,12 +64,12 @@ impl FontPage {
             fs::write(
                 &cache_file,
                 &toml::to_string(&cache).map_err(|e| {
-                    eprintln!("Failed to serialize cache: {}", &cache_file);
+                    eprintln!("Failed to serialize cache: {cache_file}");
                     e.to_string()
                 })?,
             )
             .map_err(|e| {
-                eprint!("Failed to write cache file to disk: {}", &cache_file);
+                eprint!("Failed to write cache file to disk: {cache_file}");
                 e.to_string()
             })?;
         }

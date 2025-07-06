@@ -46,7 +46,7 @@ impl Args {
 
         let mut fonts = Vec::new();
         let mut flags = Vec::new();
-        while let Some(item) = args.next() {
+        for item in args {
             if item.chars().nth(0).unwrap() == '-' {
                 flags.push(item);
             } else {
@@ -77,7 +77,7 @@ impl Args {
                 _ => {
                     show_help();
                     println!();
-                    return Err(format!("Unknown argument: {}", opt));
+                    return Err(format!("Unknown argument: {opt}"));
                 }
             }
         }

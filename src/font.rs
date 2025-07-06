@@ -40,7 +40,7 @@ impl fmt::Display for Font {
             "{}{}",
             self.name,
             match &self.override_version {
-                Some(ver) => format!(" {}", ver),
+                Some(ver) => format!(" {ver}"),
                 None => String::new(),
             },
         )
@@ -65,10 +65,10 @@ impl Font {
             return Ok(Self {
                 name: name.to_string(),
                 installer: match needs_installer {
-                    true => match Installer::parse(&args, name, version, cached_pages) {
+                    true => match Installer::parse(args, name, version, cached_pages) {
                         Ok(installer) => Some(installer),
                         Err(e) => {
-                            eprintln!("{}", e);
+                            eprintln!("{e}");
                             None
                         }
                     },
@@ -77,7 +77,7 @@ impl Font {
                 override_version: version.map(|v| v.to_string()),
             });
         }
-        eprintln!("Invalid format: '{}'", name);
+        eprintln!("Invalid format: '{name}'");
         Err(FontParseError::InvalidName)
     }
 
@@ -88,9 +88,9 @@ impl Font {
             Occupied(val) => {
                 // TODO: Validate the path before using it to prevent potential data loss
                 match fs::remove_dir_all(val.get().dir.clone()).map_err(|e| e.to_string()) {
-                    Ok(_) => println!("{}Done{}", "\x1b[92m", "\x1b[0m"),
+                    Ok(_) => println!("\x1b[92mDone\x1b[0m"),
                     Err(e) => {
-                        println!("{}{}{}", "\x1b[91m", e.to_string(), "\x1b[0m");
+                        println!("\x1b[91m{e}\x1b[0m");
                     }
                 }
                 installed_fonts.remove_entry(&self.name)?;
@@ -141,7 +141,7 @@ impl Font {
         let mut cached_pages = HashMap::<u64, FontPage>::new();
         actionable_fonts
             .iter()
-            .map(|font| Font::parse(&args, &font, needs_installer, &mut cached_pages))
+            .map(|font| Font::parse(args, font, needs_installer, &mut cached_pages))
             .filter(|font| match args.action {
                 Action::Update | Action::Install if !args.options.reinstall => font
                     .as_ref()

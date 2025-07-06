@@ -26,47 +26,47 @@ pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
         .collect();
 
     for input_byte in input.bytes() {
-        for i in 0..wc_patterns.len() {
+        for wc_pattern in &mut wc_patterns {
             'iter: loop {
-                if wc_patterns[i].bytes.is_empty() {
-                    wc_patterns[i].valid = false;
+                if wc_pattern.bytes.is_empty() {
+                    wc_pattern.valid = false;
                 }
-                if wc_patterns[i].index + 1 > wc_patterns[i].bytes.len() {
-                    if let Some(index) = wc_patterns[i].jumpback_index {
-                        wc_patterns[i].index = index;
+                if wc_pattern.index + 1 > wc_pattern.bytes.len() {
+                    if let Some(index) = wc_pattern.jumpback_index {
+                        wc_pattern.index = index;
                     } else {
-                        wc_patterns[i].valid = false;
+                        wc_pattern.valid = false;
                     }
                 }
-                if !wc_patterns[i].valid {
+                if !wc_pattern.valid {
                     break 'iter;
                 }
 
-                match wc_patterns[i].bytes[wc_patterns[i].index] {
+                match wc_pattern.bytes[wc_pattern.index] {
                     b'*' => {
-                        let p_len = wc_patterns[i].bytes.len();
+                        let p_len = wc_pattern.bytes.len();
                         if p_len == 1 {
                             return true;
                         }
-                        if wc_patterns[i].index < p_len - 1 {
-                            wc_patterns[i].jumpback_index = Some(wc_patterns[i].index);
-                            wc_patterns[i].index += 1;
+                        if wc_pattern.index < p_len - 1 {
+                            wc_pattern.jumpback_index = Some(wc_pattern.index);
+                            wc_pattern.index += 1;
                         } else {
                             return true;
                         }
                     }
                     // b'^' if input_index + wc_pattern.index == 0 => {
-                    //     wc_patterns[i].index += 1;
+                    //     wc_pattern.index += 1;
                     // }
                     c if c == input_byte => {
-                        wc_patterns[i].index += 1;
+                        wc_pattern.index += 1;
                         break 'iter;
                     }
                     _ => {
-                        if let Some(last_star) = wc_patterns[i].jumpback_index {
-                            wc_patterns[i].index = last_star + 1;
+                        if let Some(last_star) = wc_pattern.jumpback_index {
+                            wc_pattern.index = last_star + 1;
                         } else {
-                            wc_patterns[i].valid = false;
+                            wc_pattern.valid = false;
                         }
                         break 'iter;
                     }

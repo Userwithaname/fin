@@ -9,9 +9,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match args.action {
         Action::Help => show_help(),
-        _ => run(&args, &mut installed_fonts).map_err(|e| {
+        _ => run(&args, &mut installed_fonts).inspect_err(|_| {
             let _ = installed_fonts.write();
-            e
         })?,
     };
 

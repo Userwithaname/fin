@@ -39,9 +39,9 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                     // TODO: Handle the error in a way that doesn't halt the program(?)
                     installer
                         .download_font()?
-                        .install_font(&args, installed_fonts)
+                        .install_font(args, installed_fonts)
                 } else {
-                    Err(format!("Installer for '{}' has not been loaded", font))
+                    Err(format!("Installer for '{font}' has not been loaded"))
                 }
             })?;
         }
@@ -64,9 +64,9 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 if let Some(installer) = &font.installer {
                     installer
                         .download_font()?
-                        .install_font(&args, installed_fonts)
+                        .install_font(args, installed_fonts)
                 } else {
-                    Err(format!("Installer for '{}' has not been loaded", font))
+                    Err(format!("Installer for '{font}' has not been loaded"))
                 }
             })?;
         }
@@ -99,7 +99,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
 }
 
 pub fn user_prompt(message: &str) -> bool {
-    print!("{} [y/n]: ", message);
+    print!("{message} [y/n]: ");
     let _ = io::stdout().flush();
 
     let mut input = String::new();
