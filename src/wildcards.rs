@@ -9,8 +9,6 @@ pub struct WildcardPattern {
 ///
 /// Supported special characters:
 ///   '*' matches any number of any characters
-///   '^' matches the start of the input
-///   '$' matches the end of the input
 pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
     if patterns.is_empty() {
         return false;
@@ -55,9 +53,6 @@ pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
                             return true;
                         }
                     }
-                    // b'^' if input_index + wc_pattern.index == 0 => {
-                    //     wc_pattern.index += 1;
-                    // }
                     c if c == input_byte => {
                         wc_pattern.index += 1;
                         break 'iter;
