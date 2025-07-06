@@ -122,7 +122,7 @@ Arguments:
     --install-dir=[path]  Sets the installation directory
     --reinstall           Skip version checks and reinstall
     --refresh             Ignore cache and fetch new data
-    --verbose             Show more detailed output (TODO!)
+    --verbose             Show more detailed output
 ```
 
 # Installing Fin

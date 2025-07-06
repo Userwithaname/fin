@@ -35,7 +35,7 @@ impl FontPage {
         let url_hash = hasher.finish();
         if let Some(font_page) = cached_pages.get(&url_hash) {
             if args.options.verbose {
-                println!("Loading webpage from runtime cache");
+                println!("Loading webpage from runtime cache: {}", url);
             }
             return Ok(font_page.clone());
         }
@@ -56,16 +56,13 @@ impl FontPage {
             || system_time.wrapping_sub(cache.time) >= args.config.cache_timeout
         {
             if args.options.verbose {
-                println!("Updating cache: {} ({})", cache_file, url);
+                println!("Updating cache: {} ({})", url, cache_file);
             }
             let page = client
                 .get(&*url)
                 .header(USER_AGENT, "fin")
                 .send()
-                .map_err(|e| {
-                    // eprintln!("Could not access the URL for '{}'", self.name);
-                    e.to_string()
-                })?;
+                .map_err(|e| e.to_string())?;
 
             cache.time = system_time;
             cache.contents = Some(page.text().map_err(|e| {
