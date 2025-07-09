@@ -1,11 +1,14 @@
 use crate::home_dir;
 use crate::installed_file_path;
+
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::{fs, path::Path};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct InstalledFont {
+    // TODO: Allow locking fonts to a particular tag
+    // pub lock: Option<String>,
     pub url: String,
     pub dir: String,
 }
@@ -20,6 +23,7 @@ impl InstalledFonts {
     /// instance of `InstalledFonts` from it
     pub fn read() -> Result<Self, String> {
         let file = installed_file_path!();
+
         if !Path::new(&file).exists() {
             return Ok(Self {
                 installed: [].into(),
@@ -35,7 +39,7 @@ impl InstalledFonts {
         })
     }
 
-    /// Writes the `InstalledFonts` to disk in TOML format,
+    /// Writes `InstalledFonts` to disk in TOML format,
     /// if there are any changes.
     pub fn write(&self) -> Result<(), String> {
         if !self.changed {
@@ -51,7 +55,7 @@ impl InstalledFonts {
         Ok(())
     }
 
-    /// Returns the names of all InstalledFonts entries
+    /// Returns the names of all installed fonts
     pub fn get_names(&self) -> Vec<String> {
         self.installed.clone().into_keys().collect()
     }
@@ -61,9 +65,7 @@ impl InstalledFonts {
     pub fn update_entry(&mut self, name: &str, data: InstalledFont) {
         match self.installed.get_mut(name) {
             Some(entry) => *entry = data,
-            None => {
-                self.installed.insert(name.to_string(), data);
-            }
+            None => _ = self.installed.insert(name.to_string(), data),
         };
         self.changed = true;
     }

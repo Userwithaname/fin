@@ -27,7 +27,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             println!("Installing: ");
             args.fonts
                 .iter()
-                .for_each(|i| println!("   \x1b[92m{i}\x1b[0m"));
+                .for_each(|font| println!("   \x1b[92m{font}\x1b[0m"));
             println!();
 
             // TODO: Inform the user of the total download size
@@ -54,7 +54,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             println!("Updating: ");
             args.fonts
                 .iter()
-                .for_each(|i| println!("   \x1b[92m{i}\x1b[0m"));
+                .for_each(|font| println!("   \x1b[92m{font}\x1b[0m"));
             println!();
 
             if !user_prompt("Proceed?") {
@@ -79,7 +79,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             println!("Removing: ");
             args.fonts
                 .iter()
-                .for_each(|i| println!("   \x1b[91m{i}\x1b[0m"));
+                .for_each(|font| println!("   \x1b[91m{font}\x1b[0m"));
             println!();
 
             if !user_prompt("Proceed?") {
@@ -89,6 +89,9 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             args.fonts
                 .iter()
                 .try_for_each(|font| font.remove(installed_fonts))?
+        }
+        Action::List => {
+            args.fonts.iter().for_each(|font| println!("{font}"));
         }
         Action::Help => (),
     };

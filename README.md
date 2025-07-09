@@ -99,13 +99,13 @@ See the output of `fin help` for more information:
 ```
 $ fin help
 Usage:
-    fin [action] [font]
+    fin [action] [items]
 
 Actions:
     install               Install new fonts
     update                Update installed fonts
-                          Updates all fonts if unspecified
     remove                Remove installed fonts
+    list                  List installed or available fonts
     help                  Show this help message
 
 Arguments:

@@ -21,7 +21,7 @@ impl fmt::Display for FontParseError {
             "{}",
             match &self {
                 Self::Generic(e) => e.to_string(),
-                Self::InvalidName => "The font name is invalid".to_string(),
+                Self::InvalidName => "The name is invalid".to_string(),
             }
         )
     }
@@ -160,6 +160,28 @@ impl Font {
                     println!("Pattern did not match any installed fonts.");
                     return Ok(vec![]);
                 }
+
+                needs_installer = false;
+                fonts
+            }
+            Action::List => {
+                if filter.is_empty() {
+                    println!("Specify what to list: [installed/available]");
+                    return Ok(vec![]);
+                }
+                let fonts = match filter[0].as_str() {
+                    "installed" => Installer::find_installed(&["*".to_string()], installed_fonts)
+                        .map_err(|e| FontParseError::Generic(e))?,
+                    "available" | "installers" => Installer::find_installers(&["*".to_string()])
+                        .map_err(|e| FontParseError::Generic(e))?,
+                    x => {
+                        println!(
+                            "Cannot list: '{}'\nSpecify what to list: [installed/available]",
+                            x
+                        );
+                        return Ok(vec![]);
+                    }
+                };
 
                 needs_installer = false;
                 fonts

@@ -8,6 +8,7 @@ pub enum Action {
     Install,
     Update,
     Remove,
+    List,
     Help,
 }
 
@@ -34,7 +35,8 @@ impl Args {
                 "install" | "get" => Action::Install,
                 "update" | "upgrade" | "up" => Action::Update,
                 "remove" | "uninstall" | "rm" => Action::Remove,
-                "help" => Action::Help,
+                "list" | "ls" => Action::List,
+                "help" | "h" => Action::Help,
                 _ => {
                     show_help();
                     println!();
@@ -106,13 +108,13 @@ pub fn show_help() {
     print!(
         "\
 Usage:
-    fin [action] [font]
+    fin [action] [items]
 
 Actions:
     install               Install new fonts
     update                Update installed fonts
-                          Updates all fonts if unspecified
     remove                Remove installed fonts
+    list                  List installed or available fonts
     help                  Show this help message
 
 Arguments:
