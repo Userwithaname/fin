@@ -90,7 +90,7 @@ not supported
 
 # Usage
 
-- `fin install font-name` - installs the specified fonts
+- `fin install` - installs the specified fonts
 - `fin update` - updates your installed fonts
 - `fin remove` - removes the specified fonts
 
@@ -110,9 +110,10 @@ Actions:
 
 Arguments:
     --install-dir=[path]  Sets the installation directory
-    --reinstall           Skip version checks and reinstall
-    --refresh             Ignore cache and fetch new data
-    --verbose             Show more detailed output
+    --reinstall  -i       Skip version checks and reinstall
+    --refresh    -r       Ignore cache and fetch new data
+    --verbose    -v       Show more detailed output
+    --yes        -y       Automatically accept prompts
 ```
 
 # Installing Fin
@@ -130,4 +131,4 @@ and [`cargo run`](https://doc.rust-lang.org/cargo/commands/cargo-run.html).
     - Run `./target/debug/fin` from the `fin` directory, or
     - Put the program binary into a location within your `$PATH` (such as `~/.local/bin/`)
     so you can run it from anywhere using the `fin` command, or
-    - Run it using Cargo:  `cargo run -- [action] [font]`
+    - Run it using Cargo:  `cargo run -- [action] [items]`

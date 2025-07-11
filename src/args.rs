@@ -16,6 +16,7 @@ pub struct Options {
     pub reinstall: bool,
     pub refresh: bool,
     pub verbose: bool,
+    pub answer: Option<bool>,
 }
 
 pub struct Args {
@@ -60,6 +61,7 @@ impl Args {
             reinstall: false,
             refresh: false,
             verbose: false,
+            answer: None,
         };
         let mut config = Config::load()?;
 
@@ -75,11 +77,36 @@ impl Args {
                 "--reinstall" => options.reinstall = true,
                 "--refresh" => options.refresh = true,
                 "--verbose" => options.verbose = true,
+                "--yes" => options.answer = Some(true),
+                "--no" => options.answer = Some(false),
 
-                _ => {
-                    show_help();
-                    println!();
-                    return Err(format!("Unknown argument: {opt}"));
+                opt => {
+                    let mut opts = opt.chars();
+                    if opts.next().unwrap() == '-' {
+                        for o in opts {
+                            match o {
+                                'i' => options.reinstall = true,
+                                'r' => options.refresh = true,
+                                'v' => options.verbose = true,
+                                'y' => options.answer = Some(true),
+                                'n' => options.answer = Some(false),
+                                '-' => {
+                                    show_help();
+                                    println!();
+                                    return Err(format!("Unknown argument: {opt}"));
+                                }
+                                o => {
+                                    show_help();
+                                    println!();
+                                    return Err(format!("Unknown argument: -{o}"));
+                                }
+                            }
+                        }
+                    } else {
+                        show_help();
+                        println!();
+                        return Err(format!("Unknown argument: {opt}"));
+                    }
                 }
             }
         }
@@ -119,9 +146,10 @@ Actions:
 
 Arguments:
     --install-dir=[path]  Sets the installation directory
-    --reinstall           Skip version checks and reinstall
-    --refresh             Ignore cache and fetch new data
-    --verbose             Show more detailed output
+    --reinstall  -i       Skip version checks and reinstall
+    --refresh    -r       Ignore cache and fetch new data
+    --verbose    -v       Show more detailed output
+    --yes        -y       Automatically accept prompts
 "
     );
 }

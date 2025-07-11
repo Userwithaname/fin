@@ -31,7 +31,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             println!();
 
             // TODO: Inform the user of the total download size
-            if !user_prompt("Proceed?") {
+            if !user_prompt("Proceed?", args) {
                 break 'install;
             }
             args.fonts.iter().try_for_each(|font| {
@@ -57,7 +57,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 .for_each(|font| println!("   \x1b[92m{font}\x1b[0m"));
             println!();
 
-            if !user_prompt("Proceed?") {
+            if !user_prompt("Proceed?", args) {
                 break 'update;
             }
             args.fonts.iter().try_for_each(|font| {
@@ -82,7 +82,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 .for_each(|font| println!("   \x1b[91m{font}\x1b[0m"));
             println!();
 
-            if !user_prompt("Proceed?") {
+            if !user_prompt("Proceed?", args) {
                 break 'remove;
             }
             println!();
@@ -101,16 +101,28 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
     Ok(())
 }
 
-pub fn user_prompt(message: &str) -> bool {
+pub fn user_prompt(message: &str, args: &Args) -> bool {
     print!("{message} [y/n]: ");
-    let _ = io::stdout().flush();
+
+    match args.options.answer {
+        Some(false) => {
+            println!("no");
+            return false;
+        }
+        Some(true) => {
+            println!("yes");
+            return true;
+        }
+        None => {}
+    }
 
     let mut input = String::new();
+    let _ = io::stdout().flush();
     io::stdin().read_line(&mut input).unwrap();
 
     match input.to_lowercase().as_str() {
         "y\n" | "yes\n" | "yabadabadoo\n" => true,
         "n\n" | "no\n" | "nope\n" => false,
-        _ => user_prompt(message),
+        _ => user_prompt(message, args),
     }
 }

@@ -61,7 +61,7 @@
     [*] Remove the font info entry from the file on disk
 
 [ ] UX improvements:
-    [ ] Show download size before downloading
+    [!] Show download size before downloading
     [ ] Show progress while downloading
     [ ] Download all archives prior to installing(?)
         [ ] Allow parallel downloads(?)
