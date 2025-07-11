@@ -114,6 +114,7 @@ Arguments:
     --refresh    -r       Ignore cache and fetch new data
     --verbose    -v       Show more detailed output
     --yes        -y       Automatically accept prompts
+    --no         -n       Automatically reject prompts
 ```
 
 # Installing Fin
