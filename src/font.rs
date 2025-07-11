@@ -171,13 +171,12 @@ impl Font {
                 }
                 let fonts = match filter[0].as_str() {
                     "installed" => Installer::find_installed(&["*".to_string()], installed_fonts)
-                        .map_err(|e| FontParseError::Generic(e))?,
+                        .map_err(FontParseError::Generic)?,
                     "available" | "installers" => Installer::find_installers(&["*".to_string()])
-                        .map_err(|e| FontParseError::Generic(e))?,
-                    x => {
+                        .map_err(FontParseError::Generic)?,
+                    item => {
                         println!(
-                            "Cannot list: '{}'\nSpecify what to list: [installed/available]",
-                            x
+                            "Cannot list: '{item}'\nSpecify what to list: [installed/available]"
                         );
                         return Ok(vec![]);
                     }

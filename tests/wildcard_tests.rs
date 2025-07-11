@@ -83,11 +83,6 @@ mod wildcard_tests {
             &[String::from("*end*")]
         ));
         println!("Passed: \"zero-length match star at the end\"");
-        // assert!(match_any_wildcard(
-        //     "disallowed_underscore disallowed underscore",
-        //     &[String::from("no*allowed")]
-        // ));
-        // println!("Passed: \"disallowed underscore\"");
         assert!(!match_any_wildcard(
             "some random text",
             &[String::from("potato")]

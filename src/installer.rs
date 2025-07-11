@@ -217,7 +217,7 @@ impl Installer {
 
             print!("   {partial_path} ... ");
 
-            // TODO: Option to preserve directory structure? (specified by the installer)
+            // IDEA: Option to preserve directory structure (specified by the installer)
             // if let Err(e) = fs::create_dir_all(
             //     Path::new(&format!("{dest_dir}/{partial_path}"))
             //         .parent()
