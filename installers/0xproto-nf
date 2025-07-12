@@ -1,0 +1,5 @@
+name = "0xProto Nerd Font"
+tag = "latest"
+url = "https://www.nerdfonts.com/font-downloads"
+archive = "0xProto.zip"
+include = [ "*" ]

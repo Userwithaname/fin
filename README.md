@@ -21,8 +21,8 @@ akin to a standard package manager.
 
 # Configuration
 
-To configure Fin, create a `config.toml` file in your `~/.config/fin`
-directory.
+You may configure Fin using the `config.toml` file in your `~/.config/fin/`
+directory:
 
 ## Example `config.toml`
 
@@ -34,13 +34,16 @@ install_dir = "~/.fonts"
 cache_timeout = 90
 ```
 
+Note that you will also need an installer for any font you wish to install.
+
 # Installers
 
 Fin relies on TOML files (located in `~/.config/fin/installers/`) to specify
-how each font should be installed. Based on those files, Fin will attempt
-to locate and download the font archive, extract it, and install it on your
-system. Note that if the site layout or archive name or structure changes,
-the installer may need to be updated to reflect those changes as well.
+how each font should be installed. You can find a few examples in the
+`installers/` directory in this repository.
+
+Using the installers, Fin will attempt to locate and download the font archive,
+and install the font on your system.
 
 Supported fields are as follows:
 
@@ -52,7 +55,11 @@ Supported fields are as follows:
 - `exclude` - specify which files to ignore (takes precedence over `include`)
 
 > [!NOTE]
-> You can use `$name` or `$tag`, as placeholders for their values,
+> If the site layout or archive name or structure changes, the installer
+> may need to be updated to reflect those changes as well.
+
+> [!NOTE]
+> You can use `$name` or `$tag` as placeholders for their values
 > in all fields except `name` or `tag`.
 
 > [!NOTE]
@@ -65,7 +72,7 @@ Supported fields are as follows:
 
 ## Example installer
 
-Creating a file in `~/.config/fin/installers/maple-mono` with the
+Creating a `maple-mono` file in `~/.config/fin/installers/` with the
 following contents will allow you to install the latest version of
 [Maple Mono](https://github.com/subframe7536/maple-font) from GitHub
 by running `fin install maple-mono`:

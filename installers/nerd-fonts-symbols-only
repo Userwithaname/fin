@@ -1,0 +1,5 @@
+name = "Nerd Fonts Symbols Only"
+tag = "latest"
+url = "https://www.nerdfonts.com/font-downloads"
+archive = "NerdFontsSymbolsOnly.zip"
+include = [ "*" ]

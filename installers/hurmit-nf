@@ -1,0 +1,5 @@
+name = "Hurmit Nerd Font"
+tag = "latest"
+url = "https://www.nerdfonts.com/font-downloads"
+archive = "Hermit.zip"
+include = [ "*" ]

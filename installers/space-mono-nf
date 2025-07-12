@@ -1,0 +1,5 @@
+name = "SpaceMono Nerd Font"
+tag = "latest"
+url = "https://www.nerdfonts.com/font-downloads"
+archive = "SpaceMono.zip"
+include = [ "*" ]
