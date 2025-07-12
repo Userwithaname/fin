@@ -185,6 +185,9 @@ impl Font {
                 needs_installer = false;
                 fonts
             }
+            Action::Clean => {
+                return Ok(vec![]);
+            }
             Action::Help => {
                 return Ok(vec![]);
             }

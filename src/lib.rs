@@ -5,6 +5,7 @@ use crate::font::Font;
 use crate::installed::InstalledFonts;
 use crate::installer::Installer;
 
+use std::fs;
 use std::io::{self, Write};
 
 pub mod action;
@@ -95,6 +96,10 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
         }
         Action::List => {
             args.fonts.iter().for_each(|font| println!("{font}"));
+        }
+        Action::Clean => {
+            fs::remove_dir_all(cache_dir!()).map_err(|e| e.to_string())?;
+            println!("Removed the cache directory: {}", cache_dir!());
         }
         Action::Help => (),
     };

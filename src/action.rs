@@ -4,6 +4,7 @@ pub enum Action {
     Install,
     Update,
     Remove,
+    Clean,
     List,
     Help,
 }
@@ -16,6 +17,7 @@ Actions:
     install               Install new fonts
     update                Update installed fonts
     remove                Remove installed fonts
+    clean                 Removes temporary cache files
     list                  List installed or available fonts
     help                  Show this help message
 "
@@ -27,6 +29,7 @@ Actions:
                 "install" | "get" => Action::Install,
                 "update" | "upgrade" | "up" => Action::Update,
                 "remove" | "uninstall" | "rm" => Action::Remove,
+                "clean" => Action::Clean,
                 "list" | "ls" => Action::List,
                 "help" | "h" => Action::Help,
                 _ => {
