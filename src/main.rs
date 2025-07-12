@@ -1,4 +1,5 @@
-use fin::args::{show_help, Action, Args};
+use fin::action::Action;
+use fin::args::{show_help, Args};
 use fin::installed::InstalledFonts;
 use fin::run;
 use std::error::Error;

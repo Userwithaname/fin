@@ -1,3 +1,4 @@
+use crate::action::Action;
 use crate::args::*;
 use crate::config::Config;
 use crate::font::Font;
@@ -6,10 +7,12 @@ use crate::installer::Installer;
 
 use std::io::{self, Write};
 
+pub mod action;
 pub mod args;
 pub mod config;
 pub mod font_page;
 pub mod installed;
+pub mod options;
 pub mod paths;
 pub mod wildcards;
 
