@@ -9,7 +9,7 @@ pub enum Action {
 }
 
 impl Action {
-    pub fn help_actions() -> &'static str {
+    pub const fn help_actions() -> &'static str {
         // Remember to update README.md
         "\
 Actions:

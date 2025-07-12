@@ -10,7 +10,7 @@ pub struct Options {
 }
 
 impl Options {
-    pub fn help_options() -> &'static str {
+    pub const fn help_options() -> &'static str {
         // Remember to update README.md
         "\
 Arguments:
