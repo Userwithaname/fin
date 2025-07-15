@@ -17,7 +17,7 @@ Actions:
     install               Install new fonts
     update                Update installed fonts
     remove                Remove installed fonts
-    clean                 Removes temporary cache files
+    clean                 Remove temporary cache files
     list                  List installed or available fonts
     help                  Show this help message
 "

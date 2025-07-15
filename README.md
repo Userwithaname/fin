@@ -112,7 +112,7 @@ Actions:
     install               Install new fonts
     update                Update installed fonts
     remove                Remove installed fonts
-    clean                 Removes temporary cache files
+    clean                 Remove temporary cache files
     list                  List installed or available fonts
     help                  Show this help message
 
@@ -130,7 +130,7 @@ Arguments:
 If you wish to try out Fin, you can do so by cloning this repository, and
 building its source code using Cargo. The steps for building and running Fin
 are outlined below. For more information, you can read the Cargo documentation
-for  [`cargo build`](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
+for [`cargo build`](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
 and [`cargo run`](https://doc.rust-lang.org/cargo/commands/cargo-run.html).
 
 1. Clone this repository: `git clone http://github.com/Userwithaname/fin.git`

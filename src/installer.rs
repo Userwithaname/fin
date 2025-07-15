@@ -145,12 +145,13 @@ impl Installer {
             .unwrap()
             .split('"')
             .filter_map(|line| {
-                wildcard_substring(line, &(String::from("https://*") + &self.archive), b"\"")
+                wildcard_substring(line, &(String::from("https://*") + &self.archive), b"")
             })
             .next()
-            .expect("Archive download link not found") // TODO: Error handling
-            // .ok_or(String::from("Archive download link not found"))?
-            .to_string();
+            .map_or(
+                Err(format!("Archive download link not found for {}", self.name)),
+                |n| Ok(n.to_string()),
+            )?;
         Ok(direct_link)
     }
 
