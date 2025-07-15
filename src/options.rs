@@ -30,17 +30,22 @@ Arguments:
             let opt_val = &mut flag.split('=');
             let (opt, val) = (opt_val.next().unwrap(), opt_val.next());
             match opt {
+                // Arguments requiring a value (--argument=value)
                 "--install-dir" => config.install_dir = val.unwrap().to_string(),
                 "--cache-timeout" => {
                     config.cache_timeout = val.unwrap().parse::<u64>().map_err(|e| e.to_string())?
                 }
 
+                opt if val.is_some() => return Err(format!("Unknown argument: {opt}=…")),
+
+                // Arguments not requiring a value (--argument)
                 "--reinstall" => options.reinstall = true,
                 "--refresh" => options.refresh = true,
                 "--verbose" => options.verbose = true,
                 "--yes" => options.answer = Some(true),
                 "--no" => options.answer = Some(false),
 
+                // Short arguments and unknown argument errors
                 opt => {
                     let mut opts = opt.chars();
                     if opts.next().unwrap() == '-' {
