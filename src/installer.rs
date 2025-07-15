@@ -140,7 +140,7 @@ impl Installer {
     /// Note: `self.url` is expected to lead to a webpage, which has the direct link
     /// discoverable in plain text within its source.
     fn find_direct_link(&mut self, font_page: FontPage) -> Result<String, String> {
-        let direct_link = font_page
+        font_page
             .contents
             .unwrap()
             .split('"')
@@ -150,9 +150,8 @@ impl Installer {
             .next()
             .map_or(
                 Err(format!("Archive download link not found for {}", self.name)),
-                |n| Ok(n.to_string()),
-            )?;
-        Ok(direct_link)
+                |link| Ok(link.to_string()),
+            )
     }
 
     pub fn download_font(&self) -> Result<&Installer, String> {
