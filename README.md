@@ -19,6 +19,36 @@ akin to a standard package manager.
 
 "Fin" is a contraction of "font installer".
 
+# Usage
+
+- `fin install` - installs the specified fonts
+- `fin update` - updates your installed fonts
+- `fin remove` - removes the specified fonts
+
+See the output of `fin help` for more information:
+
+```
+$ fin help
+Usage:
+    fin [action] [items]
+
+Actions:
+    install               Install new fonts
+    update                Update installed fonts
+    remove                Remove installed fonts
+    clean                 Remove temporary cache files
+    list                  List installed or available fonts
+    help                  Show this help message
+
+Arguments:
+    --install-dir=[path]  Sets the installation directory
+    --reinstall  -i       Skip version checks and reinstall
+    --refresh    -r       Ignore cache and fetch new data
+    --verbose    -v       Show more detailed output
+    --yes        -y       Automatically accept prompts
+    --no         -n       Automatically reject prompts
+```
+
 # Configuration
 
 You may configure Fin using the `config.toml` file in your `~/.config/fin/`
@@ -94,36 +124,6 @@ to the `archive` in plain text (e.g. it must be accessible without
 JavaScript)
 - The download file must be an archive - other files are currently
 not supported
-
-# Usage
-
-- `fin install` - installs the specified fonts
-- `fin update` - updates your installed fonts
-- `fin remove` - removes the specified fonts
-
-See the output of `fin help` for more information:
-
-```
-$ fin help
-Usage:
-    fin [action] [items]
-
-Actions:
-    install               Install new fonts
-    update                Update installed fonts
-    remove                Remove installed fonts
-    clean                 Remove temporary cache files
-    list                  List installed or available fonts
-    help                  Show this help message
-
-Arguments:
-    --install-dir=[path]  Sets the installation directory
-    --reinstall  -i       Skip version checks and reinstall
-    --refresh    -r       Ignore cache and fetch new data
-    --verbose    -v       Show more detailed output
-    --yes        -y       Automatically accept prompts
-    --no         -n       Automatically reject prompts
-```
 
 # Installing Fin
 
