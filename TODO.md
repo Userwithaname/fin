@@ -13,11 +13,6 @@
             [*] Handle the additional arguments so they can be used
         [*] Match fonts by wildcard pattern
         [-] Allow specifying a version override (for example: `font-name:v1.0`)
-            NOTE: Doesn't currently work due to how wildcard matching is implemented.
-                  Fixing this would also make it possible to warn the user when a
-                  specific pattern did not match any fonts, as patterns would have to
-                  be associated with their matched results
-                  (example: `$ fin install inter test*`: `'test*' did not match any fonts`)
 [*] Config:
     [*] Define a structure for keeping track of installed fonts and their relevant data
     [*] User configuration file (for example: for specifying the installation directory)
@@ -35,11 +30,9 @@
             links or archive names when required).
     [*] Remember locally installed fonts
     [*] Detect available updates
-[-] Install fonts (`fin install [font]`):
+[*] Install fonts (`fin install [font]`):
     [*] Parse the installer
-    [-] Validate arguments and tell the user which actions will be performed
-        TODO: Inform the user when a specified font/pattern has no installer
-        TODO: For fonts which are already installed, require `--reinstall` or a newer version to be available
+    [*] Validate arguments and tell the user which actions will be performed
     [*] Wait for user confirmation
     [*] Download the font into `~/.cache/fin/$font/$tag/`
     [*] Extract to a temporary location

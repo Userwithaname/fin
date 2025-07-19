@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub struct WildcardPattern {
     index: usize,
     jumpback_index: Option<usize>,
@@ -5,70 +7,121 @@ pub struct WildcardPattern {
     valid: bool,
 }
 
-/// Returns true if the input matches any of the patterns
+impl WildcardPattern {
+    fn new(bytes: Box<[u8]>) -> Self {
+        Self {
+            index: 0,
+            jumpback_index: None,
+            bytes,
+            valid: true,
+        }
+    }
+
+    /// Checks the current character, modifies the index,
+    /// and validates or invalidates self.
+    ///
+    /// Returns `true` if the pattern has been matched in full,
+    /// or `false` if partial or invalid.
+    fn check_next(&mut self, input_byte: &u8) -> bool {
+        'iter: loop {
+            if self.bytes.is_empty() {
+                self.valid = false;
+            }
+            if self.index + 1 > self.bytes.len() {
+                if let Some(index) = self.jumpback_index {
+                    self.index = index;
+                } else {
+                    self.valid = false;
+                }
+            }
+            if !self.valid {
+                break 'iter;
+            }
+
+            match self.bytes[self.index] {
+                b'*' => {
+                    let p_len = self.bytes.len();
+                    if p_len == 1 {
+                        return true;
+                    }
+                    if self.index < p_len - 1 {
+                        self.jumpback_index = Some(self.index);
+                        self.index += 1;
+                    } else {
+                        return true;
+                    }
+                }
+                c if c == *input_byte => {
+                    self.index += 1;
+                    break 'iter;
+                }
+                _ => {
+                    if let Some(last_star) = self.jumpback_index {
+                        self.index = last_star + 1;
+                    } else {
+                        self.valid = false;
+                    }
+                    break 'iter;
+                }
+            }
+        }
+        false
+    }
+}
+
+/// Returns true if the pattern matches the input
 ///
 /// Supported special characters:
-///   '*' matches any number of any characters
+///   '*' matches any number of any character(s)
+pub fn match_wildcard(input: &str, pattern: &str) -> bool {
+    if pattern.is_empty() {
+        return false;
+    }
+
+    let mut wc_pattern = WildcardPattern::new(pattern.bytes().collect());
+    for input_byte in input.bytes() {
+        if wc_pattern.check_next(&input_byte) {
+            return true;
+        }
+    }
+
+    for i in wc_pattern.index..wc_pattern.bytes.len() {
+        match wc_pattern.bytes[i] {
+            b'*' => wc_pattern.index += 1,
+            c => {
+                if c == b'$' && wc_pattern.index == wc_pattern.bytes.len() - 1 {
+                    break;
+                }
+                wc_pattern.valid = false;
+            }
+        }
+    }
+
+    wc_pattern.valid
+}
+
+/// Returns true if any of the patterns match the input
+///
+/// Supported special characters:
+///   '*' matches any number of any character(s)
 pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
     if patterns.is_empty() {
         return false;
     }
+
     let mut wc_patterns: Vec<WildcardPattern> = patterns
         .iter()
-        .map(|p| WildcardPattern {
-            index: 0,
-            jumpback_index: None,
-            bytes: p.bytes().collect(),
-            valid: true,
-        })
+        .map(|p| WildcardPattern::new(p.bytes().collect()))
         .collect();
 
     for input_byte in input.bytes() {
         for wc_pattern in &mut wc_patterns {
-            'iter: loop {
-                if wc_pattern.bytes.is_empty() {
-                    wc_pattern.valid = false;
-                }
-                if wc_pattern.index + 1 > wc_pattern.bytes.len() {
-                    if let Some(index) = wc_pattern.jumpback_index {
-                        wc_pattern.index = index;
-                    } else {
-                        wc_pattern.valid = false;
-                    }
-                }
-                if !wc_pattern.valid {
-                    break 'iter;
-                }
-
-                match wc_pattern.bytes[wc_pattern.index] {
-                    b'*' => {
-                        let p_len = wc_pattern.bytes.len();
-                        if p_len == 1 {
-                            return true;
-                        }
-                        if wc_pattern.index < p_len - 1 {
-                            wc_pattern.jumpback_index = Some(wc_pattern.index);
-                            wc_pattern.index += 1;
-                        } else {
-                            return true;
-                        }
-                    }
-                    c if c == input_byte => {
-                        wc_pattern.index += 1;
-                        break 'iter;
-                    }
-                    _ => {
-                        if let Some(last_star) = wc_pattern.jumpback_index {
-                            wc_pattern.index = last_star + 1;
-                        } else {
-                            wc_pattern.valid = false;
-                        }
-                        break 'iter;
-                    }
-                }
+            if wc_pattern.check_next(&input_byte) {
+                return true;
             }
         }
     }
+
     for mut wc_pattern in wc_patterns {
         for i in wc_pattern.index..wc_pattern.bytes.len() {
             match wc_pattern.bytes[i] {
@@ -85,10 +138,51 @@ pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
             return true;
         }
     }
+
     false
 }
 
-/// Returns the portion of the input text matching the wildcard pattern
+/// Returns true if any of the patterns match the input
+///
+/// Supported special characters:
+///   '*' matches any number of any character(s)
+pub fn match_any_wildcard_new(input: &str, patterns: &[String]) -> bool {
+    for pattern in patterns {
+        // TODO: Multi-threading?
+        if !match_wildcard(input, pattern) {
+            continue;
+        }
+        return true;
+    }
+    false
+}
+
+/// Returns a HashMap of all matches, each associated with their
+/// respective pattern
+///
+/// Supported special characters:
+///   '*' matches any number of any character(s)
+pub fn match_wildcards_multi(
+    inputs: &[String],
+    patterns: &[String],
+) -> HashMap<String, Vec<String>> {
+    let mut matches = HashMap::<String, Vec<String>>::new();
+    for pattern in patterns {
+        for input in inputs {
+            // TODO: Multi-threading?
+            if !match_wildcard(input, pattern) {
+                continue;
+            }
+            matches
+                .entry(pattern.to_string())
+                .and_modify(|h| h.push(input.to_string()))
+                .or_insert(vec![input.to_string()]);
+        }
+    }
+    matches
+}
+
+/// Returns a portion of the input text matched by the wildcard pattern
 ///
 /// Supported special characters:
 ///   '*' matches any number of any characters
@@ -102,12 +196,7 @@ pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> 
         return Some(input);
     }
     let mut start: Option<usize> = None;
-    let mut wc_pattern = WildcardPattern {
-        index: 0,
-        jumpback_index: None,
-        bytes: pattern.bytes().collect(),
-        valid: true,
-    };
+    let mut wc_pattern = WildcardPattern::new(pattern.bytes().collect());
     let input_bytes = input.bytes().collect::<Box<[u8]>>();
     for input_index in 0..input.len() {
         'iter: loop {

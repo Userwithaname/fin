@@ -5,7 +5,7 @@ use crate::Args;
 
 use reqwest::header::USER_AGENT;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, DirEntry};
 use std::io::{self, Read};
 use std::path::Path;
@@ -62,7 +62,7 @@ impl Installer {
             installer.tag = version.to_string();
         }
 
-        if !match_any_wildcard(&installer.url, &["*://*.*/*".to_string()]) {
+        if !match_wildcard(&installer.url, "*://*.*/*") {
             return Err(format!(
                 "Installer for '{font_name}' did not specify a valid URL"
             ));
@@ -76,7 +76,7 @@ impl Installer {
             cached_pages,
         )?)?;
 
-        if !match_any_wildcard(&installer.archive, &["*.*".to_string()]) {
+        if !match_wildcard(&installer.archive, "*.*") {
             return Err(format!(
                 "Installer for '{font_name}' did not specify a valid archive"
             ));
@@ -105,9 +105,9 @@ impl Installer {
                 "Installers directory does not exist: {installers_dir}"
             ));
         }
-        // TODO: Make the 'font-name:version' format work again
-        let installers = fs::read_dir(installers_dir).map_err(|e| e.to_string())?;
-        Ok(installers
+
+        let installers: Vec<String> = fs::read_dir(installers_dir)
+            .map_err(|e| e.to_string())?
             .filter_map(|installer| {
                 installer.ok().and_then(|i| {
                     i.path()
@@ -115,25 +115,43 @@ impl Installer {
                         .and_then(|n| n.to_str().map(String::from))
                 })
             })
-            .filter(|installer| match_any_wildcard(installer, filter))
-            .collect())
+            .collect();
+
+        // TODO: Make the `font-name:version` format work again(?)
+        let matches = match_wildcards_multi(&installers, filter);
+        let mut installers = HashSet::new();
+
+        filter.iter().for_each(|filter| match matches.get(filter) {
+            Some(fonts) => {
+                fonts.iter().for_each(|val| {
+                    installers.replace(val.to_owned());
+                });
+            }
+            None => eprintln!("No matches for '{filter}'"),
+        });
+
+        Ok(installers.iter().map(|i| i.to_string()).collect())
     }
 
     pub fn find_installed(
         filter: &[String],
         installed_fonts: &mut InstalledFonts,
     ) -> Result<Vec<String>, String> {
-        // TODO: Make the 'font-name:version' format work again
         let installed_fonts = installed_fonts.get_names();
-        Ok(installed_fonts
-            .iter()
-            .filter_map(|font| {
-                if match_any_wildcard(font, filter) {
-                    return Some(font.clone());
-                }
-                None
-            })
-            .collect())
+
+        let matches = match_wildcards_multi(&installed_fonts, filter);
+        let mut installed = HashSet::new();
+
+        filter.iter().for_each(|filter| match matches.get(filter) {
+            Some(fonts) => {
+                fonts.iter().for_each(|val| {
+                    installed.replace(val.to_owned());
+                });
+            }
+            None => eprintln!("No matches for '{filter}'"),
+        });
+
+        Ok(installed.iter().map(|i| i.to_string()).collect())
     }
 
     /// Returns a direct link to the font archive

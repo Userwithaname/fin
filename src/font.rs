@@ -121,7 +121,6 @@ impl Font {
                     .map_err(|e| FontParseError::Generic(e.to_string()))?;
 
                 if fonts.is_empty() {
-                    println!("Pattern did not match any installers.");
                     return Ok(vec![]);
                 }
 
@@ -140,7 +139,6 @@ impl Font {
                 .map_err(|e| FontParseError::Generic(e.to_string()))?;
 
                 if fonts.is_empty() {
-                    println!("Pattern did not match any installed fonts.");
                     return Ok(vec![]);
                 }
 
@@ -157,7 +155,6 @@ impl Font {
                     .map_err(|e| FontParseError::Generic(e.to_string()))?;
 
                 if fonts.is_empty() {
-                    println!("Pattern did not match any installed fonts.");
                     return Ok(vec![]);
                 }
 
