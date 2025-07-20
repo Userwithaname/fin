@@ -127,17 +127,18 @@ not supported
 
 # Installing Fin
 
-If you wish to try out Fin, you can do so by cloning this repository, and
-building its source code using Cargo. The steps for building and running Fin
-are outlined below. For more information, you can read the Cargo documentation
-for [`cargo build`](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
-and [`cargo run`](https://doc.rust-lang.org/cargo/commands/cargo-run.html).
+If you wish to use Fin, you must first build it from source:
 
-1. Clone this repository: `git clone http://github.com/Userwithaname/fin.git`
-2. Enter the cloned directory: `cd fin`
-3. Build it using `cargo build` — the program binary will appear in `…/target/debug/fin`
-4. To run it, either:
+1. [Install Rust and Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
+2. Clone this repository: `git clone https://github.com/Userwithaname/fin.git`
+3. Enter the cloned directory: `cd fin`
+4. Build it using `cargo build` — the program binary will appear in `…/target/debug/fin`
+5. To run it, either:
+    - Run it using Cargo: `cargo run -- [action] [items]`, or
     - Run `./target/debug/fin` from the `fin` directory, or
     - Put the program binary into a location within your `$PATH` (such as `~/.local/bin/`)
-    so you can run it from anywhere using the `fin` command, or
-    - Run it using Cargo:  `cargo run -- [action] [items]`
+    so you can run it from anywhere using the `fin` command
+
+To learn more, see the Cargo documentation for
+[`cargo build`](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
+and [`cargo run`](https://doc.rust-lang.org/cargo/commands/cargo-run.html).
