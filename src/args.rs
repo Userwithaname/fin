@@ -55,13 +55,15 @@ impl Args {
     pub fn list_fonts_green(&self) {
         self.fonts
             .iter()
-            .for_each(|font| println!("   \x1b[92m{font}\x1b[0m"))
+            .for_each(|font| println!("   \x1b[92m{font}\x1b[0m"));
+        println!();
     }
 
     pub fn list_fonts_red(&self) {
         self.fonts
             .iter()
-            .for_each(|font| println!("   \x1b[91m{font}\x1b[0m"))
+            .for_each(|font| println!("   \x1b[91m{font}\x1b[0m"));
+        println!();
     }
 }
 
