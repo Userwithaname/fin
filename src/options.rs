@@ -17,6 +17,7 @@ Arguments:
     --install-dir=[path]  Sets the installation directory
     --reinstall  -i       Skip version checks and reinstall
     --refresh    -r       Ignore cache and fetch new data
+    --cache-only -c       Do not fetch new data if possible
     --verbose    -v       Show more detailed output
     --yes        -y       Automatically accept prompts
     --no         -n       Automatically reject prompts
@@ -41,6 +42,10 @@ Arguments:
                 // Arguments not requiring a value (--argument)
                 "--reinstall" => options.reinstall = true,
                 "--refresh" => options.refresh = true,
+                "--cache-only" | "--no-refresh" => {
+                    config.cache_timeout = u64::MAX;
+                    options.refresh = false;
+                }
                 "--verbose" => options.verbose = true,
                 "--yes" => options.answer = Some(true),
                 "--no" => options.answer = Some(false),
@@ -53,6 +58,10 @@ Arguments:
                             match o {
                                 'i' => options.reinstall = true,
                                 'r' => options.refresh = true,
+                                'c' => {
+                                    config.cache_timeout = u64::MAX;
+                                    options.refresh = false;
+                                }
                                 'v' => options.verbose = true,
                                 'y' => options.answer = Some(true),
                                 'n' => options.answer = Some(false),
