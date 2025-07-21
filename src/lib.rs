@@ -29,25 +29,14 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             }
 
             println!("Installing: ");
-            args.fonts
-                .iter()
-                .for_each(|font| println!("   \x1b[92m{font}\x1b[0m"));
-            println!();
+            args.list_fonts_green();
 
             // TODO: Inform the user of the total download size
             if !user_prompt("Proceed?", args) {
                 break 'install;
             }
-            args.fonts.iter().try_for_each(|font| {
-                if let Some(installer) = &font.installer {
-                    // TODO: Handle the error in a way that doesn't halt the program(?)
-                    installer
-                        .download_font()?
-                        .install_font(args, installed_fonts)
-                } else {
-                    Err(format!("Installer for '{font}' has not been loaded"))
-                }
-            })?;
+
+            install_fonts(args, installed_fonts)?;
         }
         Action::Update => 'update: {
             if args.fonts.is_empty() {
@@ -56,23 +45,13 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             }
 
             println!("Updating: ");
-            args.fonts
-                .iter()
-                .for_each(|font| println!("   \x1b[92m{font}\x1b[0m"));
-            println!();
+            args.list_fonts_green();
 
             if !user_prompt("Proceed?", args) {
                 break 'update;
             }
-            args.fonts.iter().try_for_each(|font| {
-                if let Some(installer) = &font.installer {
-                    installer
-                        .download_font()?
-                        .install_font(args, installed_fonts)
-                } else {
-                    Err(format!("Installer for '{font}' has not been loaded"))
-                }
-            })?;
+
+            install_fonts(args, installed_fonts)?;
         }
         Action::Remove => 'remove: {
             if args.fonts.is_empty() {
@@ -81,18 +60,14 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             }
 
             println!("Removing: ");
-            args.fonts
-                .iter()
-                .for_each(|font| println!("   \x1b[91m{font}\x1b[0m"));
-            println!();
+            args.list_fonts_red();
 
             if !user_prompt("Proceed?", args) {
                 break 'remove;
             }
+
             println!();
-            args.fonts
-                .iter()
-                .try_for_each(|font| font.remove(installed_fonts))?
+            remove_fonts(args, installed_fonts)?;
         }
         Action::List => {
             args.fonts.iter().for_each(|font| println!("{font}"));
@@ -106,6 +81,27 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
 
     installed_fonts.write()?;
 
+    Ok(())
+}
+
+fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
+    args.fonts.iter().try_for_each(|font| {
+        if let Some(installer) = &font.installer {
+            // TODO: Handle the error in a way that doesn't halt the program(?)
+            installer
+                .download_font()?
+                .install_font(args, installed_fonts)
+        } else {
+            Err(format!("Installer for '{font}' has not been loaded"))
+        }
+    })?;
+    Ok(())
+}
+
+fn remove_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
+    args.fonts
+        .iter()
+        .try_for_each(|font| font.remove(installed_fonts))?;
     Ok(())
 }
 
