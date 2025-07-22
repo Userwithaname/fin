@@ -34,6 +34,7 @@ Usage:
 
 Actions:
     install               Install new fonts
+    reinstall             Reinstall fonts
     update                Update installed fonts
     remove                Remove installed fonts
     clean                 Remove temporary cache files
@@ -41,13 +42,13 @@ Actions:
     help                  Show this help message
 
 Arguments:
-    --install-dir=[path]  Sets the installation directory
-    --reinstall  -i       Skip version checks and reinstall
-    --refresh    -r       Ignore cache and fetch new data
-    --cache-only -c       Do not fetch new data if possible
-    --verbose    -v       Show more detailed output
-    --yes        -y       Automatically accept prompts
-    --no         -n       Automatically reject prompts
+    --install-dir=[path]  Set the installation directory
+    --reinstall     -i    Skip version checks and reinstall
+    --refresh       -r    Ignore cache and fetch new data
+    --cache-only    -c    Do not fetch new data if possible
+    --verbose       -v    Show more detailed output
+    --yes           -y    Automatically accept prompts
+    --no            -n    Automatically reject prompts
 ```
 
 # Configuration

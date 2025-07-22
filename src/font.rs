@@ -127,6 +127,22 @@ impl Font {
                 needs_installer = true;
                 fonts
             }
+            Action::Reinstall => {
+                if filter.is_empty() {
+                    println!("No fonts were specified.");
+                    return Ok(vec![]);
+                }
+
+                let fonts = Installer::find_installed(filter, installed_fonts)
+                    .map_err(|e| FontParseError::Generic(e.to_string()))?;
+
+                if fonts.is_empty() {
+                    return Ok(vec![]);
+                }
+
+                needs_installer = true;
+                fonts
+            }
             Action::Update => {
                 let match_all = &["*".to_string()];
                 let fonts = Installer::find_installed(
@@ -203,7 +219,7 @@ impl Font {
                     .installer
                     .as_ref()
                     .is_some_and(|installer| installer.has_updates(installed_fonts)),
-                _ => true,
+                _ => !needs_installer || font.as_ref().unwrap().installer.is_some(),
             })
             .collect()
     }

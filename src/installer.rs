@@ -127,7 +127,7 @@ impl Installer {
                     installers.replace(val.to_owned());
                 });
             }
-            None => eprintln!("No matches for '{filter}'"),
+            None => eprintln!("No installers: '{filter}'"),
         });
 
         Ok(installers.iter().map(|i| i.to_string()).collect())
@@ -148,7 +148,7 @@ impl Installer {
                     installed.replace(val.to_owned());
                 });
             }
-            None => eprintln!("No matches for '{filter}'"),
+            None => eprintln!("Not installed: '{filter}'"),
         });
 
         Ok(installed.iter().map(|i| i.to_string()).collect())

@@ -2,6 +2,7 @@ use crate::show_help;
 
 pub enum Action {
     Install,
+    Reinstall,
     Update,
     Remove,
     Clean,
@@ -15,6 +16,7 @@ impl Action {
         "\
 Actions:
     install               Install new fonts
+    reinstall             Reinstall fonts
     update                Update installed fonts
     remove                Remove installed fonts
     clean                 Remove temporary cache files
@@ -27,6 +29,7 @@ Actions:
         Ok(match action {
             Some(a) => match a.as_str() {
                 "install" | "get" => Action::Install,
+                "reinstall" => Action::Reinstall,
                 "update" | "upgrade" | "up" => Action::Update,
                 "remove" | "uninstall" | "rm" => Action::Remove,
                 "clean" => Action::Clean,

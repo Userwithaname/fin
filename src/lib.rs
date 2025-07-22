@@ -38,6 +38,21 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
 
             install_fonts(args, installed_fonts)?;
         }
+        Action::Reinstall => 'reinstall: {
+            if args.fonts.is_empty() {
+                println!("Nothing to reinstall.");
+                return Ok(());
+            }
+
+            println!("Installing: ");
+            args.list_fonts_green();
+
+            if !user_prompt("Proceed?", args) {
+                break 'reinstall;
+            }
+
+            install_fonts(args, installed_fonts)?;
+        }
         Action::Update => 'update: {
             if args.fonts.is_empty() {
                 println!("Nothing to update.");
