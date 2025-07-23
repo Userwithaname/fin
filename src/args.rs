@@ -67,9 +67,9 @@ impl Args {
     }
 }
 
-pub fn show_help() {
+pub fn show_help() -> String {
     // Remember to update README.md
-    print!(
+    let help_message = format!(
         "\
 Usage:
     fin [action] [items]
@@ -79,4 +79,8 @@ Usage:
         Action::help_actions(),
         Options::help_options()
     );
+
+    print!("{help_message}");
+
+    help_message
 }

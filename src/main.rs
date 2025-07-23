@@ -9,7 +9,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::build(&mut installed_fonts)?;
 
     match args.action {
-        Action::Help => show_help(),
+        Action::Help => {
+            show_help();
+        }
         _ => run(&args, &mut installed_fonts).inspect_err(|_| {
             let _ = installed_fonts.write();
         })?,

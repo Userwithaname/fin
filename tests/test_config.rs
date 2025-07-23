@@ -1,11 +1,11 @@
-mod config_tests {
+mod test_config {
     #![cfg(test)]
 
     use fin::config::Config;
     use fin::default_config;
 
     #[test]
-    fn default_config_consistency() {
+    fn consistent_defaults() {
         let cmp_lines = toml::to_string(&Config::default()).unwrap();
         let cmp_lines = cmp_lines.lines();
 
