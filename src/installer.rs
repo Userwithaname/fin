@@ -119,36 +119,39 @@ impl Installer {
 
         let mut matches = HashMap::<String, Vec<String>>::new();
         for filter in filters {
-            let mut p_v = filter.split(':');
-            let (pattern, version) = (p_v.next().unwrap(), p_v.next());
+            let mut p_t = filter.split(':');
+            let (pattern, tag) = (p_t.next().unwrap(), p_t.next());
+
             for input in &installers {
                 if !match_wildcard(input, pattern) {
                     continue;
                 }
-                let font = if let Some(version) = version {
-                    input.to_string() + ":" + version
+
+                let font = if let Some(tag) = tag {
+                    input.to_string() + ":" + tag
                 } else {
                     input.to_string()
                 };
-                matches
-                    .entry(pattern.to_string())
-                    .and_modify(|h| h.push(font.to_owned()))
-                    .or_insert(vec![font]);
+
+                match matches.get_mut(filter) {
+                    Some(entry) => entry.push(font),
+                    None => {
+                        let _ = matches.insert(filter.to_string(), vec![font]);
+                    }
+                };
             }
         }
 
         let mut installers = HashSet::new();
 
-        filters.iter().for_each(
-            |filter| match matches.get(filter.split(':').nth(0).unwrap()) {
-                Some(fonts) => {
-                    fonts.iter().for_each(|val| {
-                        installers.replace(val.to_owned());
-                    });
-                }
-                None => eprintln!("No installers: '{filter}'"),
-            },
-        );
+        filters.iter().for_each(|filter| match matches.get(filter) {
+            Some(fonts) => {
+                fonts.iter().for_each(|val| {
+                    installers.replace(val.to_owned());
+                });
+            }
+            None => eprintln!("No installers: '{filter}'"),
+        });
 
         Ok(installers.iter().map(|i| i.to_string()).collect())
     }
@@ -187,7 +190,10 @@ impl Installer {
             })
             .next()
             .map_or(
-                Err(format!("Archive download link not found for {}", self.name)),
+                Err(format!(
+                    "Archive download link not found for {} ({})",
+                    self.name, self.tag
+                )),
                 |link| Ok(link.to_string()),
             )
     }
