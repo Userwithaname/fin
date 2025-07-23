@@ -58,8 +58,6 @@ impl Font {
             return Err(FontParseError::InvalidName);
         }
 
-        // TODO: The `font:version` format no longer works
-        //       due to how the wildcard font matching is implemented
         let mut s = name.split(':');
         if let (Some(name), version, None) = (s.next(), s.next(), s.next()) {
             return Ok(Self {

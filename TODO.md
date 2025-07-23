@@ -2,8 +2,8 @@
 
 [*] = Completed | [!] = Current priority | [-] = In progress | [ ] = Not started | [?] Uncertain
 
-[-] Setup:
-    [-] Load user arguments
+[*] Setup:
+    [*] Load user arguments
         [*] Determine the action to perform (`install`/`remove`/`update`)
         [*] Determine which fonts to perform the action on
             [*] Error when no fonts were specified to `install` or `remove`
@@ -12,7 +12,7 @@
         [*] Load additional arguments separately from the fonts (e.g.: `--test-argument`)
             [*] Handle the additional arguments so they can be used
         [*] Match fonts by wildcard pattern
-        [-] Allow specifying a version override (for example: `font-name:v1.0`)
+        [*] Allow specifying a version override (for example: `font-name:v1.0`)
 [*] Config:
     [*] Define a structure for keeping track of installed fonts and their relevant data
     [*] User configuration file (for example: for specifying the installation directory)
@@ -54,7 +54,7 @@
     [*] Remove the font info entry from the file on disk
 
 [ ] UX improvements:
-    [!] Show download size before downloading
+    [ ] Show download size before downloading
     [ ] Show progress while downloading
     [ ] Download all archives prior to installing(?)
         [ ] Allow parallel downloads(?)

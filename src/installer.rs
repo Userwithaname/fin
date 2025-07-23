@@ -98,7 +98,7 @@ impl Installer {
         Ok(installer)
     }
 
-    pub fn find_installers(filter: &[String]) -> Result<Vec<String>, String> {
+    pub fn find_installers(filters: &[String]) -> Result<Vec<String>, String> {
         let installers_dir = installers_dir_path!();
         if !Path::new(&installers_dir).exists() {
             return Err(format!(
@@ -117,18 +117,38 @@ impl Installer {
             })
             .collect();
 
-        // TODO: Make the `font-name:version` format work again(?)
-        let matches = match_wildcards_multi(&installers, filter);
+        let mut matches = HashMap::<String, Vec<String>>::new();
+        for filter in filters {
+            let mut p_v = filter.split(':');
+            let (pattern, version) = (p_v.next().unwrap(), p_v.next());
+            for input in &installers {
+                if !match_wildcard(input, pattern) {
+                    continue;
+                }
+                let font = if let Some(version) = version {
+                    input.to_string() + ":" + version
+                } else {
+                    input.to_string()
+                };
+                matches
+                    .entry(pattern.to_string())
+                    .and_modify(|h| h.push(font.to_owned()))
+                    .or_insert(vec![font]);
+            }
+        }
+
         let mut installers = HashSet::new();
 
-        filter.iter().for_each(|filter| match matches.get(filter) {
-            Some(fonts) => {
-                fonts.iter().for_each(|val| {
-                    installers.replace(val.to_owned());
-                });
-            }
-            None => eprintln!("No installers: '{filter}'"),
-        });
+        filters.iter().for_each(
+            |filter| match matches.get(filter.split(':').nth(0).unwrap()) {
+                Some(fonts) => {
+                    fonts.iter().for_each(|val| {
+                        installers.replace(val.to_owned());
+                    });
+                }
+                None => eprintln!("No installers: '{filter}'"),
+            },
+        );
 
         Ok(installers.iter().map(|i| i.to_string()).collect())
     }
