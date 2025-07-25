@@ -86,10 +86,15 @@ impl InstalledFonts {
     /// - `Err(…)`: if errors were encountered
     pub fn uninstall(&mut self, font: &str) -> Result<Option<String>, String> {
         if let Some(installed_font) = self.installed.get(font) {
-            print!("Removing {} ... ", font);
+            print!("Removing {font} ... ");
+
+            let dir = installed_font.dir.clone();
+            if !Path::new(&dir).exists() {
+                println!("\x1b[93mNot installed\x1b[0m");
+                return Ok(Some(dir));
+            }
 
             let mut errors = false;
-            let dir = installed_font.dir.clone();
 
             // TODO: Remember which files were installed, and only remove those
             //       (& remove directory if left empty)
@@ -102,12 +107,11 @@ impl InstalledFonts {
             }
 
             if !errors {
-                self.remove_entry(font).map(|_| Some(dir.clone()))
+                self.remove_entry(font).map(|_| Some(dir))
             } else {
                 Err("Failed to remove font".to_string())
             }
         } else {
-            println!();
             Ok(None)
         }
     }
