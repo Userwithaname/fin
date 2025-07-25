@@ -4,7 +4,6 @@ use crate::Args;
 use crate::InstalledFonts;
 use crate::Installer;
 
-use std::collections::btree_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
 use std::{fmt, fs};
 
@@ -79,25 +78,21 @@ impl Font {
         Err(FontParseError::InvalidName)
     }
 
+    // TODO: Move into `InstalledFonts`
     pub fn remove(&self, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
         print!("Removing {} ... ", self.name);
-        // todo!("Remove the font from disk");
-        match installed_fonts.installed.entry(self.name.clone()) {
-            Occupied(val) => {
-                // TODO: Validate the path before using it to prevent potential data loss
-                match fs::remove_dir_all(val.get().dir.clone()).map_err(|e| e.to_string()) {
-                    Ok(_) => println!("\x1b[92mDone\x1b[0m"),
-                    Err(e) => {
-                        println!("\x1b[91m{e}\x1b[0m");
-                    }
-                }
-                installed_fonts.remove_entry(&self.name)?;
+
+        if let Some(val) = installed_fonts.installed.get(&self.name) {
+            // TODO: Validate the path before using it to prevent potential data loss
+            match fs::remove_dir_all(val.dir.clone()).map_err(|e| e.to_string()) {
+                Ok(_) => println!("\x1b[92mDone\x1b[0m"),
+                Err(e) => println!("\x1b[91m{e}\x1b[0m"),
             }
-            Vacant(_) => {
-                println!();
-                return Err("Font does not have an installed path associated".to_string());
-            }
-        };
+            installed_fonts.remove_entry(&self.name)?;
+        } else {
+            println!();
+            return Err("Font does not have an installed path associated".to_string());
+        }
 
         Ok(())
     }
