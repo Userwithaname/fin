@@ -91,7 +91,7 @@ impl InstalledFonts {
             let dir = installed_font.dir.clone();
             if !Path::new(&dir).exists() {
                 println!("\x1b[93mNot installed\x1b[0m");
-                return Ok(Some(dir));
+                return self.remove_entry(font).map(|_| Some(dir));
             }
 
             let mut errors = false;
