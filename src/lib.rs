@@ -116,7 +116,7 @@ fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<()
 fn remove_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
     args.fonts
         .iter()
-        .try_for_each(|font| font.remove(installed_fonts))?;
+        .try_for_each(|font| installed_fonts.uninstall(&font.name).map(|_| ()))?;
     Ok(())
 }
 

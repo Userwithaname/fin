@@ -76,4 +76,39 @@ impl InstalledFonts {
         self.changed = true;
         Ok(())
     }
+
+    /// Removes the font from disk if it exists
+    /// and returns the removed directory
+    ///
+    /// Returns:
+    /// - `Ok(Some(dir))`: upon successful removal
+    /// - `Ok(None)`: if the font is not installed
+    /// - `Err(…)`: if errors were encountered
+    pub fn uninstall(&mut self, font: &str) -> Result<Option<String>, String> {
+        if let Some(installed_font) = self.installed.get(font) {
+            print!("Removing {} ... ", font);
+
+            let mut errors = false;
+            let dir = installed_font.dir.clone();
+
+            // TODO: Remember which files were installed, and only remove those
+            //       (& remove directory if left empty)
+            match fs::remove_dir_all(dir.clone()).map_err(|e| e.to_string()) {
+                Ok(_) => println!("\x1b[92mDone\x1b[0m"),
+                Err(e) => {
+                    errors = true;
+                    println!("\x1b[91m{e}\x1b[0m")
+                }
+            }
+
+            if !errors {
+                self.remove_entry(font).map(|_| Some(dir.clone()))
+            } else {
+                Err("Failed to remove font".to_string())
+            }
+        } else {
+            println!();
+            Ok(None)
+        }
+    }
 }

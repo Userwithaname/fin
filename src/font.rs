@@ -78,39 +78,20 @@ impl Font {
         Err(FontParseError::InvalidName)
     }
 
-    // TODO: Move into `InstalledFonts`
-    pub fn remove(&self, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
-        print!("Removing {} ... ", self.name);
-
-        if let Some(val) = installed_fonts.installed.get(&self.name) {
-            // TODO: Validate the path before using it to prevent potential data loss
-            match fs::remove_dir_all(val.dir.clone()).map_err(|e| e.to_string()) {
-                Ok(_) => println!("\x1b[92mDone\x1b[0m"),
-                Err(e) => println!("\x1b[91m{e}\x1b[0m"),
-            }
-            installed_fonts.remove_entry(&self.name)?;
-        } else {
-            println!();
-            return Err("Font does not have an installed path associated".to_string());
-        }
-
-        Ok(())
-    }
-
     pub fn get_actionable_fonts(
         args: &Args,
-        filter: &[String],
+        filters: &[String],
         installed_fonts: &mut InstalledFonts,
     ) -> Result<Vec<Font>, FontParseError> {
         let needs_installer;
         let actionable_fonts: Vec<String> = match args.action {
             Action::Install => {
-                if filter.is_empty() {
+                if filters.is_empty() {
                     println!("No fonts were specified.");
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installers(filter)
+                let fonts = Installer::find_installers(filters)
                     .map_err(|e| FontParseError::Generic(e.to_string()))?;
 
                 if fonts.is_empty() {
@@ -121,12 +102,12 @@ impl Font {
                 fonts
             }
             Action::Reinstall => {
-                if filter.is_empty() {
+                if filters.is_empty() {
                     println!("No fonts were specified.");
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installed(filter, installed_fonts)
+                let fonts = Installer::find_installed(filters, installed_fonts)
                     .map_err(|e| FontParseError::Generic(e.to_string()))?;
 
                 if fonts.is_empty() {
@@ -139,9 +120,9 @@ impl Font {
             Action::Update => {
                 let match_all = &["*".to_string()];
                 let fonts = Installer::find_installed(
-                    match filter.is_empty() {
+                    match filters.is_empty() {
                         true => match_all,
-                        false => filter,
+                        false => filters,
                     },
                     installed_fonts,
                 )
@@ -155,12 +136,12 @@ impl Font {
                 fonts
             }
             Action::Remove => {
-                if filter.is_empty() {
+                if filters.is_empty() {
                     println!("No fonts were specified.");
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installed(filter, installed_fonts)
+                let fonts = Installer::find_installed(filters, installed_fonts)
                     .map_err(|e| FontParseError::Generic(e.to_string()))?;
 
                 if fonts.is_empty() {
@@ -171,11 +152,11 @@ impl Font {
                 fonts
             }
             Action::List => {
-                if filter.is_empty() {
+                if filters.is_empty() {
                     println!("Specify what to list: [installed/available]");
                     return Ok(vec![]);
                 }
-                let fonts = match filter[0].as_str() {
+                let fonts = match filters[0].as_str() {
                     "installed" => Installer::find_installed(&["*".to_string()], installed_fonts)
                         .map_err(FontParseError::Generic)?,
                     "available" | "installers" => Installer::find_installers(&["*".to_string()])

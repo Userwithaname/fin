@@ -157,15 +157,15 @@ impl Installer {
     }
 
     pub fn find_installed(
-        filter: &[String],
+        filters: &[String],
         installed_fonts: &mut InstalledFonts,
     ) -> Result<Vec<String>, String> {
         let installed_fonts = installed_fonts.get_names();
 
-        let matches = match_wildcards_multi(&installed_fonts, filter);
+        let matches = match_wildcards_multi(&installed_fonts, filters);
         let mut installed = HashSet::new();
 
-        filter.iter().for_each(|filter| match matches.get(filter) {
+        filters.iter().for_each(|filter| match matches.get(filter) {
             Some(fonts) => {
                 fonts.iter().for_each(|val| {
                     installed.replace(val.to_owned());
@@ -238,10 +238,9 @@ impl Installer {
         // TODO: If already installed, remove it before installation?
         let temp_dir = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag,);
 
-        let dest_dir = match installed_fonts.installed.get(&self.name) {
-            Some(installed) => installed.dir.clone(),
-            None => format!("{}/{}/", args.config.install_dir, &self.name),
-        };
+        let dest_dir = installed_fonts
+            .uninstall(&self.installer_name)?
+            .unwrap_or(format!("{}/{}/", args.config.install_dir, &self.name));
 
         // Move the files specified by the installer into the target directory
         println!("Installing:");
