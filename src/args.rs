@@ -3,6 +3,7 @@ use crate::Action;
 use crate::Config;
 use crate::Font;
 use crate::InstalledFonts;
+use crate::{println_green, println_red};
 
 use std::env;
 
@@ -55,14 +56,12 @@ impl Args {
     pub fn list_fonts_green(&self) {
         self.fonts
             .iter()
-            .for_each(|font| println!("   \x1b[92m{font}\x1b[0m"));
+            .for_each(|font| println_green!("   {font}"));
         println!();
     }
 
     pub fn list_fonts_red(&self) {
-        self.fonts
-            .iter()
-            .for_each(|font| println!("   \x1b[91m{font}\x1b[0m"));
+        self.fonts.iter().for_each(|font| println_red!("   {font}"));
         println!();
     }
 }

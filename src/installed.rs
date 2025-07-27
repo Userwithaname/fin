@@ -97,7 +97,7 @@ impl InstalledFonts {
             println!("Removing {dir_name}: ");
 
             if !Path::new(&dir).exists() {
-                println!("\x1b[93mNot installed\x1b[0m");
+                println_orange!("Not installed");
                 return self.remove_entry(font).map(|_| Some(dir));
             }
 
@@ -112,7 +112,7 @@ impl InstalledFonts {
                     .inspect(|_| println!("Successfuly removed {dir_name}"))
                     .map(|_| Some(dir)),
                 Err(_) => {
-                    println!("Errors were encountered while removing {}", dir_name);
+                    println!("Errors were encountered while removing {dir_name}");
                     Err("Failed to remove font".to_string())
                 }
             }
@@ -130,15 +130,15 @@ impl InstalledFonts {
             let file = format!("{dir}/{file}");
             let file = Path::new(&file);
             if !file.exists() {
-                println!("\x1b[93mMissing\x1b[0m");
+                println_orange!("Missing");
                 return;
             }
 
             match fs::remove_file(file) {
-                Ok(_) => println!("\x1b[92mDone\x1b[0m"),
+                Ok(_) => println_green!("Done"),
                 Err(e) => {
                     errors = true;
-                    println!("\x1b[91m{e}\x1b[0m")
+                    println_red!("{e}")
                 }
             };
         });
@@ -146,11 +146,11 @@ impl InstalledFonts {
         print!("   ../{dir_name} ... ");
         if fs::read_dir(dir).is_ok_and(|remaining| remaining.count() == 0) {
             match fs::remove_dir_all(dir) {
-                Ok(_) => println!("\x1b[92mDone\x1b[0m"),
-                Err(e) => println!("\x1b[91m{e}\x1b[0m"),
+                Ok(_) => println_green!("Done"),
+                Err(e) => println_red!("{e}"),
             }
         } else {
-            println!("\x1b[93mNot removed: Directory not empty\x1b[0m");
+            println_orange!("Not removed: Directory not empty");
         }
 
         match errors {
@@ -164,10 +164,10 @@ impl InstalledFonts {
 
         print!("   ../{dir_name} ... ");
         match fs::remove_dir_all(dir).map_err(|e| e.to_string()) {
-            Ok(_) => println!("\x1b[92mDone\x1b[0m"),
+            Ok(_) => println_green!("Done"),
             Err(e) => {
                 errors = true;
-                println!("\x1b[91m{e}\x1b[0m")
+                println_red!("{e}")
             }
         }
 

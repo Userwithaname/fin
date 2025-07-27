@@ -10,6 +10,7 @@ use std::io::{self, Write};
 
 pub mod action;
 pub mod args;
+pub mod colors;
 pub mod config;
 pub mod font_page;
 pub mod installed;
@@ -109,16 +110,17 @@ fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<()
             {
                 Ok(_) => (),
                 Err(e) => {
-                    println!("Failed to install {}:\n\x1b[91m{e}\x1b[0m", installer.name);
-                    errors.push(format!("{font}: \x1b[91m{e}\x1b[0m"));
+                    println!("Failed to install {}:\n{}", installer.name, red!(&e));
+                    errors.push(format!("{font}: {}", red!(&e)));
                 }
             }
         } else {
-            println!("Failed to install {}", font);
-            println!("\x1b[91mInstaller for '{font}' has not been loaded[0m");
+            println!("Failed to install {font}");
+            println_red!("Installer for '{font}' has not been loaded");
             errors.push(format!(
-                "{}: \x1b[91mInstaller has not been loaded\x1b[0m",
-                font
+                "{}: {}",
+                font,
+                format_red!("Installer has not been loaded")
             ));
         }
     });

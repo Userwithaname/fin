@@ -269,7 +269,7 @@ impl Installer {
             //         .parent()
             //         .unwrap(),
             // ) {
-            //     println!("\x1b[91m{e}\x1b[0m");
+            //     println_red!("{e}");
             //     *errors.lock().unwrap() = true;
             //     return;
             // }
@@ -279,9 +279,9 @@ impl Installer {
                 format!("{dest_dir}/{filename}"),
                 // format!("{dest_dir}/{partial_path}"), // <-- to preserve subdirectories
             ) {
-                Ok(_) => println!("\x1b[92mDone\x1b[0m"),
+                Ok(_) => println_green!("Done"),
                 Err(e) => {
-                    println!("\x1b[91m{e}\x1b[0m");
+                    println_green!("{e}");
                     *errors.lock().unwrap() = true;
                 }
             };
