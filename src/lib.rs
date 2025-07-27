@@ -120,14 +120,18 @@ fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<()
             errors.push(format!(
                 "{}: {}",
                 font,
-                format_red!("Installer has not been loaded")
+                red!("Installer has not been loaded")
             ));
         }
     });
 
-    println!("\nFailed:");
-    errors.iter().for_each(|e| println!("   {e}"));
-    Ok(())
+    if !errors.is_empty() {
+        println!("\nFailed:");
+        errors.iter().for_each(|e| println!("   {e}"));
+        Err("One or more fonts failed to install".to_string())
+    } else {
+        Ok(())
+    }
 }
 
 fn remove_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
