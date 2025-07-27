@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex};
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct Installer {
-    name: String,
+    pub name: String,
     tag: String,
     url: String,
     archive: String,

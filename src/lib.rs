@@ -100,16 +100,31 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
 }
 
 fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
-    args.fonts.iter().try_for_each(|font| {
+    let mut errors = Vec::new();
+    args.fonts.iter().for_each(|font| {
         if let Some(installer) = &font.installer {
-            // TODO: Handle the error in a way that doesn't halt the program(?)
-            installer
-                .download_font()?
-                .install_font(args, installed_fonts)
+            match installer
+                .download_font()
+                .map(|installer| installer.install_font(args, installed_fonts))
+            {
+                Ok(_) => (),
+                Err(e) => {
+                    println!("Failed to install {}:\n\x1b[91m{e}\x1b[0m", installer.name);
+                    errors.push(format!("{font}: \x1b[91m{e}\x1b[0m"));
+                }
+            }
         } else {
-            Err(format!("Installer for '{font}' has not been loaded"))
+            println!("Failed to install {}", font);
+            println!("\x1b[91mInstaller for '{font}' has not been loaded[0m");
+            errors.push(format!(
+                "{}: \x1b[91mInstaller has not been loaded\x1b[0m",
+                font
+            ));
         }
-    })?;
+    });
+
+    println!("\nFailed:");
+    errors.iter().for_each(|e| println!("   {e}"));
     Ok(())
 }
 
