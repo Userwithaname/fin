@@ -47,6 +47,7 @@ Arguments:
     --refresh       -r    Ignore cache and fetch new data
     --cache-only    -c    Do not fetch new data if possible
     --verbose       -v    Show more detailed output
+    --force         -f    Skip safety checks while running
     --yes           -y    Automatically accept prompts
     --no            -n    Automatically reject prompts
 ```

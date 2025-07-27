@@ -239,7 +239,7 @@ impl Installer {
         let temp_dir = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag,);
 
         let dest_dir = installed_fonts
-            .uninstall(&self.installer_name)?
+            .uninstall(&self.installer_name, args)?
             .unwrap_or(format!("{}/{}/", args.config.install_dir, &self.name));
 
         // Move the files specified by the installer into the target directory
@@ -248,7 +248,8 @@ impl Installer {
         fs::create_dir_all(&dest_dir).map_err(|err| err.to_string())?;
         let errors = Arc::new(Mutex::new(false));
 
-        visit_dirs(Path::new(&temp_dir), &|file| {
+        let mut files = Vec::new();
+        visit_dirs(Path::new(&temp_dir), &mut |file| {
             let partial_path = &file.path().display().to_string().replace(&temp_dir, "");
 
             // Ignore files which don't satisfy the 'include' and 'exclude' patterns
@@ -258,6 +259,8 @@ impl Installer {
                 return;
             }
 
+            let filename = partial_path.split('/').next_back().unwrap();
+            files.push(filename.to_owned());
             print!("   {partial_path} ... ");
 
             // IDEA: Option to preserve directory structure (specified by the installer)
@@ -273,10 +276,7 @@ impl Installer {
 
             match fs::rename(
                 format!("{temp_dir}/{partial_path}"),
-                format!(
-                    "{dest_dir}/{}",
-                    partial_path.split('/').next_back().unwrap()
-                ),
+                format!("{dest_dir}/{filename}"),
                 // format!("{dest_dir}/{partial_path}"), // <-- to preserve subdirectories
             ) {
                 Ok(_) => println!("\x1b[92mDone\x1b[0m"),
@@ -296,6 +296,7 @@ impl Installer {
                     InstalledFont {
                         url: self.url.clone(),
                         dir: dest_dir,
+                        files,
                     },
                 );
             }
@@ -315,7 +316,7 @@ impl Installer {
 }
 
 // https://doc.rust-lang.org/nightly/std/fs/fn.read_dir.html#examples
-fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
+fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;

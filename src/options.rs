@@ -7,6 +7,7 @@ pub struct Options {
     pub refresh: bool,
     pub verbose: bool,
     pub answer: Option<bool>,
+    pub force: bool,
 }
 
 impl Options {
@@ -19,6 +20,7 @@ Arguments:
     --refresh       -r    Ignore cache and fetch new data
     --cache-only    -c    Do not fetch new data if possible
     --verbose       -v    Show more detailed output
+    --force         -f    Forcefully perform action (unsafe)
     --yes           -y    Automatically accept prompts
     --no            -n    Automatically reject prompts
 "
@@ -47,6 +49,7 @@ Arguments:
                     options.refresh = false;
                 }
                 "--verbose" => options.verbose = true,
+                "--force" => options.force = true,
                 "--yes" => options.answer = Some(true),
                 "--no" => options.answer = Some(false),
 
@@ -63,6 +66,7 @@ Arguments:
                                     options.refresh = false;
                                 }
                                 'v' => options.verbose = true,
+                                'f' => options.force = true,
                                 'y' => options.answer = Some(true),
                                 'n' => options.answer = Some(false),
                                 '-' => {

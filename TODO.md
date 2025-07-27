@@ -45,10 +45,9 @@
     [*] Wait for user confirmation
     [*] Perform the installation for each of the fonts
     [*] Update the font info entry in the file on disk
-[-] Remove fonts (`fin remove [font]`):
+[*] Remove fonts (`fin remove [font]`):
     [*] Gather a list of installed fonts
-    [-] Validate arguments and tell the user which actions will be performed
-        TODO: Make sure the install path is valid (prevent potential data loss)
+    [*] Validate arguments and tell the user which actions will be performed
     [*] Wait for user confirmation
     [*] Delete from disk (install dir should be in the config)
     [*] Remove the font info entry from the file on disk
