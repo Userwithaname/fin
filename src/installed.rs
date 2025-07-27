@@ -102,13 +102,19 @@ impl InstalledFonts {
             }
 
             let result = match args.options.force {
-                true => Self::remove_dir_all(&dir, dir_name),
                 false => Self::remove_files(installed_font, &dir, dir_name),
+                true => Self::remove_dir_all(&dir, dir_name),
             };
 
             match result {
-                Ok(_) => self.remove_entry(font).map(|_| Some(dir)),
-                Err(_) => Err("Failed to remove font".to_string()),
+                Ok(_) => self
+                    .remove_entry(font)
+                    .inspect(|_| println!("Successfuly removed {dir_name}"))
+                    .map(|_| Some(dir)),
+                Err(_) => {
+                    println!("Errors were encountered while removing {}", dir_name);
+                    Err("Failed to remove font".to_string())
+                }
             }
         } else {
             Ok(None)
@@ -148,8 +154,8 @@ impl InstalledFonts {
         }
 
         match errors {
-            true => Err(()),
             false => Ok(()),
+            true => Err(()),
         }
     }
 
@@ -166,8 +172,8 @@ impl InstalledFonts {
         }
 
         match errors {
-            true => Err(()),
             false => Ok(()),
+            true => Err(()),
         }
     }
 }
