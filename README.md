@@ -73,7 +73,7 @@ Note that you will also need an installer for any font you wish to install.
 
 Fin relies on TOML files (located in `~/.config/fin/installers/`) to specify
 how each font should be installed. You can find a few examples in the
-`installers/` directory in this repository.
+`installers/` directory of this repository.
 
 Using the installers, Fin will attempt to locate and download the font archive,
 and install the font on your system.
@@ -86,6 +86,7 @@ Supported fields are as follows:
 - `archive` - the archvie name, which will be used for finding the download link within the above page's raw HTML
 - `include` - specify which files within the archive to install
 - `exclude` - specify which files to ignore (takes precedence over `include`)
+- `keep_folders` - follow the same directory structure as the archive (defaults to `false`)
 
 > [!NOTE]
 > If the site layout or archive name or structure changes, the installer

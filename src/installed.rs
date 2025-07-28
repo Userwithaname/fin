@@ -3,7 +3,7 @@ use crate::home_dir;
 use crate::installed_file_path;
 
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::{fs, path::Path};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -124,34 +124,49 @@ impl InstalledFonts {
     fn remove_files(installed_font: &InstalledFont, dir: &str, dir_name: &str) -> Result<(), ()> {
         let mut errors = false;
 
+        let mut directories: BTreeSet<String> = [String::new()].into();
         installed_font.files.iter().for_each(|file| {
             print!("   {file} ... ");
 
-            let file = format!("{dir}/{file}");
-            let file = Path::new(&file);
-            if !file.exists() {
+            let file_path = format!("{dir}/{file}");
+            let file_path = Path::new(&file_path);
+            if !file_path.exists() {
                 println_orange!("Missing");
                 return;
             }
 
-            match fs::remove_file(file) {
+            match fs::remove_file(file_path) {
                 Ok(_) => println_green!("Done"),
                 Err(e) => {
                     errors = true;
                     println_red!("{e}")
                 }
             };
+
+            let mut dirs: Vec<String> = Vec::new();
+            let file_path_split: Box<[&str]> = file.split('/').collect();
+            for i in 0..file_path_split.len() - 1 {
+                if i > 0 {
+                    dirs.push(dirs[i - 1].clone() + "/" + file_path_split[i]);
+                } else {
+                    dirs.push(file_path_split[0].to_string())
+                }
+                directories.replace(dirs[i].clone());
+            }
         });
 
-        print!("   ../{dir_name} ... ");
-        if fs::read_dir(dir).is_ok_and(|remaining| remaining.count() == 0) {
-            match fs::remove_dir_all(dir) {
-                Ok(_) => println_green!("Done"),
-                Err(e) => println_red!("{e}"),
+        directories.iter().rev().for_each(|subdir| {
+            print!("   ../{dir_name}/{subdir} ... ");
+            let target = dir.to_owned() + subdir;
+            if fs::read_dir(&target).is_ok_and(|remaining| remaining.count() == 0) {
+                match fs::remove_dir(&target) {
+                    Ok(_) => println_green!("Done"),
+                    Err(e) => println_red!("{e}"),
+                }
+            } else {
+                println_orange!("Not removed: Directory not empty");
             }
-        } else {
-            println_orange!("Not removed: Directory not empty");
-        }
+        });
 
         match errors {
             false => Ok(()),

@@ -5,7 +5,7 @@ use crate::Args;
 
 use reqwest::header::USER_AGENT;
 use serde::Deserialize;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, DirEntry};
 use std::io::{self, Read};
 use std::path::Path;
@@ -20,6 +20,8 @@ pub struct Installer {
     archive: String,
     include: Box<[String]>,
     exclude: Box<[String]>,
+    keep_folders: bool,
+
     #[serde(skip_serializing)]
     installer_name: String,
 }
@@ -28,11 +30,12 @@ impl Default for Installer {
     fn default() -> Self {
         Self {
             name: String::new(),
-            tag: String::from("latest"),
+            tag: String::new(),
             url: String::new(),
             archive: String::new(),
-            include: Box::new([String::from("*")]),
-            exclude: Box::new([]),
+            include: [String::from("*")].into(),
+            exclude: [].into(),
+            keep_folders: false,
             installer_name: String::new(),
         }
     }
@@ -142,7 +145,7 @@ impl Installer {
             }
         }
 
-        let mut installers = HashSet::new();
+        let mut installers = BTreeSet::new();
 
         filters.iter().for_each(|filter| match matches.get(filter) {
             Some(fonts) => {
@@ -163,7 +166,7 @@ impl Installer {
         let installed_fonts = installed_fonts.get_names();
 
         let matches = match_wildcards_multi(&installed_fonts, filters);
-        let mut installed = HashSet::new();
+        let mut installed = BTreeSet::new();
 
         filters.iter().for_each(|filter| match matches.get(filter) {
             Some(fonts) => {
@@ -235,8 +238,7 @@ impl Installer {
         args: &Args,
         installed_fonts: &mut InstalledFonts,
     ) -> Result<(), String> {
-        // TODO: If already installed, remove it before installation?
-        let temp_dir = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag,);
+        let temp_dir = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag);
 
         let dest_dir = installed_fonts
             .uninstall(&self.installer_name, args)?
@@ -259,29 +261,34 @@ impl Installer {
                 return;
             }
 
-            let filename = partial_path.split('/').next_back().unwrap();
-            files.push(filename.to_owned());
-            print!("   {partial_path} ... ");
+            let target_path = match self.keep_folders {
+                true => {
+                    if let Err(e) = fs::create_dir_all(
+                        Path::new(&format!("{dest_dir}/{partial_path}"))
+                            .parent()
+                            .unwrap(),
+                    ) {
+                        println!("   {partial_path} ... {}", red!(&e.to_string()));
+                        *errors.lock().unwrap() = true;
+                        return;
+                    }
+                    partial_path
+                }
+                false => partial_path.split('/').next_back().unwrap(),
+            };
 
-            // IDEA: Option to preserve directory structure (specified by the installer)
-            // if let Err(e) = fs::create_dir_all(
-            //     Path::new(&format!("{dest_dir}/{partial_path}"))
-            //         .parent()
-            //         .unwrap(),
-            // ) {
-            //     println_red!("{e}");
-            //     *errors.lock().unwrap() = true;
-            //     return;
-            // }
+            print!("   {target_path} ... ");
 
             match fs::rename(
                 format!("{temp_dir}/{partial_path}"),
-                format!("{dest_dir}/{filename}"),
-                // format!("{dest_dir}/{partial_path}"), // <-- to preserve subdirectories
+                format!("{dest_dir}/{target_path}"),
             ) {
-                Ok(_) => println_green!("Done"),
+                Ok(_) => {
+                    println_green!("Done");
+                    files.push(target_path.to_owned());
+                }
                 Err(e) => {
-                    println_green!("{e}");
+                    println_red!("{e}");
                     *errors.lock().unwrap() = true;
                 }
             };
