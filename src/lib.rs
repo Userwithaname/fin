@@ -93,7 +93,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             println!("Removed the cache directory: {}", cache_dir!());
         }
         Action::Help => (),
-    };
+    }
 
     installed_fonts.write()?;
 
@@ -125,12 +125,12 @@ fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<()
         }
     });
 
-    if !errors.is_empty() {
+    if errors.is_empty() {
+        Ok(())
+    } else {
         println!("\nFailed:");
         errors.iter().for_each(|e| println!("   {e}"));
         Err("One or more fonts failed to install".to_string())
-    } else {
-        Ok(())
     }
 }
 
@@ -141,6 +141,7 @@ fn remove_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(),
     Ok(())
 }
 
+#[inline]
 pub fn user_prompt(message: &str, args: &Args) -> bool {
     print!("{message} [y/n]: ");
 

@@ -7,7 +7,7 @@ use crate::Installer;
 use std::collections::HashMap;
 use std::{fmt, fs};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum FontParseError {
     Generic(String),
     InvalidName,
@@ -41,7 +41,7 @@ impl fmt::Display for Font {
             match &self.override_version {
                 Some(ver) => format!(" {ver}"),
                 None => String::new(),
-            },
+            }
         )
     }
 }
@@ -71,7 +71,7 @@ impl Font {
                     },
                     false => None,
                 },
-                override_version: version.map(|v| v.to_string()),
+                override_version: version.map(ToString::to_string),
             });
         }
         eprintln!("Invalid format: '{name}'");
@@ -81,7 +81,7 @@ impl Font {
     pub fn get_actionable_fonts(
         args: &Args,
         filters: &[String],
-        installed_fonts: &mut InstalledFonts,
+        installed_fonts: &InstalledFonts,
     ) -> Result<Vec<Font>, FontParseError> {
         let needs_installer;
         let actionable_fonts: Vec<String> = match args.action {
@@ -91,8 +91,7 @@ impl Font {
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installers(filters)
-                    .map_err(|e| FontParseError::Generic(e.to_string()))?;
+                let fonts = Installer::find_installers(filters).map_err(FontParseError::Generic)?;
 
                 if fonts.is_empty() {
                     return Ok(vec![]);
@@ -107,8 +106,7 @@ impl Font {
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installed(filters, installed_fonts)
-                    .map_err(|e| FontParseError::Generic(e.to_string()))?;
+                let fonts = Installer::find_installed(filters, installed_fonts);
 
                 if fonts.is_empty() {
                     return Ok(vec![]);
@@ -125,8 +123,7 @@ impl Font {
                         false => filters,
                     },
                     installed_fonts,
-                )
-                .map_err(|e| FontParseError::Generic(e.to_string()))?;
+                );
 
                 if fonts.is_empty() {
                     return Ok(vec![]);
@@ -141,8 +138,7 @@ impl Font {
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installed(filters, installed_fonts)
-                    .map_err(|e| FontParseError::Generic(e.to_string()))?;
+                let fonts = Installer::find_installed(filters, installed_fonts);
 
                 if fonts.is_empty() {
                     return Ok(vec![]);
@@ -157,8 +153,7 @@ impl Font {
                     return Ok(vec![]);
                 }
                 let fonts = match filters[0].as_str() {
-                    "installed" => Installer::find_installed(&["*".to_string()], installed_fonts)
-                        .map_err(FontParseError::Generic)?,
+                    "installed" => Installer::find_installed(&["*".to_string()], installed_fonts),
                     "available" | "installers" => Installer::find_installers(&["*".to_string()])
                         .map_err(FontParseError::Generic)?,
                     item => {

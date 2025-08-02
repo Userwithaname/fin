@@ -8,7 +8,7 @@ pub struct WildcardPattern {
 }
 
 impl WildcardPattern {
-    fn new(bytes: Box<[u8]>) -> Self {
+    const fn new(bytes: Box<[u8]>) -> Self {
         Self {
             index: 0,
             jumpback_index: None,
@@ -22,7 +22,7 @@ impl WildcardPattern {
     ///
     /// Returns `true` if the pattern has been matched in full,
     /// or `false` if partial or invalid.
-    fn check_next(&mut self, input_byte: &u8) -> bool {
+    fn check_next(&mut self, input_byte: u8) -> bool {
         'iter: loop {
             if self.bytes.is_empty() {
                 self.valid = false;
@@ -51,7 +51,7 @@ impl WildcardPattern {
                         return true;
                     }
                 }
-                c if c == *input_byte => {
+                c if c == input_byte => {
                     self.index += 1;
                     break 'iter;
                 }
@@ -80,7 +80,7 @@ pub fn match_wildcard(input: &str, pattern: &str) -> bool {
 
     let mut wc_pattern = WildcardPattern::new(pattern.bytes().collect());
     for input_byte in input.bytes() {
-        if wc_pattern.check_next(&input_byte) {
+        if wc_pattern.check_next(input_byte) {
             return true;
         }
     }
@@ -116,7 +116,7 @@ pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
 
     for input_byte in input.bytes() {
         for wc_pattern in &mut wc_patterns {
-            if wc_pattern.check_next(&input_byte) {
+            if wc_pattern.check_next(input_byte) {
                 return true;
             }
         }
@@ -176,7 +176,7 @@ pub fn match_wildcards_multi(
             matches
                 .entry(pattern.to_string())
                 .and_modify(|h| h.push(input.to_string()))
-                .or_insert(vec![input.to_string()]);
+                .or_insert_with(|| vec![input.to_string()]);
         }
     }
     matches
@@ -259,8 +259,5 @@ pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> 
             }
         }
     }
-    match start {
-        Some(start) => Some(&input[start..input.len()]),
-        None => None,
-    }
+    start.map(|start| &input[start..input.len()])
 }

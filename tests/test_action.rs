@@ -26,7 +26,7 @@ mod test_actions {
         print!("{help_actions}");
 
         all_actions.iter().for_each(|action| {
-            let action = format!("  {:?} ", action).to_lowercase();
+            let action = format!("  {action:?} ").to_lowercase();
             if !help_actions.contains(&action) {
                 panic!(
                     "The '{}' action is missing from the help message",

@@ -130,10 +130,9 @@ impl Installer {
                     continue;
                 }
 
-                let font = if let Some(tag) = tag {
-                    input.to_string() + ":" + tag
-                } else {
-                    input.to_string()
+                let font = match tag {
+                    Some(tag) => input.to_string() + ":" + tag,
+                    None => input.to_string(),
                 };
 
                 match matches.get_mut(filter) {
@@ -141,7 +140,7 @@ impl Installer {
                     None => {
                         let _ = matches.insert(filter.to_string(), vec![font]);
                     }
-                };
+                }
             }
         }
 
@@ -149,20 +148,17 @@ impl Installer {
 
         filters.iter().for_each(|filter| match matches.get(filter) {
             Some(fonts) => {
-                fonts.iter().for_each(|val| {
-                    installers.replace(val.to_owned());
-                });
+                for font in fonts {
+                    installers.replace(font.to_owned());
+                }
             }
             None => eprintln!("No installers: '{filter}'"),
         });
 
-        Ok(installers.iter().map(|i| i.to_string()).collect())
+        Ok(installers.iter().map(ToString::to_string).collect())
     }
 
-    pub fn find_installed(
-        filters: &[String],
-        installed_fonts: &mut InstalledFonts,
-    ) -> Result<Vec<String>, String> {
+    pub fn find_installed(filters: &[String], installed_fonts: &InstalledFonts) -> Vec<String> {
         let installed_fonts = installed_fonts.get_names();
 
         let matches = match_wildcards_multi(&installed_fonts, filters);
@@ -170,38 +166,39 @@ impl Installer {
 
         filters.iter().for_each(|filter| match matches.get(filter) {
             Some(fonts) => {
-                fonts.iter().for_each(|val| {
-                    installed.replace(val.to_owned());
-                });
+                for font in fonts {
+                    installed.replace(font.to_owned());
+                }
             }
             None => eprintln!("Not installed: '{filter}'"),
         });
 
-        Ok(installed.iter().map(|i| i.to_string()).collect())
+        installed.iter().map(ToString::to_string).collect()
     }
 
     /// Returns a direct link to the font archive
     /// Note: `self.url` is expected to lead to a webpage, which has the direct link
     /// discoverable in plain text within its source.
-    fn find_direct_link(&mut self, font_page: FontPage) -> Result<String, String> {
+    fn find_direct_link(&self, font_page: FontPage) -> Result<String, String> {
         font_page
             .contents
             .unwrap()
             .split('"')
-            .filter_map(|line| {
+            .find_map(|line| {
                 wildcard_substring(line, &(String::from("https://*") + &self.archive), b"")
             })
-            .next()
-            .map_or(
-                Err(format!(
-                    "Archive download link not found for {} ({})",
-                    self.name, self.tag
-                )),
+            .map_or_else(
+                || {
+                    Err(format!(
+                        "Archive download link not found for {} ({})",
+                        self.name, self.tag
+                    ))
+                },
                 |link| Ok(link.to_string()),
             )
     }
 
-    pub fn download_font(&self) -> Result<&Installer, String> {
+    pub fn download_font(&self) -> Result<&Self, String> {
         let reqwest_client = reqwest::blocking::Client::new();
 
         println!("\n{}:", &self.name);
@@ -242,7 +239,7 @@ impl Installer {
 
         let dest_dir = installed_fonts
             .uninstall(&self.installer_name, args)?
-            .unwrap_or(format!("{}/{}/", args.config.install_dir, &self.name));
+            .unwrap_or_else(|| format!("{}/{}/", args.config.install_dir, &self.name));
 
         // Move the files specified by the installer into the target directory
         println!("Installing:");
@@ -283,7 +280,7 @@ impl Installer {
                 format!("{temp_dir}/{partial_path}"),
                 format!("{dest_dir}/{target_path}"),
             ) {
-                Ok(_) => {
+                Ok(()) => {
                     println_green!("Done");
                     files.push(target_path.to_owned());
                 }
@@ -313,12 +310,11 @@ impl Installer {
         Ok(())
     }
 
-    pub fn has_updates(&self, installed_fonts: &mut InstalledFonts) -> bool {
-        self.url
-            != match installed_fonts.installed.get(&self.installer_name) {
-                Some(installed) => installed.url.clone(),
-                None => String::new(),
-            }
+    pub fn has_updates(&self, installed_fonts: &InstalledFonts) -> bool {
+        installed_fonts
+            .installed
+            .get(&self.installer_name)
+            .is_none_or(|installed| self.url != installed.url.clone())
     }
 }
 
