@@ -160,15 +160,14 @@ impl Font {
                     "available" | "installers" => Installer::filter_installers(&["*".to_string()])
                         .map_err(FontParseError::Generic)?,
                     "all" => {
+                        let match_all = &["*".to_string()];
                         let mut fonts = BTreeSet::new();
-                        for installer in Installer::filter_installers(&["*".to_string()])
+                        for installer in Installer::filter_installers(match_all)
                             .map_err(FontParseError::Generic)?
                         {
                             fonts.insert(installer);
                         }
-                        for installed in
-                            Installer::filter_installed(&["*".to_string()], installed_fonts)
-                        {
+                        for installed in Installer::filter_installed(match_all, installed_fonts) {
                             fonts.replace(installed);
                         }
                         fonts.iter().map(ToString::to_string).collect()

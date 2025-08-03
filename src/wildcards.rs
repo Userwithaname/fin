@@ -209,9 +209,6 @@ pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> 
         'iter: loop {
             match wc_pattern.bytes[wc_pattern.index] {
                 b'*' => {
-                    if start.is_none() {
-                        start = Some(input_index);
-                    }
                     if exclude.contains(&input_bytes[input_index]) {
                         wc_pattern.jumpback_index = None;
                         wc_pattern.index = 0;
@@ -222,7 +219,10 @@ pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> 
                         wc_pattern.jumpback_index = Some(wc_pattern.index);
                         wc_pattern.index += 1;
                     } else {
-                        return Some(&input[start.unwrap()..input.len()]);
+                        return Some(&input[start.unwrap_or(input_index)..input.len()]);
+                    }
+                    if start.is_none() {
+                        start = Some(input_index);
                     }
                 }
                 b'^' if input_index + wc_pattern.index == 0 => {
@@ -230,11 +230,11 @@ pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> 
                     wc_pattern.index += 1;
                 }
                 c if c == input_bytes[input_index] => {
+                    if wc_pattern.index == wc_pattern.bytes.len() - 1 {
+                        return Some(&input[start.unwrap_or(input_index)..=input_index]);
+                    }
                     if start.is_none() {
                         start = Some(input_index);
-                    }
-                    if wc_pattern.index == wc_pattern.bytes.len() - 1 {
-                        return Some(&input[start.unwrap()..=input_index]);
                     }
                     wc_pattern.index += 1;
                     break 'iter;
