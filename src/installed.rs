@@ -58,6 +58,7 @@ impl InstalledFonts {
     }
 
     /// Returns the names of all installed fonts
+    #[must_use]
     pub fn get_names(&self) -> Vec<String> {
         self.installed.clone().into_keys().collect()
     }
@@ -68,7 +69,7 @@ impl InstalledFonts {
         match self.installed.get_mut(name) {
             Some(entry) => *entry = data,
             None => _ = self.installed.insert(name.to_string(), data),
-        };
+        }
         self.changed = true;
     }
 
@@ -98,7 +99,7 @@ impl InstalledFonts {
 
             if !Path::new(&dir).exists() {
                 println_orange!("Not installed");
-                return self.remove_entry(font).map(|_| Some(dir));
+                return self.remove_entry(font).map(|()| Some(dir));
             }
 
             let result = match args.options.force {
@@ -107,11 +108,11 @@ impl InstalledFonts {
             };
 
             match result {
-                Ok(_) => self
+                Ok(()) => self
                     .remove_entry(font)
-                    .inspect(|_| println!("Successfuly removed {dir_name}"))
-                    .map(|_| Some(dir)),
-                Err(_) => {
+                    .inspect(|()| println!("Successfuly removed {dir_name}"))
+                    .map(|()| Some(dir)),
+                Err(()) => {
                     println!("Errors were encountered while removing {dir_name}");
                     Err("Failed to remove font".to_string())
                 }
@@ -136,12 +137,12 @@ impl InstalledFonts {
             }
 
             match fs::remove_file(file_path) {
-                Ok(_) => println_green!("Done"),
+                Ok(()) => println_green!("Done"),
                 Err(e) => {
                     errors = true;
-                    println_red!("{e}")
+                    println_red!("{e}");
                 }
-            };
+            }
 
             let mut dirs: Vec<String> = Vec::new();
             let file_path_split: Box<[&str]> = file.split('/').collect();
@@ -149,7 +150,7 @@ impl InstalledFonts {
                 if i > 0 {
                     dirs.push(dirs[i - 1].clone() + "/" + file_path_split[i]);
                 } else {
-                    dirs.push(file_path_split[0].to_string())
+                    dirs.push(file_path_split[0].to_string());
                 }
                 directories.replace(dirs[i].clone());
             }
@@ -160,7 +161,7 @@ impl InstalledFonts {
             let target = dir.to_owned() + subdir;
             if fs::read_dir(&target).is_ok_and(|remaining| remaining.count() == 0) {
                 match fs::remove_dir(&target) {
-                    Ok(_) => println_green!("Done"),
+                    Ok(()) => println_green!("Done"),
                     Err(e) => println_red!("{e}"),
                 }
             } else {
@@ -179,10 +180,10 @@ impl InstalledFonts {
 
         print!("   ../{dir_name} ... ");
         match fs::remove_dir_all(dir).map_err(|e| e.to_string()) {
-            Ok(_) => println_green!("Done"),
+            Ok(()) => println_green!("Done"),
             Err(e) => {
                 errors = true;
-                println_red!("{e}")
+                println_red!("{e}");
             }
         }
 

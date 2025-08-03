@@ -101,7 +101,9 @@ impl Installer {
         Ok(installer)
     }
 
-    pub fn find_installers(filters: &[String]) -> Result<Vec<String>, String> {
+    /// Returns the installer names of all available installers matched
+    /// by any of the provided filter patterns
+    pub fn filter_installers(filters: &[String]) -> Result<Vec<String>, String> {
         let installers_dir = installers_dir_path!();
         if !Path::new(&installers_dir).exists() {
             return Err(format!(
@@ -152,13 +154,16 @@ impl Installer {
                     installers.replace(font.to_owned());
                 }
             }
-            None => eprintln!("No installers: '{filter}'"),
+            None => println!("No installers: '{filter}'"),
         });
 
         Ok(installers.iter().map(ToString::to_string).collect())
     }
 
-    pub fn find_installed(filters: &[String], installed_fonts: &InstalledFonts) -> Vec<String> {
+    /// Returns the installer names of all installed fonts matched by
+    /// any of the provided filter patterns
+    #[must_use]
+    pub fn filter_installed(filters: &[String], installed_fonts: &InstalledFonts) -> Vec<String> {
         let installed_fonts = installed_fonts.get_names();
 
         let matches = match_wildcards_multi(&installed_fonts, filters);
@@ -170,7 +175,7 @@ impl Installer {
                     installed.replace(font.to_owned());
                 }
             }
-            None => eprintln!("Not installed: '{filter}'"),
+            None => println!("Not installed: '{filter}'"),
         });
 
         installed.iter().map(ToString::to_string).collect()
@@ -288,7 +293,7 @@ impl Installer {
                     println_red!("{e}");
                     *errors.lock().unwrap() = true;
                 }
-            };
+            }
         })
         .map_err(|e| e.to_string())?;
 
@@ -310,6 +315,7 @@ impl Installer {
         Ok(())
     }
 
+    #[must_use]
     pub fn has_updates(&self, installed_fonts: &InstalledFonts) -> bool {
         installed_fonts
             .installed

@@ -4,7 +4,9 @@ use crate::Args;
 use crate::InstalledFonts;
 use crate::Installer;
 
+use std::collections::BTreeSet;
 use std::collections::HashMap;
+use std::path::Path;
 use std::{fmt, fs};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -91,7 +93,8 @@ impl Font {
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installers(filters).map_err(FontParseError::Generic)?;
+                let fonts =
+                    Installer::filter_installers(filters).map_err(FontParseError::Generic)?;
 
                 if fonts.is_empty() {
                     return Ok(vec![]);
@@ -106,7 +109,7 @@ impl Font {
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installed(filters, installed_fonts);
+                let fonts = Installer::filter_installed(filters, installed_fonts);
 
                 if fonts.is_empty() {
                     return Ok(vec![]);
@@ -117,7 +120,7 @@ impl Font {
             }
             Action::Update => {
                 let match_all = &["*".to_string()];
-                let fonts = Installer::find_installed(
+                let fonts = Installer::filter_installed(
                     match filters.is_empty() {
                         true => match_all,
                         false => filters,
@@ -138,7 +141,7 @@ impl Font {
                     return Ok(vec![]);
                 }
 
-                let fonts = Installer::find_installed(filters, installed_fonts);
+                let fonts = Installer::filter_installed(filters, installed_fonts);
 
                 if fonts.is_empty() {
                     return Ok(vec![]);
@@ -148,17 +151,31 @@ impl Font {
                 fonts
             }
             Action::List => {
-                if filters.is_empty() {
-                    println!("Specify what to list: [installed/available]");
-                    return Ok(vec![]);
-                }
-                let fonts = match filters[0].as_str() {
-                    "installed" => Installer::find_installed(&["*".to_string()], installed_fonts),
-                    "available" | "installers" => Installer::find_installers(&["*".to_string()])
+                let item = match filters.is_empty() {
+                    false => filters[0].as_str(),
+                    true => "all",
+                };
+                let fonts = match item {
+                    "installed" => Installer::filter_installed(&["*".to_string()], installed_fonts),
+                    "available" | "installers" => Installer::filter_installers(&["*".to_string()])
                         .map_err(FontParseError::Generic)?,
+                    "all" => {
+                        let mut fonts = BTreeSet::new();
+                        for installer in Installer::filter_installers(&["*".to_string()])
+                            .map_err(FontParseError::Generic)?
+                        {
+                            fonts.insert(installer);
+                        }
+                        for installed in
+                            Installer::filter_installed(&["*".to_string()], installed_fonts)
+                        {
+                            fonts.replace(installed);
+                        }
+                        fonts.iter().map(ToString::to_string).collect()
+                    }
                     item => {
                         println!(
-                            "Cannot list: '{item}'\nSpecify what to list: [installed/available]"
+                            "Cannot list: '{item}'\nSupported items: [installed/available/all]"
                         );
                         return Ok(vec![]);
                     }
@@ -167,10 +184,7 @@ impl Font {
                 needs_installer = false;
                 fonts
             }
-            Action::Clean => {
-                return Ok(vec![]);
-            }
-            Action::Help => {
+            Action::Clean | Action::Help => {
                 return Ok(vec![]);
             }
         };
@@ -191,5 +205,10 @@ impl Font {
                 _ => !needs_installer || font.as_ref().unwrap().installer.is_some(),
             })
             .collect()
+    }
+
+    #[must_use]
+    pub fn has_installer(name: &str) -> bool {
+        return Path::new(&(installers_dir_path!() + name)).exists();
     }
 }

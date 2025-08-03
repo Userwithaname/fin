@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         _ => run(&args, &mut installed_fonts).inspect_err(|_| {
             let _ = installed_fonts.write();
         })?,
-    };
+    }
 
     // TODO: Call `installed_fonts.write()` when cancelling with ^C
     //       in case any changes have already been performed

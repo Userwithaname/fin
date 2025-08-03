@@ -11,6 +11,7 @@ pub struct Options {
 }
 
 impl Options {
+    #[must_use]
     pub const fn help_options() -> &'static str {
         // Remember to update README.md
         "\

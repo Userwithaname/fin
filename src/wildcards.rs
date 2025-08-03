@@ -8,6 +8,7 @@ pub struct WildcardPattern {
 }
 
 impl WildcardPattern {
+    #[must_use]
     const fn new(bytes: Box<[u8]>) -> Self {
         Self {
             index: 0,
@@ -69,10 +70,11 @@ impl WildcardPattern {
     }
 }
 
-/// Returns true if the pattern matches the input
+/// Returns `true` if the pattern matches the input
 ///
 /// Supported special characters:
 ///   '*' matches any number of any character(s)
+#[must_use]
 pub fn match_wildcard(input: &str, pattern: &str) -> bool {
     if pattern.is_empty() {
         return false;
@@ -100,10 +102,11 @@ pub fn match_wildcard(input: &str, pattern: &str) -> bool {
     wc_pattern.valid
 }
 
-/// Returns true if any of the patterns match the input
+/// Returns `true` if any of the patterns match the input
 ///
 /// Supported special characters:
 ///   '*' matches any number of any character(s)
+#[must_use]
 pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
     if patterns.is_empty() {
         return false;
@@ -142,10 +145,11 @@ pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
     false
 }
 
-/// Returns true if any of the patterns match the input
+/// Returns `true` if any of the patterns match the input
 ///
 /// Supported special characters:
 ///   '*' matches any number of any character(s)
+#[must_use]
 pub fn match_any_wildcard_new(input: &str, patterns: &[String]) -> bool {
     for pattern in patterns {
         // TODO: Multi-threading?
@@ -157,11 +161,13 @@ pub fn match_any_wildcard_new(input: &str, patterns: &[String]) -> bool {
     false
 }
 
-/// Returns a HashMap of all matches, each associated with their
-/// respective pattern
+/// Returns a `HashMap` of all matches.
+/// Key: original `String` pattern
+/// Value: `Vec<String>` of matches
 ///
 /// Supported special characters:
 ///   '*' matches any number of any character(s)
+#[must_use]
 pub fn match_wildcards_multi(
     inputs: &[String],
     patterns: &[String],
@@ -188,6 +194,7 @@ pub fn match_wildcards_multi(
 ///   '*' matches any number of any characters
 ///   '^' matches the start of the input
 ///   '$' matches the end of the input
+#[must_use]
 pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> Option<&'a str> {
     if pattern.is_empty() {
         return None;

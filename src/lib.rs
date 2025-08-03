@@ -1,5 +1,5 @@
 use crate::action::Action;
-use crate::args::*;
+use crate::args::{show_help, Args};
 use crate::config::Config;
 use crate::font::Font;
 use crate::installed::InstalledFonts;
@@ -86,7 +86,17 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             remove_fonts(args, installed_fonts)?;
         }
         Action::List => {
-            args.fonts.iter().for_each(|font| println!("{font}"));
+            args.fonts.iter().for_each(|font| {
+                if installed_fonts.installed.get(&font.name).is_some() {
+                    if Font::has_installer(&font.name) {
+                        println_green!("{font}");
+                    } else {
+                        println_orange!("{font}");
+                    }
+                } else {
+                    println!("{font}");
+                }
+            });
         }
         Action::Clean => {
             fs::remove_dir_all(cache_dir!()).map_err(|e| e.to_string())?;
@@ -142,6 +152,7 @@ fn remove_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(),
 }
 
 #[inline]
+#[must_use]
 pub fn user_prompt(message: &str, args: &Args) -> bool {
     print!("{message} [y/n]: ");
 
