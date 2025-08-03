@@ -49,7 +49,7 @@ impl FontPage {
             || system_time.wrapping_sub(cache.time) >= args.config.cache_timeout
         {
             if args.options.verbose {
-                println!("Updating cache:        {url} ({url_hash})");
+                println!("Updating cache:       {url} ({url_hash})");
             }
             let page = client
                 .get(url)
