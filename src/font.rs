@@ -209,6 +209,6 @@ impl Font {
 
     #[must_use]
     pub fn has_installer(name: &str) -> bool {
-        return Path::new(&(installers_dir_path!() + name)).exists();
+        Path::new(&(installers_dir_path!() + name)).exists()
     }
 }
