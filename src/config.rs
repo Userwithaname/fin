@@ -56,4 +56,11 @@ impl Config {
         fs::write(config_file_path!(), default_config!()).map_err(|e| e.to_string())?;
         Ok(Self::default())
     }
+
+    pub fn panic_if_invalid(&self) {
+        assert!(
+            self.install_dir.trim().split('/').count() > 2,
+            "The specified installation directory is invalid"
+        );
+    }
 }

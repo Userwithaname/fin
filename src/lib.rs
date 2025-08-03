@@ -24,6 +24,8 @@ mod installer;
 pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
     match args.action {
         Action::Install => 'install: {
+            args.config.panic_if_invalid();
+
             if args.fonts.is_empty() {
                 println!("Nothing new to install.");
                 return Ok(());
@@ -40,6 +42,8 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             install_fonts(args, installed_fonts)?;
         }
         Action::Reinstall => 'reinstall: {
+            args.config.panic_if_invalid();
+
             if args.fonts.is_empty() {
                 println!("Nothing to reinstall.");
                 return Ok(());
@@ -55,6 +59,8 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             install_fonts(args, installed_fonts)?;
         }
         Action::Update => 'update: {
+            args.config.panic_if_invalid();
+
             if args.fonts.is_empty() {
                 println!("Nothing to update.");
                 return Ok(());
@@ -87,7 +93,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
         }
         Action::List => {
             args.fonts.iter().for_each(|font| {
-                if installed_fonts.installed.get(&font.name).is_some() {
+                if installed_fonts.installed.contains_key(&font.name) {
                     if Font::has_installer(&font.name) {
                         println_green!("{font}");
                     } else {

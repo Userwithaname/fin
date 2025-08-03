@@ -93,12 +93,12 @@ impl InstalledFonts {
 
             let mut dir_iter = dir.split('/');
             dir_iter.next_back();
-            let dir_name = dir_iter.next_back().unwrap();
+            let dir_name = dir_iter.next_back().unwrap_or("(unknown)");
 
             println!("Removing {dir_name}: ");
 
             if !Path::new(&dir).exists() {
-                println_orange!("Not installed");
+                println_orange!("Not found");
                 return self.remove_entry(font).map(|()| Some(dir));
             }
 
@@ -110,10 +110,10 @@ impl InstalledFonts {
             match result {
                 Ok(()) => self
                     .remove_entry(font)
-                    .inspect(|()| println!("Successfuly removed {dir_name}"))
+                    .inspect(|()| println!("Removed: {dir_name}"))
                     .map(|()| Some(dir)),
                 Err(()) => {
-                    println!("Errors were encountered while removing {dir_name}");
+                    println!("Errors were encountered while removing: {dir_name}");
                     Err("Failed to remove font".to_string())
                 }
             }
