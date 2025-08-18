@@ -3,16 +3,19 @@ use crate::installed::{InstalledFont, InstalledFonts};
 use crate::wildcards::*;
 use crate::Args;
 
-use flate2::read::GzDecoder;
-use reqwest::header::USER_AGENT;
-use serde::Deserialize;
 use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, DirEntry};
 use std::io::{self, Read};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+
+use reqwest::header::USER_AGENT;
+
+use flate2::read::GzDecoder;
 use tar::Archive;
 use xz::read::XzDecoder;
+
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 #[serde(default)]
@@ -212,12 +215,16 @@ impl Installer {
 
         println!("\n{}:", &self.name);
 
-        println!("Awaiting response: {} ...", &self.url);
+        print!("Awaiting response: {} ... ", &self.url);
         let mut remote_data = reqwest_client
             .get(&self.url)
             .header(USER_AGENT, "fin")
             .send()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                println_red!("Error");
+                e.to_string()
+            })?;
+        println_green!("OK");
 
         print!("Downloading archive... ");
         let mut archive_buffer: Vec<u8> = Vec::new();
@@ -227,7 +234,6 @@ impl Installer {
         })?;
         println_green!("Done");
 
-        // println!("Reading archive...");
         let reader = std::io::Cursor::new(archive_buffer);
         let extract_to = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag);
 
@@ -262,11 +268,20 @@ impl Installer {
         reader: std::io::Cursor<Vec<u8>>,
         extract_to: &str,
     ) -> Result<(), String> {
-        let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| e.to_string())?;
+        let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
+            println_red!("Failed");
+            e.to_string()
+        })?;
 
-        println!("Attempting extraction...");
+        print!("Attempting extraction... ");
         // TODO: Extract selectively (instead of selectively moving in `install_font()`)
-        zip::ZipArchive::extract(&mut zip_archive, extract_to).map_err(|e| e.to_string())
+        zip::ZipArchive::extract(&mut zip_archive, extract_to).map_err(|e| {
+            println_red!("Failed");
+            e.to_string()
+        })?;
+        println_green!("Done");
+
+        Ok(())
     }
 
     fn extract_tar_gz(
@@ -276,11 +291,17 @@ impl Installer {
     ) -> Result<(), String> {
         let mut tar_gz_archive = GzDecoder::new(reader);
 
-        println!("Attempting extraction...");
+        print!("Attempting extraction... ");
         // TODO: Extract selectively (instead of selectively moving in `install_font()`)
         Archive::new(&mut tar_gz_archive)
             .unpack(extract_to)
-            .map_err(|e| e.to_string())
+            .map_err(|e| {
+                println_red!("Failed");
+                e.to_string()
+            })?;
+        println_green!("Done");
+
+        Ok(())
     }
 
     fn extract_tar_xz(
@@ -290,11 +311,17 @@ impl Installer {
     ) -> Result<(), String> {
         let mut tar_xz_archive = XzDecoder::new(reader);
 
-        println!("Attempting extraction...");
+        print!("Attempting extraction... ");
         // TODO: Extract selectively (instead of selectively moving in `install_font()`)
         Archive::new(&mut tar_xz_archive)
             .unpack(extract_to)
-            .map_err(|e| e.to_string())
+            .map_err(|e| {
+                println_red!("Failed");
+                e.to_string()
+            })?;
+        println_green!("Done");
+
+        Ok(())
     }
 
     pub fn install_font(

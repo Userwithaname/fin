@@ -92,17 +92,30 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             remove_fonts(args, installed_fonts)?;
         }
         Action::List => {
-            args.fonts.iter().for_each(|font| {
-                if installed_fonts.installed.contains_key(&font.name) {
-                    if Font::has_installer(&font.name) {
-                        println_green!("{font}");
-                    } else {
-                        println_orange!("{font}");
+            args.fonts
+                .iter()
+                .for_each(|font| match installed_fonts.installed.get(&font.name) {
+                    Some(installed) => {
+                        if Font::has_installer(&font.name) {
+                            match args.options.verbose {
+                                true => println!("{}: {}", format_green!("{font}"), installed.dir),
+                                false => println_green!("{font}"),
+                            }
+                        } else {
+                            match args.options.verbose {
+                                true => println!(
+                                    "{}: {}",
+                                    format_orange!("{font} (missing installer)"),
+                                    installed.dir
+                                ),
+                                false => println_orange!("{font} (missing installer)"),
+                            }
+                        }
                     }
-                } else {
-                    println!("{font}");
-                }
-            });
+                    None => {
+                        println!("{font}");
+                    }
+                });
         }
         Action::Clean => {
             fs::remove_dir_all(cache_dir!()).map_err(|e| e.to_string())?;
