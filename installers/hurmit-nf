@@ -1,5 +1,5 @@
 name = "Hurmit Nerd Font"
 tag = "latest"
-url = "https://www.nerdfonts.com/font-downloads"
-archive = "Hermit.zip"
+url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
+archive = "Hermit.tar.xz"
 include = [ "*" ]

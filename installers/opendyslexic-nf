@@ -1,5 +1,5 @@
 name = "OpenDyslexic Nerd Font"
 tag = "latest"
-url = "https://www.nerdfonts.com/font-downloads"
-archive = "OpenDyslexic.zip"
+url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
+archive = "OpenDyslexic.tar.xz"
 include = [ "*" ]

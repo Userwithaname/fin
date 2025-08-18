@@ -1,5 +1,5 @@
 name = "SpaceMono Nerd Font"
 tag = "latest"
-url = "https://www.nerdfonts.com/font-downloads"
-archive = "SpaceMono.zip"
+url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
+archive = "SpaceMono.tar.xz"
 include = [ "*" ]

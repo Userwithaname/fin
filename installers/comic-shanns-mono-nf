@@ -1,5 +1,5 @@
 name = "ComicShannsMono Nerd Font"
 tag = "latest"
-url = "https://www.nerdfonts.com/font-downloads"
-archive = "ComicShannsMono.zip"
+url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
+archive = "ComicShannsMono.tar.xz"
 include = [ "*" ]

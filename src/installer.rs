@@ -3,6 +3,7 @@ use crate::installed::{InstalledFont, InstalledFonts};
 use crate::wildcards::*;
 use crate::Args;
 
+use flate2::read::GzDecoder;
 use reqwest::header::USER_AGENT;
 use serde::Deserialize;
 use std::collections::{BTreeSet, HashMap};
@@ -10,6 +11,8 @@ use std::fs::{self, DirEntry};
 use std::io::{self, Read};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use tar::Archive;
+use xz::read::XzDecoder;
 
 #[derive(Deserialize)]
 #[serde(default)]
@@ -203,6 +206,7 @@ impl Installer {
             )
     }
 
+    // TODO: Utilize internal mutability (or builder pattern?)
     pub fn download_font(&self) -> Result<&Self, String> {
         let reqwest_client = reqwest::blocking::Client::new();
 
@@ -215,24 +219,82 @@ impl Installer {
             .send()
             .map_err(|e| e.to_string())?;
 
-        println!("Downloading archive...");
+        print!("Downloading archive... ");
         let mut archive_buffer: Vec<u8> = Vec::new();
-        remote_data
-            .read_to_end(&mut archive_buffer)
-            .map_err(|e| e.to_string())?;
+        remote_data.read_to_end(&mut archive_buffer).map_err(|e| {
+            println_red!("Failed");
+            e.to_string()
+        })?;
+        println_green!("Done");
 
         // println!("Reading archive...");
         let reader = std::io::Cursor::new(archive_buffer);
+        let extract_to = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag);
+
+        match self.archive.split('.').next_back() {
+            Some("zip") => self.extract_zip(reader, &extract_to)?,
+            Some("gz") => self.extract_tar_gz(reader, &extract_to)?,
+            Some("xz") => self.extract_tar_xz(reader, &extract_to)?,
+            Some(_) => return Err(format!("Unsupported archive extension: {}", self.archive)),
+            None => {
+                return Err(format!(
+                    "Archive requires a file extension: {}",
+                    self.archive
+                ))
+            }
+        }
+
+        // if self.archive.ends_with(".zip") {
+        //     self.extract_zip(reader, &extract_to)?;
+        // } else if self.archive.ends_with(".tar.gz") {
+        //     self.extract_tar_gz(reader, &extract_to)?;
+        // } else if self.archive.ends_with(".tar.xz") {
+        //     self.extract_tar_xz(reader, &extract_to)?;
+        // } else {
+        //     eprintln!("Unsupported archive extension: {}", self.archive);
+        // }
+
+        Ok(self)
+    }
+
+    fn extract_zip(
+        &self,
+        reader: std::io::Cursor<Vec<u8>>,
+        extract_to: &str,
+    ) -> Result<(), String> {
         let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| e.to_string())?;
 
         println!("Attempting extraction...");
         // TODO: Extract selectively (instead of selectively moving in `install_font()`)
-        zip::ZipArchive::extract(
-            &mut zip_archive,
-            format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag),
-        )
-        .map_err(|e| e.to_string())?;
-        Ok(self)
+        zip::ZipArchive::extract(&mut zip_archive, extract_to).map_err(|e| e.to_string())
+    }
+
+    fn extract_tar_gz(
+        &self,
+        reader: std::io::Cursor<Vec<u8>>,
+        extract_to: &str,
+    ) -> Result<(), String> {
+        let mut tar_gz_archive = GzDecoder::new(reader);
+
+        println!("Attempting extraction...");
+        // TODO: Extract selectively (instead of selectively moving in `install_font()`)
+        Archive::new(&mut tar_gz_archive)
+            .unpack(extract_to)
+            .map_err(|e| e.to_string())
+    }
+
+    fn extract_tar_xz(
+        &self,
+        reader: std::io::Cursor<Vec<u8>>,
+        extract_to: &str,
+    ) -> Result<(), String> {
+        let mut tar_xz_archive = XzDecoder::new(reader);
+
+        println!("Attempting extraction...");
+        // TODO: Extract selectively (instead of selectively moving in `install_font()`)
+        Archive::new(&mut tar_xz_archive)
+            .unpack(extract_to)
+            .map_err(|e| e.to_string())
     }
 
     pub fn install_font(

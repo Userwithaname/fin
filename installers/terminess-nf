@@ -1,5 +1,5 @@
 name = "Terminess Nerd Font"
 tag = "latest"
-url = "https://www.nerdfonts.com/font-downloads"
-archive = "Terminus.zip"
+url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
+archive = "Terminus.tar.xz"
 include = [ "*" ]

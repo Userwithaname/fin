@@ -1,5 +1,5 @@
 name = "Nerd Fonts Symbols Only"
 tag = "latest"
-url = "https://www.nerdfonts.com/font-downloads"
+url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
 archive = "NerdFontsSymbolsOnly.zip"
 include = [ "*" ]
