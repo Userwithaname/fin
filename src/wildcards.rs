@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::thread;
 
 pub struct WildcardPattern {
     index: usize,
@@ -146,17 +148,38 @@ pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
 }
 
 /// Returns `true` if any of the patterns match the input
+/// This is a multi-threaded version of `match_any_wildcard()`
 ///
 /// Supported special characters:
 ///   '*' matches any number of any character(s)
 #[must_use]
-pub fn match_any_wildcard_new(input: &str, patterns: &[String]) -> bool {
-    for pattern in patterns {
-        // TODO: Multi-threading?
-        if !match_wildcard(input, pattern) {
+pub fn match_any_wildcard_mt(input: Arc<str>, patterns: Arc<[String]>) -> bool {
+    let mut threads = Vec::new();
+
+    for i in 0..patterns.len() {
+        let input = Arc::clone(&input);
+        let patterns = Arc::clone(&patterns);
+
+        threads.push(thread::spawn(move || match_wildcard(&input, &patterns[i])));
+    }
+
+    let mut i = 0;
+    loop {
+        if threads.is_empty() {
+            break;
+        }
+
+        if threads[i].is_finished() {
+            if threads.remove(i).join().unwrap() {
+                return true;
+            }
             continue;
         }
-        return true;
+        i += 1;
+
+        if i == threads.len() {
+            i = 0;
+        }
     }
     false
 }

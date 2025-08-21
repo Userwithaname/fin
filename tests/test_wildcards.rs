@@ -128,41 +128,53 @@ mod test_wildcards {
     }
 
     #[test]
-    fn test_match_any_wildcard_new() {
-        if match_any_wildcard_new("partially matching patern", &[String::from("*matching")]) {
+    fn test_match_any_wildcard_mt() {
+        if match_any_wildcard_mt(
+            "partially matching patern".into(),
+            [String::from("*matching")].into(),
+        ) {
             panic!("Failed: \"partially matching pattern\": (expected non-match)");
         }
-        if !match_any_wildcard_new("match all", &[String::from("*")]) {
+        if !match_any_wildcard_mt("match all".into(), [String::from("*")].into()) {
             panic!("Failed: \"match all\": (expected match)");
         }
-        if !match_any_wildcard_new("surrounding (test) characters", &[String::from("*(*)*")]) {
+        if !match_any_wildcard_mt(
+            "surrounding (test) characters".into(),
+            [String::from("*(*)*")].into(),
+        ) {
             panic!("Failed: \"surrounding characters\": (expected match)");
         }
-        if !match_any_wildcard_new("beginning of the string", &[String::from("*ng")]) {
+        if !match_any_wildcard_mt(
+            "beginning of the string".into(),
+            [String::from("*ng")].into(),
+        ) {
             panic!("Failed: \"beginning of the string\": (expected match)");
         }
-        if !match_any_wildcard_new("end of the string", &[String::from("end*")]) {
+        if !match_any_wildcard_mt("end of the string".into(), [String::from("end*")].into()) {
             panic!("Failed: \"end of the string\": (expected match)");
         }
-        if !match_any_wildcard_new("zero-length match star", &[String::from("*match *star")]) {
+        if !match_any_wildcard_mt(
+            "zero-length match star".into(),
+            [String::from("*match *star")].into(),
+        ) {
             panic!("Failed: \"zero-length match star\": (expected match)");
         }
-        if !match_any_wildcard_new(
-            "zero-length match star at the end",
-            &[String::from("*end*")],
+        if !match_any_wildcard_mt(
+            "zero-length match star at the end".into(),
+            [String::from("*end*")].into(),
         ) {
             panic!("Failed: \"zero-length match star at the end\": (expected match)");
         }
-        if match_any_wildcard_new("some random text", &[String::from("potato")]) {
+        if match_any_wildcard_mt("some random text".into(), [String::from("potato")].into()) {
             panic!("Failed: \"non-match\": (expected non-match)");
         }
-        if match_any_wildcard_new("", &[String::from("something")]) {
+        if match_any_wildcard_mt("".into(), [String::from("something")].into()) {
             panic!("Failed: \"empty input\": (expected non-match)");
         }
-        if match_any_wildcard_new("something", &[]) {
+        if match_any_wildcard_mt("something".into(), [].into()) {
             panic!("Failed: \"no patterns\": (expected non-match)");
         }
-        if match_any_wildcard_new("something", &[String::from("")]) {
+        if match_any_wildcard_mt("something".into(), [String::from("")].into()) {
             panic!("Failed: \"empty pattern\": (expected non-match)");
         }
     }
