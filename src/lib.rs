@@ -88,7 +88,6 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 break 'remove;
             }
 
-            println!();
             remove_fonts(args, installed_fonts)?;
         }
         Action::List => {
@@ -164,9 +163,10 @@ fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<()
 }
 
 fn remove_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
-    args.fonts
-        .iter()
-        .try_for_each(|font| installed_fonts.uninstall(&font.name, args).map(|_| ()))?;
+    args.fonts.iter().try_for_each(|font| {
+        println!();
+        installed_fonts.uninstall(&font.name, args).map(|_| ())
+    })?;
     Ok(())
 }
 
