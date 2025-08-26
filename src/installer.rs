@@ -7,7 +7,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, DirEntry};
 use std::io::{self, Read};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use reqwest::header::USER_AGENT;
 
@@ -339,7 +339,7 @@ impl Installer {
         println!("Installing:");
 
         fs::create_dir_all(&dest_dir).map_err(|err| err.to_string())?;
-        let errors = Arc::new(Mutex::new(false));
+        let errors = Mutex::new(false);
 
         let mut files = Vec::new();
         visit_dirs(Path::new(&temp_dir), &mut |file| {
