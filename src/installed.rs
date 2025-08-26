@@ -4,6 +4,7 @@ use crate::installed_file_path;
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+use std::io::{self, Write};
 use std::{fs, path::Path};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -128,6 +129,7 @@ impl InstalledFonts {
         let mut directories: BTreeSet<String> = [String::new()].into();
         installed_font.files.iter().for_each(|file| {
             print!("   {file} ... ");
+            let _ = io::stdout().flush();
 
             let file_path = format!("{dir}/{file}");
             let file_path = Path::new(&file_path);
@@ -158,6 +160,8 @@ impl InstalledFonts {
 
         directories.iter().rev().for_each(|subdir| {
             print!("   ../{dir_name}/{subdir} ... ");
+            let _ = io::stdout().flush();
+
             let target = dir.to_owned() + subdir;
             if fs::read_dir(&target).is_ok_and(|remaining| remaining.count() == 0) {
                 match fs::remove_dir(&target) {
@@ -179,6 +183,8 @@ impl InstalledFonts {
         let mut errors = false;
 
         print!("   ../{dir_name} ... ");
+        let _ = io::stdout().flush();
+
         match fs::remove_dir_all(dir).map_err(|e| e.to_string()) {
             Ok(()) => println_green!("Done"),
             Err(e) => {

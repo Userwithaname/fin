@@ -5,7 +5,7 @@ use crate::Args;
 
 use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, DirEntry};
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -216,6 +216,8 @@ impl Installer {
         println!("\n{}:", &self.name);
 
         print!("Awaiting response: {} ... ", &self.url);
+        let _ = io::stdout().flush();
+
         let mut remote_data = reqwest_client
             .get(&self.url)
             .header(USER_AGENT, "fin")
@@ -227,6 +229,8 @@ impl Installer {
         println_green!("OK");
 
         print!("Downloading archive... ");
+        let _ = io::stdout().flush();
+
         let mut archive_buffer: Vec<u8> = Vec::new();
         remote_data.read_to_end(&mut archive_buffer).map_err(|e| {
             println_red!("Failed");
@@ -268,12 +272,14 @@ impl Installer {
         reader: std::io::Cursor<Vec<u8>>,
         extract_to: &str,
     ) -> Result<(), String> {
+        print!("Attempting extraction... ");
+        let _ = io::stdout().flush();
+
         let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
             println_red!("Failed");
             e.to_string()
         })?;
 
-        print!("Attempting extraction... ");
         // TODO: Extract selectively (instead of selectively moving in `install_font()`)
         zip::ZipArchive::extract(&mut zip_archive, extract_to).map_err(|e| {
             println_red!("Failed");
@@ -289,9 +295,11 @@ impl Installer {
         reader: std::io::Cursor<Vec<u8>>,
         extract_to: &str,
     ) -> Result<(), String> {
+        print!("Attempting extraction... ");
+        let _ = io::stdout().flush();
+
         let mut tar_gz_archive = GzDecoder::new(reader);
 
-        print!("Attempting extraction... ");
         // TODO: Extract selectively (instead of selectively moving in `install_font()`)
         Archive::new(&mut tar_gz_archive)
             .unpack(extract_to)
@@ -309,9 +317,11 @@ impl Installer {
         reader: std::io::Cursor<Vec<u8>>,
         extract_to: &str,
     ) -> Result<(), String> {
+        print!("Attempting extraction... ");
+        let _ = io::stdout().flush();
+
         let mut tar_xz_archive = XzDecoder::new(reader);
 
-        print!("Attempting extraction... ");
         // TODO: Extract selectively (instead of selectively moving in `install_font()`)
         Archive::new(&mut tar_xz_archive)
             .unpack(extract_to)
@@ -369,6 +379,7 @@ impl Installer {
             };
 
             print!("   {target_path} ... ");
+            let _ = io::stdout().flush();
 
             match fs::rename(
                 format!("{temp_dir}/{partial_path}"),
