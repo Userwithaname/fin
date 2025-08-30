@@ -7,7 +7,6 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, DirEntry};
 use std::io::{self, Read, Write};
 use std::path::Path;
-use std::sync::Mutex;
 
 use reqwest::header::USER_AGENT;
 
@@ -349,7 +348,7 @@ impl Installer {
         println!("Installing:");
 
         fs::create_dir_all(&dest_dir).map_err(|err| err.to_string())?;
-        let errors = Mutex::new(false);
+        let mut errors = false;
 
         let mut files = Vec::new();
         visit_dirs(Path::new(&temp_dir), &mut |file| {
@@ -370,7 +369,7 @@ impl Installer {
                             .unwrap(),
                     ) {
                         println!("   {partial_path} ... {}", red!(&e.to_string()));
-                        *errors.lock().unwrap() = true;
+                        errors = true;
                         return;
                     }
                     partial_path
@@ -391,13 +390,13 @@ impl Installer {
                 }
                 Err(e) => {
                     println_red!("{e}");
-                    *errors.lock().unwrap() = true;
+                    errors = true;
                 }
             }
         })
         .map_err(|e| e.to_string())?;
 
-        match *errors.lock().unwrap() {
+        match errors {
             false => {
                 println!("Successfully installed {}", self.name);
                 installed_fonts.update_entry(
