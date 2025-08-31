@@ -1,5 +1,5 @@
 name = "0xProto Nerd Font"
 tag = "latest"
 url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
-archive = "0xProto.tar.xz"
+archive = "0xProto.zip"
 include = [ "*" ]

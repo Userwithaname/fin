@@ -12,7 +12,6 @@ use reqwest::header::USER_AGENT;
 
 use flate2::read::GzDecoder;
 use tar::Archive;
-use xz::read::XzDecoder;
 
 use serde::Deserialize;
 
@@ -313,24 +312,28 @@ impl Installer {
 
     fn extract_tar_xz(
         &self,
-        reader: std::io::Cursor<Vec<u8>>,
-        extract_to: &str,
+        _reader: std::io::Cursor<Vec<u8>>,
+        _extract_to: &str,
     ) -> Result<(), String> {
-        print!("Attempting extraction... ");
-        let _ = io::stdout().flush();
+        todo!("XZ support is not currently supported");
 
-        let mut tar_xz_archive = XzDecoder::new(reader);
+        // NOTE: `tar.xz` support is currently disabled due to
+        // outdated `xz` crate dependencies for `zip` and `bzip2`
 
-        // TODO: Extract selectively (instead of selectively moving in `install_font()`)
-        Archive::new(&mut tar_xz_archive)
-            .unpack(extract_to)
-            .map_err(|e| {
-                println_red!("Failed");
-                e.to_string()
-            })?;
-        println_green!("Done");
+        // print!("Attempting extraction... ");
+        // let _ = io::stdout().flush();
 
-        Ok(())
+        // let mut tar_xz_archive = XzDecoder::new(reader);
+
+        // Archive::new(&mut tar_xz_archive)
+        //     .unpack(extract_to)
+        //     .map_err(|e| {
+        //         println_red!("Failed");
+        //         e.to_string()
+        //     })?;
+        // println_green!("Done");
+
+        // Ok(())
     }
 
     pub fn install_font(
