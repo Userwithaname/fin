@@ -83,16 +83,28 @@ impl FontPage {
                 .get(url)
                 .header(USER_AGENT, "fin")
                 .send()
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| {
+                    cached_pages.lock().unwrap().remove_entry(&url_hash);
+                    e.to_string()
+                })?;
 
             font_page.time = system_time;
-            font_page.contents = Some(page.text().map_err(|e| e.to_string())?);
+            font_page.contents = Some(page.text().map_err(|e| {
+                cached_pages.lock().unwrap().remove_entry(&url_hash);
+                e.to_string()
+            })?);
 
             fs::write(
                 &cache_file,
-                &toml::to_string(&font_page).map_err(|e| e.to_string())?,
+                &toml::to_string(&font_page).map_err(|e| {
+                    cached_pages.lock().unwrap().remove_entry(&url_hash);
+                    e.to_string()
+                })?,
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                cached_pages.lock().unwrap().remove_entry(&url_hash);
+                e.to_string()
+            })?;
         } else if args.options.verbose {
             println!("Reading cache (disk): {url} ({url_hash})");
         }
