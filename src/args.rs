@@ -6,7 +6,9 @@ use crate::InstalledFonts;
 use crate::{println_green, println_red};
 
 use std::env;
+use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct Args {
     pub action: Action,
     pub fonts: Box<[Font]>,
@@ -46,7 +48,7 @@ impl Args {
             config,
         };
 
-        args.fonts = Font::get_actionable_fonts(&args, &fonts, installed_fonts)
+        args.fonts = Font::get_actionable_fonts(Arc::new(args.clone()), &fonts, installed_fonts)
             .map_err(|e| e.to_string())?
             .into();
 

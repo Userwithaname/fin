@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Clone, Default, Serialize, Deserialize)]
@@ -19,22 +20,49 @@ pub struct FontPage {
 impl FontPage {
     pub fn get_font_page(
         url: &str,
-        args: &Args,
+        args: Arc<Args>,
         client: &reqwest::blocking::Client,
-        cached_pages: &mut HashMap<u64, FontPage>,
+        cached_pages: Arc<Mutex<HashMap<u64, FontPage>>>,
     ) -> Result<Self, String> {
         let mut hasher = DefaultHasher::new();
         url.hash(&mut hasher);
         let url_hash = hasher.finish();
-        if let Some(font_page) = cached_pages.get(&url_hash) {
-            if args.options.verbose {
-                println!("Reading cache (RAM):  {url} ({url_hash})");
+
+        let font_page = cached_pages.lock().unwrap().get(&url_hash).cloned();
+
+        if let Some(font_page) = font_page {
+            match font_page.contents.clone() {
+                Some(_) => {
+                    if args.options.verbose {
+                        println!("Reading cache (RAM):  {url} ({url_hash})");
+                    }
+                    return Ok(font_page.clone());
+                }
+                None => loop {
+                    if cached_pages
+                        .lock()
+                        .unwrap()
+                        .get(&url_hash)
+                        .unwrap()
+                        .contents
+                        .is_some()
+                    {
+                        return FontPage::get_font_page(url, args, client, cached_pages);
+                    }
+                },
             }
-            return Ok(font_page.clone());
         }
 
+        cached_pages.lock().unwrap().insert(
+            url_hash,
+            FontPage {
+                time: 0,
+                contents: None,
+            },
+        );
+
         let cache_file = format!("{}{}", cache_dir!(), &url_hash);
-        let mut cache: FontPage =
+        let mut font_page: FontPage =
             toml::from_str(&fs::read_to_string(&cache_file).unwrap_or_default())
                 .unwrap_or_default();
 
@@ -44,9 +72,9 @@ impl FontPage {
             .div_f64(60.0)
             .as_secs();
 
-        if cache.contents.is_none()
+        if font_page.contents.is_none()
             || args.options.refresh
-            || system_time.wrapping_sub(cache.time) >= args.config.cache_timeout
+            || system_time.wrapping_sub(font_page.time) >= args.config.cache_timeout
         {
             if args.options.verbose {
                 println!("Updating cache:       {url} ({url_hash})");
@@ -57,19 +85,20 @@ impl FontPage {
                 .send()
                 .map_err(|e| e.to_string())?;
 
-            cache.time = system_time;
-            cache.contents = Some(page.text().map_err(|e| e.to_string())?);
+            font_page.time = system_time;
+            font_page.contents = Some(page.text().map_err(|e| e.to_string())?);
 
             fs::write(
                 &cache_file,
-                &toml::to_string(&cache).map_err(|e| e.to_string())?,
+                &toml::to_string(&font_page).map_err(|e| e.to_string())?,
             )
             .map_err(|e| e.to_string())?;
         } else if args.options.verbose {
             println!("Reading cache (disk): {url} ({url_hash})");
         }
 
-        cached_pages.insert(url_hash, cache.clone());
-        Ok(cache)
+        *cached_pages.lock().unwrap().get_mut(&url_hash).unwrap() = font_page.clone();
+
+        Ok(font_page)
     }
 }

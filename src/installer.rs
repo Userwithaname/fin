@@ -7,6 +7,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, DirEntry};
 use std::io::{self, Read, Write};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use reqwest::header::USER_AGENT;
 
@@ -15,7 +16,7 @@ use tar::Archive;
 
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(default)]
 pub struct Installer {
     pub name: String,
@@ -47,10 +48,10 @@ impl Default for Installer {
 
 impl Installer {
     pub fn parse(
-        args: &Args,
+        args: Arc<Args>,
         font_name: &str,
         override_version: Option<&str>,
-        cached_pages: &mut HashMap<u64, FontPage>,
+        cached_pages: Arc<Mutex<HashMap<u64, FontPage>>>,
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
             &fs::read_to_string(installer_path!(&font_name)).map_err(|err| {

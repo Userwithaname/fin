@@ -1,6 +1,6 @@
 use crate::show_help;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Action {
     Install,
     Reinstall,

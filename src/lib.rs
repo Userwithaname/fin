@@ -62,7 +62,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             args.config.panic_if_invalid();
 
             if args.fonts.is_empty() {
-                println!("Nothing to update.");
+                println!("No updates found.");
                 return Ok(());
             }
 

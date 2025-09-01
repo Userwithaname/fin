@@ -1,7 +1,7 @@
 use crate::show_help;
 use crate::Config;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Options {
     pub reinstall: bool,
     pub refresh: bool,

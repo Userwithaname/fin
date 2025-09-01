@@ -7,6 +7,8 @@ use crate::Installer;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::{fmt, fs};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -28,6 +30,7 @@ impl fmt::Display for FontParseError {
     }
 }
 
+#[derive(Clone)]
 pub struct Font {
     pub name: String,
     pub installer: Option<Installer>,
@@ -50,10 +53,10 @@ impl fmt::Display for Font {
 
 impl Font {
     pub fn parse(
-        args: &Args,
+        args: Arc<Args>,
         name: &str,
         needs_installer: bool,
-        cached_pages: &mut HashMap<u64, FontPage>,
+        cached_pages: Arc<Mutex<HashMap<u64, FontPage>>>,
     ) -> Result<Self, FontParseError> {
         if name.is_empty() {
             return Err(FontParseError::InvalidName);
@@ -81,7 +84,7 @@ impl Font {
     }
 
     pub fn get_actionable_fonts(
-        args: &Args,
+        args: Arc<Args>,
         filters: &[String],
         installed_fonts: &InstalledFonts,
     ) -> Result<Vec<Font>, FontParseError> {
@@ -188,13 +191,22 @@ impl Font {
             }
         };
 
-        let mut cached_pages = HashMap::<u64, FontPage>::new();
+        let cached_pages = Arc::new(Mutex::new(HashMap::<u64, FontPage>::new()));
         fs::create_dir_all(cache_dir!()).map_err(|e| FontParseError::Generic(e.to_string()))?;
 
-        actionable_fonts
-            .iter()
-            .map(|font| Font::parse(args, font, needs_installer, &mut cached_pages))
-            .filter(|font| match args.action {
+        let mut handles = Vec::new();
+        for font in actionable_fonts {
+            let args = Arc::clone(&args);
+            let cached_pages = Arc::clone(&cached_pages);
+            handles.push(thread::spawn(move || {
+                Font::parse(args, &font, needs_installer, cached_pages)
+            }));
+        }
+
+        let mut actionable_fonts = Vec::new();
+        for handle in handles {
+            let font = handle.join().unwrap();
+            if match args.action {
                 Action::Update | Action::Install if !args.options.reinstall => font
                     .as_ref()
                     .unwrap()
@@ -202,8 +214,15 @@ impl Font {
                     .as_ref()
                     .is_some_and(|installer| installer.has_updates(installed_fonts)),
                 _ => !needs_installer || font.as_ref().unwrap().installer.is_some(),
-            })
-            .collect()
+            } {
+                match font {
+                    Ok(font) => actionable_fonts.push(font),
+                    Err(e) => eprintln!("Error parsing font: {e}"),
+                }
+            }
+        }
+
+        Ok(actionable_fonts)
     }
 
     #[must_use]

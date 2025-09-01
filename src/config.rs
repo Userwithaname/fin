@@ -4,7 +4,7 @@ use crate::home_dir;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct Config {
     pub install_dir: String,
