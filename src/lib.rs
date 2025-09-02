@@ -96,14 +96,16 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 .for_each(|font| match installed_fonts.installed.get(&font.name) {
                     Some(installed) => {
                         if Font::has_installer(&font.name) {
-                            match args.options.verbose {
-                                true => println!("{}: {}", format_green!("{font}"), installed.dir),
+                            match args.options.verbose || args.config.verbose_list {
+                                true => {
+                                    println!("{}\n ↪ {}", format_green!("{font}"), installed.dir)
+                                }
                                 false => println_green!("{font}"),
                             }
                         } else {
                             match args.options.verbose {
                                 true => println!(
-                                    "{}: {}",
+                                    "{}\n ↪ {}",
                                     format_orange!("{font} (missing installer)"),
                                     installed.dir
                                 ),
@@ -120,7 +122,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             fs::remove_dir_all(cache_dir!()).map_err(|e| e.to_string())?;
             println!("Removed the cache directory: {}", cache_dir!());
         }
-        Action::Help => (),
+        Action::Init | Action::Help => (),
     }
 
     installed_fonts.write()?;

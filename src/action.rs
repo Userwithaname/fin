@@ -8,6 +8,7 @@ pub enum Action {
     Remove,
     Clean,
     List,
+    Init,
     Help,
 }
 
@@ -23,6 +24,7 @@ Actions:
     remove                Remove installed fonts
     clean                 Remove temporary cache files
     list                  List installed or available fonts
+    init                  Create a new configuration file
     help                  Show this help message
 "
     }
@@ -36,6 +38,7 @@ Actions:
                 "remove" | "uninstall" | "rm" => Action::Remove,
                 "clean" => Action::Clean,
                 "list" | "ls" => Action::List,
+                "init" | "land" => Action::Init,
                 "help" | "h" => Action::Help,
                 _ => {
                     show_help();

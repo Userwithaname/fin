@@ -30,6 +30,8 @@ Arguments:
     pub fn build(flags: &Vec<String>, config: &mut Config) -> Result<Self, String> {
         let mut options = Self::default();
 
+        options.verbose = config.verbose_mode;
+
         for flag in flags {
             let opt_val = &mut flag.split('=');
             let (opt, val) = (opt_val.next().unwrap(), opt_val.next());
@@ -48,6 +50,11 @@ Arguments:
                 "--cache-only" | "--no-refresh" => {
                     config.cache_timeout = u64::MAX;
                     options.refresh = false;
+                }
+                "--no-verbose" => {
+                    config.verbose_cache = false;
+                    config.verbose_list = false;
+                    options.verbose = false;
                 }
                 "--verbose" => options.verbose = true,
                 "--force" => options.force = true,

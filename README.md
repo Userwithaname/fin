@@ -39,6 +39,7 @@ Actions:
     remove                Remove installed fonts
     clean                 Remove temporary cache files
     list                  List installed or available fonts
+    init                  Create a new configuration file
     help                  Show this help message
 
 Arguments:
@@ -50,21 +51,6 @@ Arguments:
     --force         -f    Forcefully perform action (unsafe)
     --yes           -y    Automatically accept prompts
     --no            -n    Automatically reject prompts
-```
-
-# Configuration
-
-You may configure Fin using the `config.toml` file in your `~/.config/fin/`
-directory:
-
-## Example `config.toml`
-
-```toml
-# Default location for installing new fonts:
-install_dir = "~/.fonts"
-
-# Time (in minutes) until local cache is considered outdated:
-cache_timeout = 90
 ```
 
 Note that you will also need an installer for any font you wish to install.
@@ -129,7 +115,31 @@ JavaScript)
 - The download file must be an archive - other files are currently
 not supported
 
-# Installing Fin
+# Configuration
+
+Fin can be configured using the `config.toml` file in your `~/.config/fin/`
+directory.
+
+Running `fin init` will create the following configuration:
+
+```toml
+# Default location for installing new fonts
+install_dir = "~/.local/share/fonts"
+
+# How long (in minutes) until cache is considered outdated
+cache_timeout = 90
+
+# Show verbose output by default (pass --no-verbose to negate)
+verbose_mode = false
+
+# Show installed paths when running the 'list' command
+verbose_list = false
+
+# Show verbose cache-related output
+verbose_cache = false
+```
+
+# Building from source
 
 If you wish to use Fin, you must first build it from source:
 

@@ -316,7 +316,7 @@ impl Installer {
         _reader: std::io::Cursor<Vec<u8>>,
         _extract_to: &str,
     ) -> Result<(), String> {
-        todo!("XZ support is not currently supported");
+        todo!("XZ format is currently unsupported");
 
         // NOTE: `tar.xz` support is currently disabled due to
         // outdated `xz` crate dependencies for `zip` and `bzip2`

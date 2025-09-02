@@ -21,7 +21,7 @@ mod test_actions {
     #[test]
     fn help_includes_all_actions() {
         let all_actions =
-            ensure_exhaustive!(Action, Install, Reinstall, Update, Remove, Clean, List, Help);
+            ensure_exhaustive!(Action, Install, Reinstall, Update, Remove, List, Clean, Init, Help);
         let help_actions = Action::help_actions();
         print!("{help_actions}");
 
