@@ -208,7 +208,6 @@ impl Installer {
             )
     }
 
-    // TODO: Utilize internal mutability (or builder pattern?)
     pub fn download_font(&self) -> Result<&Self, String> {
         let reqwest_client = reqwest::blocking::Client::new();
 
@@ -230,6 +229,9 @@ impl Installer {
         print!("Downloading archive... ");
         let _ = io::stdout().flush();
 
+        // TODO: Store downloaded data into self
+        // TODO: Show download progress
+        // IDEA: Parallel downloads, only install after all downloads are done
         let mut archive_buffer: Vec<u8> = Vec::new();
         remote_data.read_to_end(&mut archive_buffer).map_err(|e| {
             println_red!("Failed");
