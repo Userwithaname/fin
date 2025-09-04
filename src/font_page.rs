@@ -43,12 +43,12 @@ impl FontPage {
                         .lock()
                         .unwrap()
                         .get(&url_hash)
-                        .unwrap()
-                        .contents
-                        .is_some()
+                        .is_some_and(|entry| entry.contents.is_none())
                     {
-                        return FontPage::get_font_page(url, args, client, cached_pages);
+                        continue;
                     }
+
+                    return FontPage::get_font_page(url, args, client, cached_pages);
                 },
             }
         }
