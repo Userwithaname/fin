@@ -3,6 +3,7 @@ use crate::Action;
 use crate::Args;
 use crate::InstalledFonts;
 use crate::Installer;
+use crate::{cache_dir, home_dir, installers_dir_path};
 
 use std::collections::BTreeSet;
 use std::collections::HashMap;

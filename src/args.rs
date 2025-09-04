@@ -1,3 +1,4 @@
+use crate::font::Font;
 use crate::options::Options;
 use crate::Action;
 use crate::Config;
@@ -8,14 +9,13 @@ use std::env;
 #[derive(Clone)]
 pub struct Args {
     pub action: Action,
-    pub items: Vec<String>,
     pub config: Config,
     pub options: Options,
 }
 
 impl Args {
     /// Loads the user-specified actions and arguments
-    pub fn build() -> Result<Self, String> {
+    pub fn build() -> Result<(Self, Vec<String>), String> {
         let mut args = env::args();
         args.next();
 
@@ -38,23 +38,23 @@ impl Args {
             .install_dir
             .replace("~/", &format!("{}/", env::var("HOME").unwrap()));
 
-        Ok(Args {
-            action,
+        Ok((
+            Args {
+                action,
+                options,
+                config,
+            },
             items,
-            options,
-            config,
-        })
+        ))
     }
 
-    pub fn list_fonts_green(&self) {
-        self.items
-            .iter()
-            .for_each(|font| println_green!("   {font}"));
+    pub fn list_fonts_green(fonts: &[Font]) {
+        fonts.iter().for_each(|font| println_green!("   {font}"));
         println!();
     }
 
-    pub fn list_fonts_red(&self) {
-        self.items.iter().for_each(|font| println_red!("   {font}"));
+    pub fn list_fonts_red(fonts: &[Font]) {
+        fonts.iter().for_each(|font| println_red!("   {font}"));
         println!();
     }
 }

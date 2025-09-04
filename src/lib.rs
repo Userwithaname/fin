@@ -7,27 +7,25 @@ use crate::installer::Installer;
 
 use std::fs;
 use std::io::{self, Write};
-use std::sync::Arc;
 
 pub mod action;
 pub mod args;
 pub mod colors;
 pub mod config;
+pub mod font;
 pub mod font_page;
 pub mod installed;
 pub mod options;
 pub mod paths;
 pub mod wildcards;
 
-mod font;
 mod installer;
 
-pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
-    let mut fonts: Box<[Font]> =
-        Font::get_actionable_fonts(Arc::new(args.clone()), &args.items, installed_fonts)
-            .map_err(|e| e.to_string())?
-            .into();
-
+pub fn run(
+    args: &Args,
+    fonts: &mut Box<[Font]>,
+    installed_fonts: &mut InstalledFonts,
+) -> Result<(), String> {
     match args.action {
         Action::Install => 'install: {
             args.config.panic_if_invalid();
@@ -38,14 +36,14 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             }
 
             println!("Installing: ");
-            args.list_fonts_green();
+            Args::list_fonts_green(fonts);
 
             // TODO: Inform the user of the total download size
             if !user_prompt("Proceed?", args) {
                 break 'install;
             }
 
-            install_fonts(args, &mut fonts, installed_fonts)?;
+            install_fonts(args, fonts, installed_fonts)?;
         }
         Action::Reinstall => 'reinstall: {
             args.config.panic_if_invalid();
@@ -56,13 +54,13 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             }
 
             println!("Installing: ");
-            args.list_fonts_green();
+            Args::list_fonts_green(&fonts);
 
             if !user_prompt("Proceed?", args) {
                 break 'reinstall;
             }
 
-            install_fonts(args, &mut fonts, installed_fonts)?;
+            install_fonts(args, fonts, installed_fonts)?;
         }
         Action::Update => 'update: {
             args.config.panic_if_invalid();
@@ -73,13 +71,13 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             }
 
             println!("Updating: ");
-            args.list_fonts_green();
+            Args::list_fonts_green(&fonts);
 
             if !user_prompt("Proceed?", args) {
                 break 'update;
             }
 
-            install_fonts(args, &mut fonts, installed_fonts)?;
+            install_fonts(args, fonts, installed_fonts)?;
         }
         Action::Remove => 'remove: {
             if fonts.is_empty() {
@@ -88,7 +86,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             }
 
             println!("Removing: ");
-            args.list_fonts_red();
+            Args::list_fonts_red(&fonts);
 
             if !user_prompt("Proceed?", args) {
                 break 'remove;
