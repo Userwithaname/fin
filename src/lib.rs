@@ -23,7 +23,7 @@ mod font;
 mod installer;
 
 pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
-    let mut fonts =
+    let mut fonts: Box<[Font]> =
         Font::get_actionable_fonts(Arc::new(args.clone()), &args.items, installed_fonts)
             .map_err(|e| e.to_string())?
             .into();
@@ -32,7 +32,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
         Action::Install => 'install: {
             args.config.panic_if_invalid();
 
-            if args.items.is_empty() {
+            if fonts.is_empty() {
                 println!("Nothing new to install.");
                 return Ok(());
             }
@@ -50,7 +50,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
         Action::Reinstall => 'reinstall: {
             args.config.panic_if_invalid();
 
-            if args.items.is_empty() {
+            if fonts.is_empty() {
                 println!("Nothing to reinstall.");
                 return Ok(());
             }
@@ -67,7 +67,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
         Action::Update => 'update: {
             args.config.panic_if_invalid();
 
-            if args.items.is_empty() {
+            if fonts.is_empty() {
                 println!("No updates found.");
                 return Ok(());
             }
@@ -82,7 +82,7 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
             install_fonts(args, &mut fonts, installed_fonts)?;
         }
         Action::Remove => 'remove: {
-            if args.items.is_empty() {
+            if fonts.is_empty() {
                 println!("Nothing to remove.");
                 return Ok(());
             }

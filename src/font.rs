@@ -70,7 +70,7 @@ impl Font {
                         Ok(installer) => Some(installer),
                         Err(e) => {
                             eprintln!("{e}");
-                            None
+                            return Err(FontParseError::Generic(e));
                         }
                     },
                     false => None,
@@ -205,13 +205,14 @@ impl Font {
         let mut actionable_fonts = Vec::new();
         for handle in handles {
             let font = handle.join().unwrap();
+            if font.is_err() {
+                continue;
+            }
+            let installer = font.as_ref().unwrap().installer.as_ref();
             if match args.action {
-                Action::Update | Action::Install if !args.options.reinstall => font
-                    .as_ref()
-                    .unwrap()
-                    .installer
-                    .as_ref()
-                    .is_some_and(|installer| installer.has_updates(installed_fonts)),
+                Action::Update | Action::Install if !args.options.reinstall => {
+                    installer.unwrap().has_updates(installed_fonts)
+                }
                 _ => !needs_installer || font.as_ref().unwrap().installer.is_some(),
             } {
                 match font {
