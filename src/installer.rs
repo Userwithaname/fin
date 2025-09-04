@@ -29,6 +29,8 @@ pub struct Installer {
 
     #[serde(skip_serializing)]
     installer_name: String,
+    #[serde(skip_serializing)]
+    download_buffer: Option<Vec<u8>>,
 }
 
 impl Default for Installer {
@@ -42,6 +44,7 @@ impl Default for Installer {
             exclude: [].into(),
             keep_folders: false,
             installer_name: String::new(),
+            download_buffer: None,
         }
     }
 }
@@ -208,7 +211,7 @@ impl Installer {
             )
     }
 
-    pub fn download_font(&self) -> Result<&Self, String> {
+    pub fn download_font(&mut self) -> Result<&mut Self, String> {
         let reqwest_client = reqwest::blocking::Client::new();
 
         println!("\n{}:", &self.name);
@@ -229,17 +232,29 @@ impl Installer {
         print!("Downloading archive... ");
         let _ = io::stdout().flush();
 
-        // TODO: Store downloaded data into self
         // TODO: Show download progress
-        // IDEA: Parallel downloads, only install after all downloads are done
         let mut archive_buffer: Vec<u8> = Vec::new();
         remote_data.read_to_end(&mut archive_buffer).map_err(|e| {
             println_red!("Failed");
             e.to_string()
         })?;
+        self.download_buffer = Some(archive_buffer);
         println_green!("Done");
 
-        let reader = std::io::Cursor::new(archive_buffer);
+        Ok(self)
+    }
+
+    pub fn extract_archive(&mut self) -> Result<&Self, String> {
+        let data = self.download_buffer.take();
+        if data.is_none() {
+            return Err(format!(
+                "{}: {}",
+                self.installer_name,
+                red!("Attempted extraction with no downloaded data"),
+            ));
+        }
+
+        let reader = std::io::Cursor::new(data.unwrap());
         let extract_to = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag);
 
         match self.archive.split('.').next_back() {
@@ -254,16 +269,6 @@ impl Installer {
                 ))
             }
         }
-
-        // if self.archive.ends_with(".zip") {
-        //     self.extract_zip(reader, &extract_to)?;
-        // } else if self.archive.ends_with(".tar.gz") {
-        //     self.extract_tar_gz(reader, &extract_to)?;
-        // } else if self.archive.ends_with(".tar.xz") {
-        //     self.extract_tar_xz(reader, &extract_to)?;
-        // } else {
-        //     eprintln!("Unsupported archive extension: {}", self.archive);
-        // }
 
         Ok(self)
     }

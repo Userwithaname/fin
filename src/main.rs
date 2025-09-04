@@ -7,7 +7,7 @@ use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut installed_fonts = InstalledFonts::read()?;
-    let args = Args::build(&mut installed_fonts)?;
+    let args = Args::build()?;
 
     match args.action {
         Action::Help => {

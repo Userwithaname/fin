@@ -7,6 +7,7 @@ use crate::installer::Installer;
 
 use std::fs;
 use std::io::{self, Write};
+use std::sync::Arc;
 
 pub mod action;
 pub mod args;
@@ -22,11 +23,16 @@ mod font;
 mod installer;
 
 pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
+    let mut fonts =
+        Font::get_actionable_fonts(Arc::new(args.clone()), &args.items, installed_fonts)
+            .map_err(|e| e.to_string())?
+            .into();
+
     match args.action {
         Action::Install => 'install: {
             args.config.panic_if_invalid();
 
-            if args.fonts.is_empty() {
+            if args.items.is_empty() {
                 println!("Nothing new to install.");
                 return Ok(());
             }
@@ -39,12 +45,12 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 break 'install;
             }
 
-            install_fonts(args, installed_fonts)?;
+            install_fonts(args, &mut fonts, installed_fonts)?;
         }
         Action::Reinstall => 'reinstall: {
             args.config.panic_if_invalid();
 
-            if args.fonts.is_empty() {
+            if args.items.is_empty() {
                 println!("Nothing to reinstall.");
                 return Ok(());
             }
@@ -56,12 +62,12 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 break 'reinstall;
             }
 
-            install_fonts(args, installed_fonts)?;
+            install_fonts(args, &mut fonts, installed_fonts)?;
         }
         Action::Update => 'update: {
             args.config.panic_if_invalid();
 
-            if args.fonts.is_empty() {
+            if args.items.is_empty() {
                 println!("No updates found.");
                 return Ok(());
             }
@@ -73,10 +79,10 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 break 'update;
             }
 
-            install_fonts(args, installed_fonts)?;
+            install_fonts(args, &mut fonts, installed_fonts)?;
         }
         Action::Remove => 'remove: {
-            if args.fonts.is_empty() {
+            if args.items.is_empty() {
                 println!("Nothing to remove.");
                 return Ok(());
             }
@@ -88,10 +94,10 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
                 break 'remove;
             }
 
-            remove_fonts(args, installed_fonts)?;
+            remove_fonts(args, &fonts, installed_fonts)?;
         }
         Action::List => {
-            args.fonts
+            fonts
                 .iter()
                 .for_each(|font| match installed_fonts.installed.get(&font.name) {
                     Some(installed) => {
@@ -130,14 +136,16 @@ pub fn run(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), Stri
     Ok(())
 }
 
-fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
+// IDEA: Parallel downloads, only install after all downloads are done
+fn install_fonts(
+    args: &Args,
+    fonts: &mut Box<[Font]>,
+    installed_fonts: &mut InstalledFonts,
+) -> Result<(), String> {
     let mut errors = Vec::new();
-    args.fonts.iter().for_each(|font| {
-        if let Some(installer) = &font.installer {
-            match installer
-                .download_font()
-                .map(|installer| installer.install_font(args, installed_fonts))
-            {
+    fonts.iter_mut().for_each(|font| {
+        if let Some(installer) = &mut font.installer {
+            match download_and_install(args, installer, installed_fonts) {
                 Ok(_) => (),
                 Err(e) => {
                     println!("Failed to install {}:\n{}", installer.name, red!(&e));
@@ -164,8 +172,23 @@ fn install_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<()
     }
 }
 
-fn remove_fonts(args: &Args, installed_fonts: &mut InstalledFonts) -> Result<(), String> {
-    args.fonts.iter().try_for_each(|font| {
+fn download_and_install(
+    args: &Args,
+    installer: &mut Installer,
+    installed_fonts: &mut InstalledFonts,
+) -> Result<(), String> {
+    installer
+        .download_font()?
+        .extract_archive()?
+        .install_font(args, installed_fonts)
+}
+
+fn remove_fonts(
+    args: &Args,
+    fonts: &Box<[Font]>,
+    installed_fonts: &mut InstalledFonts,
+) -> Result<(), String> {
+    fonts.iter().try_for_each(|font| {
         println!();
         installed_fonts.uninstall(&font.name, args).map(|_| ())
     })?;

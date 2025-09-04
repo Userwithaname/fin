@@ -1,36 +1,33 @@
 use crate::options::Options;
 use crate::Action;
 use crate::Config;
-use crate::Font;
-use crate::InstalledFonts;
 use crate::{println_green, println_red};
 
 use std::env;
-use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Args {
     pub action: Action,
-    pub fonts: Box<[Font]>,
+    pub items: Vec<String>,
     pub config: Config,
     pub options: Options,
 }
 
 impl Args {
     /// Loads the user-specified actions and arguments
-    pub fn build(installed_fonts: &mut InstalledFonts) -> Result<Self, String> {
+    pub fn build() -> Result<Self, String> {
         let mut args = env::args();
         args.next();
 
         let action = Action::parse(args.next())?;
 
-        let mut fonts = Vec::new();
         let mut flags = Vec::new();
+        let mut items = Vec::new();
         for item in args {
             if item.chars().nth(0).unwrap() == '-' {
                 flags.push(item);
             } else {
-                fonts.push(item);
+                items.push(item);
             }
         }
 
@@ -41,29 +38,23 @@ impl Args {
             .install_dir
             .replace("~/", &format!("{}/", env::var("HOME").unwrap()));
 
-        let mut args = Args {
+        Ok(Args {
             action,
-            fonts: [].into(),
+            items,
             options,
             config,
-        };
-
-        args.fonts = Font::get_actionable_fonts(Arc::new(args.clone()), &fonts, installed_fonts)
-            .map_err(|e| e.to_string())?
-            .into();
-
-        Ok(args)
+        })
     }
 
     pub fn list_fonts_green(&self) {
-        self.fonts
+        self.items
             .iter()
             .for_each(|font| println_green!("   {font}"));
         println!();
     }
 
     pub fn list_fonts_red(&self) {
-        self.fonts.iter().for_each(|font| println_red!("   {font}"));
+        self.items.iter().for_each(|font| println_red!("   {font}"));
         println!();
     }
 }
