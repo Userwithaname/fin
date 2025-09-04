@@ -36,7 +36,7 @@ impl FontPage {
                     if args.options.verbose | args.config.verbose_cache {
                         println!("Reading cache (RAM):  {url} ({url_hash})");
                     }
-                    return Ok(font_page.clone());
+                    return Ok(font_page);
                 }
                 None => loop {
                     if cached_pages
