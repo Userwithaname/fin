@@ -28,9 +28,10 @@ Arguments:
     }
 
     pub fn build(flags: &Vec<String>, config: &mut Config) -> Result<Self, String> {
-        let mut options = Self::default();
-
-        options.verbose = config.verbose_mode;
+        let mut options = Self {
+            verbose: config.verbose_mode,
+            ..Self::default()
+        };
 
         for flag in flags {
             let opt_val = &mut flag.split('=');

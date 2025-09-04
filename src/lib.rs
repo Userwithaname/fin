@@ -185,7 +185,7 @@ fn download_and_install(
 
 fn remove_fonts(
     args: &Args,
-    fonts: &Box<[Font]>,
+    fonts: &[Font],
     installed_fonts: &mut InstalledFonts,
 ) -> Result<(), String> {
     fonts.iter().try_for_each(|font| {
