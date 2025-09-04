@@ -16,7 +16,7 @@ use tar::Archive;
 
 use serde::Deserialize;
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 #[serde(default)]
 pub struct Installer {
     pub name: String,

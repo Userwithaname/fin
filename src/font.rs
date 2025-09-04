@@ -30,7 +30,6 @@ impl fmt::Display for FontParseError {
     }
 }
 
-#[derive(Clone)]
 pub struct Font {
     pub name: String,
     pub installer: Option<Installer>,
