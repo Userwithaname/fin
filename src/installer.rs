@@ -17,36 +17,24 @@ use tar::Archive;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-#[serde(default)]
 pub struct Installer {
     pub name: String,
+    #[serde(default)]
     tag: String,
     url: String,
     archive: String,
     include: Box<[String]>,
+    #[serde(default)]
     exclude: Box<[String]>,
+    #[serde(default)]
     keep_folders: bool,
 
+    #[serde(default)]
     #[serde(skip_serializing)]
     installer_name: String,
+    #[serde(default)]
     #[serde(skip_serializing)]
     download_buffer: Option<Vec<u8>>,
-}
-
-impl Default for Installer {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            tag: String::new(),
-            url: String::new(),
-            archive: String::new(),
-            include: [String::from("*")].into(),
-            exclude: [].into(),
-            keep_folders: false,
-            installer_name: String::new(),
-            download_buffer: None,
-        }
-    }
 }
 
 impl Installer {
