@@ -350,10 +350,12 @@ impl Installer {
             .file_names()
             .map(ToString::to_string)
             .filter(|file| {
-                // FIX: This creates all paths, regardless if they're included or not
                 if file.ends_with('/') {
                     if keep_folders {
-                        let _ = fs::create_dir_all(extract_to.to_owned() + file);
+                        // NOTE: This creates all paths, regardless if they're included or not
+                        let _ = fs::create_dir_all(extract_to.to_owned() + file).inspect_err(|e| {
+                            println!("   Directory creation error: {}", format_red!("{e}"));
+                        });
                     }
                     return false;
                 }
@@ -362,7 +364,7 @@ impl Installer {
             .collect();
 
         fs::create_dir_all(extract_to).map_err(|e| {
-            println_red!("{e}");
+            println!("   Directory creation error: {}", format_red!("{e}"));
             e.to_string()
         })?;
 
@@ -405,8 +407,9 @@ impl Installer {
         keep_folders: bool,
     ) -> Result<Vec<String>, String> {
         println!("Extracting: ");
+
         fs::create_dir_all(extract_to).map_err(|e| {
-            println_red!("{e}");
+            println!("   Directory creation error: {}", format_red!("{e}"));
             e.to_string()
         })?;
 
@@ -428,17 +431,20 @@ impl Installer {
             if !match_any_wildcard(&file, include) || match_any_wildcard(&file, exclude) {
                 continue;
             }
-            if file.is_empty() || file.ends_with('/') {
-                // FIX: This creates all paths, regardless if they're included or not
-                fs::create_dir_all(extract_to.to_owned() + &file).map_err(|e| {
-                    println_red!("{e}");
-                    e.to_string()
-                })?;
-                continue;
-            }
 
             print!("   {file} ... ");
             let _ = io::stdout().flush();
+
+            if file.is_empty() || file.ends_with('/') {
+                if keep_folders {
+                    // NOTE: This creates all paths, regardless if they're included or not
+                    fs::create_dir_all(extract_to.to_owned() + &file).map_err(|e| {
+                        println_red!("{e}");
+                        e.to_string()
+                    })?;
+                }
+                continue;
+            }
 
             let mut file_contents = Vec::new();
             entry.read_to_end(&mut file_contents).map_err(|e| {
