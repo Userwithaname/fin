@@ -73,6 +73,13 @@ impl Installer {
             ));
         }
 
+        if !match_wildcard(&installer.file, "*.*") {
+            return Err(format!(
+                "Installer for '{font_name}' did not specify a valid archive"
+            ));
+        }
+        installer.file = installer.file.replace("$tag", &installer.tag);
+
         let reqwest_client = reqwest::blocking::Client::new();
         installer.url = match installer.url.ends_with("$file") {
             true => installer.url.replace("$file", &installer.file),
@@ -83,13 +90,6 @@ impl Installer {
                 cached_pages,
             )?)?,
         };
-
-        if !match_wildcard(&installer.file, "*.*") {
-            return Err(format!(
-                "Installer for '{font_name}' did not specify a valid archive"
-            ));
-        }
-        installer.file = installer.file.replace("$tag", &installer.tag);
 
         match installer.action {
             InstallAction::Extract {
