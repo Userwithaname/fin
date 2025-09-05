@@ -242,7 +242,7 @@ impl Installer {
             })?;
         println_green!("OK");
 
-        print!("Downloading font ... ");
+        print!("Downloading ... ");
         let _ = io::stdout().flush();
 
         // TODO: Show download progress

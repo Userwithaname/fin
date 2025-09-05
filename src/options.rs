@@ -21,7 +21,7 @@ Arguments:
     --refresh       -r    Ignore cache and fetch new data
     --cache-only    -c    Do not fetch new data if possible
     --verbose       -v    Show more detailed output
-    --force         -f    Forcefully perform action (unsafe)
+    --force         -F    Forcefully perform action (unsafe)
     --yes           -y    Automatically accept prompts
     --no            -n    Automatically reject prompts
 "
@@ -75,7 +75,7 @@ Arguments:
                                     options.refresh = false;
                                 }
                                 'v' => options.verbose = true,
-                                'f' => options.force = true,
+                                'F' => options.force = true,
                                 'y' => options.answer = Some(true),
                                 'n' => options.answer = Some(false),
                                 '-' => {

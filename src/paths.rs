@@ -17,7 +17,7 @@ macro_rules! cache_dir {
 #[macro_export]
 macro_rules! staging_dir {
     () => {
-        home_dir!() + "/.cache/fin/"
+        home_dir!() + "/.cache/fin/staging"
     };
 }
 

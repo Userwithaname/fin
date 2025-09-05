@@ -18,7 +18,9 @@ mod test_readme {
 
     #[test]
     fn consistent_config_file() {
-        if !readme().contains(&fin::default_config!()) {
+        let default_config = &fin::default_config!();
+        println!("{default_config}");
+        if !readme().contains(default_config) {
             panic!("Example configuration in the README needs to be updated");
         }
     }
