@@ -49,10 +49,15 @@ impl InstalledFonts {
             return Ok(());
         }
 
-        let contents = toml::to_string(&self.installed).map_err(|e| {
-            eprintln!("Failed to serialize installed fonts to TOML");
-            e.to_string()
-        })?;
+        let contents = toml::to_string(&self.installed)
+            .map_err(|e| {
+                eprintln!("Failed to serialize installed fonts to TOML");
+                e.to_string()
+            })?
+            .replace("[\"", "[\n\t\"")
+            .replace("\", \"", "\",\n\t\"")
+            .replace("\"]", "\"\n]");
+
         fs::write(installed_file_path!(), contents).map_err(|e| e.to_string())?;
 
         Ok(())
