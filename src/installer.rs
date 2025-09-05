@@ -82,6 +82,7 @@ impl Installer {
 
         let reqwest_client = reqwest::blocking::Client::new();
         installer.url = match installer.url.ends_with("$file") {
+            // TODO: Get the redirected URL for direct links
             true => installer.url.replace("$file", &installer.file),
             false => installer.find_direct_link(FontPage::get_font_page(
                 &installer.url.replace("$tag", &installer.tag),
@@ -241,7 +242,7 @@ impl Installer {
             })?;
         println_green!("OK");
 
-        print!("Downloading font... ");
+        print!("Downloading font ... ");
         let _ = io::stdout().flush();
 
         // TODO: Show download progress
@@ -313,8 +314,18 @@ impl Installer {
             InstallAction::SingleFile => {
                 fs::create_dir_all(&extract_to).map_err(|e| e.to_string())?;
                 let file = self.url.split('/').next_back().unwrap();
+
+                println!("Writing file:");
+                print!("   {file} ... ");
+                let _ = io::stdout().flush();
+
                 self.files.push(file.to_string());
-                fs::write(extract_to + file, data.unwrap()).map_err(|e| e.to_string())?;
+                fs::write(extract_to + file, data.unwrap()).map_err(|e| {
+                    println_red!("{e}");
+                    e.to_string()
+                })?;
+
+                println_green!("Done");
             }
         }
 
@@ -328,15 +339,14 @@ impl Installer {
         exclude: &[String],
         keep_folders: bool,
     ) -> Result<Vec<String>, String> {
-        print!("Attempting extraction... ");
-        let _ = io::stdout().flush();
+        println!("Extracting:");
 
         let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
             println_red!("Failed to read the archive");
             e.to_string()
         })?;
 
-        let files: Vec<String> = zip_archive
+        let mut files: Vec<String> = zip_archive
             .file_names()
             .map(ToString::to_string)
             .filter(|file| {
@@ -350,12 +360,16 @@ impl Installer {
                 match_any_wildcard(file, include) && !match_any_wildcard(file, exclude)
             })
             .collect();
+
         fs::create_dir_all(extract_to).map_err(|e| {
             println_red!("{e}");
             e.to_string()
         })?;
 
-        for file in &files {
+        for file in &mut files {
+            print!("   {file} ... ");
+            let _ = io::stdout().flush();
+
             let mut file_contents = Vec::new();
             zip_archive
                 .by_name(file)
@@ -369,21 +383,16 @@ impl Installer {
                     e.to_string()
                 })?;
 
-            fs::write(
-                extract_to.to_owned()
-                    + match keep_folders {
-                        true => file,
-                        false => file.split('/').next_back().unwrap(),
-                    },
-                file_contents,
-            )
-            .map_err(|e| {
+            if !keep_folders {
+                *file = file.split('/').next_back().unwrap().to_owned();
+            }
+
+            fs::write(extract_to.to_owned() + &file, file_contents).map_err(|e| {
                 println_red!("{e}");
                 e.to_string()
             })?;
+            println_green!("Done");
         }
-
-        println_green!("Done");
 
         Ok(files)
     }
@@ -395,7 +404,7 @@ impl Installer {
         exclude: &[String],
         keep_folders: bool,
     ) -> Result<Vec<String>, String> {
-        print!("Attempting extraction... ");
+        println!("Extracting: ");
         fs::create_dir_all(extract_to).map_err(|e| {
             println_red!("{e}");
             e.to_string()
@@ -404,7 +413,7 @@ impl Installer {
         let mut fonts = Vec::new();
         for mut entry in archive.entries().map_err(|e| e.to_string())? {
             let entry = entry.as_mut().unwrap();
-            let path = match keep_folders {
+            let file = match keep_folders {
                 true => entry.path().unwrap().to_string_lossy().into_owned(),
                 false => entry
                     .path()
@@ -416,17 +425,20 @@ impl Installer {
                     .to_string(),
             };
 
-            if !match_any_wildcard(&path, include) || match_any_wildcard(&path, exclude) {
+            if !match_any_wildcard(&file, include) || match_any_wildcard(&file, exclude) {
                 continue;
             }
-            if path.is_empty() || path.ends_with('/') {
+            if file.is_empty() || file.ends_with('/') {
                 // FIX: This creates all paths, regardless if they're included or not
-                fs::create_dir_all(extract_to.to_owned() + &path).map_err(|e| {
+                fs::create_dir_all(extract_to.to_owned() + &file).map_err(|e| {
                     println_red!("{e}");
                     e.to_string()
                 })?;
                 continue;
             }
+
+            print!("   {file} ... ");
+            let _ = io::stdout().flush();
 
             let mut file_contents = Vec::new();
             entry.read_to_end(&mut file_contents).map_err(|e| {
@@ -434,12 +446,12 @@ impl Installer {
                 e.to_string()
             })?;
 
-            fs::write(&(extract_to.to_owned() + &path), file_contents)
+            fs::write(&(extract_to.to_owned() + &file), file_contents)
                 .map_err(|e| e.to_string())?;
-            fonts.push(path);
-        }
+            fonts.push(file);
 
-        println_green!("Done");
+            println_green!("Done");
+        }
 
         Ok(fonts)
     }
@@ -534,7 +546,7 @@ impl Installer {
 
         match errors {
             false => {
-                println!("Successfully installed {}", self.name);
+                // println!("Successfully installed {}", self.name);
                 installed_fonts.update_entry(
                     &self.installer_name,
                     InstalledFont {

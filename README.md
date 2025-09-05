@@ -80,7 +80,8 @@ Supported fields are as follows:
 > [!IMPORTANT]
 > Unless using direct links, the font download is found within a plain
 > text version of the webpage. If the site layout or font assets change,
-> the installer may need to be updated as well.
+> the installer may need to be updated as well. Updating fonts using
+> direct links is currently not supported.
 
 > [!NOTE]
 > You can use `$name` or `$tag` as placeholders for their values

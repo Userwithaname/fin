@@ -111,7 +111,7 @@ impl InstalledFonts {
             match result {
                 Ok(()) => self
                     .remove_entry(font)
-                    .inspect(|()| println!("Removed: {dir_name}"))
+                    // .inspect(|()| println!("Removed: {dir_name}"))
                     .map(|()| Some(dir)),
                 Err(()) => {
                     println!("Errors were encountered while removing: {dir_name}");
@@ -139,7 +139,7 @@ impl InstalledFonts {
             }
 
             match fs::remove_file(file_path) {
-                Ok(()) => println_green!("Done"),
+                Ok(()) => println_green!("Removed"),
                 Err(e) => {
                     errors = true;
                     println_red!("{e}");
@@ -165,7 +165,7 @@ impl InstalledFonts {
             let target = dir.to_owned() + subdir;
             if fs::read_dir(&target).is_ok_and(|remaining| remaining.count() == 0) {
                 match fs::remove_dir(&target) {
-                    Ok(()) => println_green!("Done"),
+                    Ok(()) => println_green!("Removed"),
                     Err(e) => println_red!("{e}"),
                 }
             } else {
@@ -186,7 +186,7 @@ impl InstalledFonts {
         let _ = io::stdout().flush();
 
         match fs::remove_dir_all(dir).map_err(|e| e.to_string()) {
-            Ok(()) => println_green!("Done"),
+            Ok(()) => println_green!("Removed"),
             Err(e) => {
                 errors = true;
                 println_red!("{e}");
