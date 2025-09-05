@@ -78,10 +78,13 @@ Supported fields are as follows:
     - `[action.SingleFile]` - place the downloaded file into the installation directory directly
 
 > [!IMPORTANT]
-> Unless using direct links, the font download is found within a plain
-> text version of the webpage. If the site layout or font assets change,
-> the installer may need to be updated as well. Updating fonts using
-> direct links is currently not supported.
+> Unless using direct links, Fin looks for the font's download
+> link within the webpage source. If the site layout, links, or
+> files change, the installer may need to be updated as well.
+
+> [!NOTE]
+> Installers using direct links currently cannot detect updates
+> without changing the installer.
 
 > [!NOTE]
 > You can use `$name` or `$tag` as placeholders for their values
