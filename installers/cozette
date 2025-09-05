@@ -1,0 +1,6 @@
+name = "Cozette"
+tag = "latest"
+url = "https://api.github.com/repos/the-moonwitch/Cozette/releases/$tag"
+file = "CozetteVector.ttf"
+
+[action.SingleFile]

@@ -15,6 +15,13 @@ macro_rules! cache_dir {
 }
 
 #[macro_export]
+macro_rules! staging_dir {
+    () => {
+        home_dir!() + "/.cache/fin/"
+    };
+}
+
+#[macro_export]
 macro_rules! installers_dir_path {
     () => {
         home_dir!() + "/.config/fin/installers/"

@@ -1,5 +1,7 @@
 name = "SpaceMono Nerd Font"
 tag = "latest"
 url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
-archive = "SpaceMono.zip"
+file = "SpaceMono.zip"
+
+[action.Extract]
 include = [ "*" ]

@@ -68,11 +68,14 @@ Supported fields are as follows:
 
 - `name` - name of the font, used for the installation directory
 - `tag` - the tag/version of the font to install
-- `url` - the URL of the font's download page, which should include a direct link to the font archive
-- `archive` - the archvie name, which will be used for finding the download link within the above page's raw HTML
-- `include` - specify which files within the archive to install
-- `exclude` - specify which files to ignore (takes precedence over `include`)
-- `keep_folders` - follow the same directory structure as the archive (defaults to `false`)
+- `url` - the URL of the font's download page, which should include a direct link to the font file
+- `file` - the name of the file to download
+- `action` - what to do with the file:
+    - `[action.Extract]` - extract files from the archive; required fields:
+        - `include` - specify which files within the archive to install
+        - `exclude` - specify which files to ignore (takes precedence over `include`, defaults to none)
+        - `keep_folders` - follow the same directory structure as the archive (defaults to `false`)
+    - `[action.SingleFile]` - place the downloaded file into the installation directory directly
 
 > [!NOTE]
 > If the site layout or archive name or structure changes, the installer
@@ -83,12 +86,11 @@ Supported fields are as follows:
 > in all fields except `name` or `tag`.
 
 > [!NOTE]
-> The `archive`/`include`/`exclude` fields support wildcards.
+> The `file`/`include`/`exclude` fields support wildcards.
 
 > [!NOTE]
-> In the future, Fin may also support downloading fonts using
-> a direct link to the font archive provided as the URL, but
-> this is not currently supported.
+> In the future, Fin may also support downloading fonts using a direct
+> link provided as the URL, but this is not currently supported.
 
 ## Example installer
 
@@ -101,19 +103,18 @@ by running `fin install maple-mono`:
 name = "Maple Mono"
 tag = "latest"
 url = "https://api.github.com/repos/subframe7536/maple-font/releases/$tag"
-archive = "MapleMono-Variable.zip"
+file = "MapleMono-Variable.zip"
+
+[action.Extract]
 include = [ "LICENSE.txt", "*.ttf" ]
-exclude = [  ]
 ````
 
 ## Limitations
 
 - The installer URL may not be a direct download link
 - The installer URL must be a page which contains a direct link
-to the `archive` in plain text (e.g. it must be accessible without
+to the `file` in plain text (e.g. it must be accessible without
 JavaScript)
-- The download file must be an archive - other files are currently
-not supported
 
 # Configuration
 

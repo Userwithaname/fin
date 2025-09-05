@@ -19,13 +19,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             config::Config::write_default_config()?;
         }
         _ => {
-            let mut fonts: Box<[Font]> =
+            let mut fonts =
                 Font::get_actionable_fonts(Arc::new(args.clone()), &items, &installed_fonts)
                     .map_err(|e| e.to_string())?
                     .into();
             run(&args, &mut fonts, &mut installed_fonts).inspect_err(|_| {
                 let _ = installed_fonts.write();
-            })?
+            })?;
         }
     }
 

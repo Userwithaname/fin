@@ -1,5 +1,7 @@
 name = "Nerd Fonts Symbols Only"
 tag = "latest"
 url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
-archive = "NerdFontsSymbolsOnly.zip"
+file = "NerdFontsSymbolsOnly.zip"
+
+[action.Extract]
 include = [ "*" ]

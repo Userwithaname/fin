@@ -41,8 +41,8 @@ impl Args {
         Ok((
             Args {
                 action,
-                options,
                 config,
+                options,
             },
             items,
         ))

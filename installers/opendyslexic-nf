@@ -1,5 +1,7 @@
 name = "OpenDyslexic Nerd Font"
 tag = "latest"
 url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
-archive = "OpenDyslexic.zip"
+file = "OpenDyslexic.zip"
+
+[action.Extract]
 include = [ "*" ]

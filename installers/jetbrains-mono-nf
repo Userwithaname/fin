@@ -1,5 +1,7 @@
 name = "JetBrains Mono Nerd Font"
 tag = "latest"
 url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
-archive = "JetBrainsMono.zip"
+file = "JetBrainsMono.zip"
+
+[action.Extract]
 include = [ "*" ]

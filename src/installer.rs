@@ -4,7 +4,7 @@ use crate::wildcards::*;
 use crate::Args;
 
 use std::collections::{BTreeSet, HashMap};
-use std::fs::{self, DirEntry};
+use std::fs;
 use std::io::{self, Read, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -22,19 +22,25 @@ pub struct Installer {
     #[serde(default)]
     tag: String,
     url: String,
-    archive: String,
-    include: Box<[String]>,
-    #[serde(default)]
-    exclude: Box<[String]>,
-    #[serde(default)]
-    keep_folders: bool,
+    file: String,
+    action: InstallAction,
 
-    #[serde(default)]
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing)]
     installer_name: String,
-    #[serde(default)]
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing)]
     download_buffer: Option<Vec<u8>>,
+    #[serde(default, skip_serializing)]
+    files: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+enum InstallAction {
+    Extract {
+        include: Box<[String]>,
+        exclude: Option<Box<[String]>>,
+        keep_folders: Option<bool>,
+    },
+    SingleFile,
 }
 
 impl Installer {
@@ -75,24 +81,39 @@ impl Installer {
             cached_pages,
         )?)?;
 
-        if !match_wildcard(&installer.archive, "*.*") {
+        if !match_wildcard(&installer.file, "*.*") {
             return Err(format!(
                 "Installer for '{font_name}' did not specify a valid archive"
             ));
         }
-        installer.archive = installer.archive.replace("$tag", &installer.tag);
+        installer.file = installer.file.replace("$tag", &installer.tag);
 
-        installer.include = installer
-            .include
-            .iter()
-            .map(|file| file.replace("$tag", &installer.tag))
-            .collect();
-
-        installer.exclude = installer
-            .exclude
-            .iter()
-            .map(|file| file.replace("$tag", &installer.tag))
-            .collect();
+        match installer.action {
+            InstallAction::Extract {
+                include,
+                exclude,
+                keep_folders,
+            } => {
+                installer.action = InstallAction::Extract {
+                    include: include
+                        .iter()
+                        .map(|p| p.replace("$tag", &installer.tag))
+                        .collect(),
+                    exclude: exclude.map_or_else(
+                        || None,
+                        |p| {
+                            Some(
+                                p.iter()
+                                    .map(|p| p.replace("$tag", &installer.tag))
+                                    .collect(),
+                            )
+                        },
+                    ),
+                    keep_folders,
+                }
+            }
+            InstallAction::SingleFile => (),
+        }
 
         Ok(installer)
     }
@@ -186,7 +207,7 @@ impl Installer {
             .unwrap()
             .split('"')
             .find_map(|line| {
-                wildcard_substring(line, &(String::from("https://*") + &self.archive), b"")
+                wildcard_substring(line, &(String::from("https://*") + &self.file), b"")
             })
             .map_or_else(
                 || {
@@ -217,11 +238,11 @@ impl Installer {
             })?;
         println_green!("OK");
 
-        print!("Downloading archive... ");
+        print!("Downloading font... ");
         let _ = io::stdout().flush();
 
         // TODO: Show download progress
-        let mut archive_buffer: Vec<u8> = Vec::new();
+        let mut archive_buffer = Vec::new();
         remote_data.read_to_end(&mut archive_buffer).map_err(|e| {
             println_red!("Failed");
             e.to_string()
@@ -232,7 +253,7 @@ impl Installer {
         Ok(self)
     }
 
-    pub fn extract_archive(&mut self) -> Result<&Self, String> {
+    pub fn prepare_install(&mut self) -> Result<&Self, String> {
         let data = self.download_buffer.take();
         if data.is_none() {
             return Err(format!(
@@ -242,19 +263,55 @@ impl Installer {
             ));
         }
 
-        let reader = std::io::Cursor::new(data.unwrap());
-        let extract_to = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag);
-
-        match self.archive.split('.').next_back() {
-            Some("zip") => self.extract_zip(reader, &extract_to)?,
-            Some("gz") => self.extract_tar_gz(reader, &extract_to)?,
-            Some("xz") => self.extract_tar_xz(reader, &extract_to)?,
-            Some(_) => return Err(format!("Unsupported archive extension: {}", self.archive)),
-            None => {
-                return Err(format!(
-                    "Archive requires a file extension: {}",
-                    self.archive
-                ))
+        let extract_to = format!("{}/{}/", staging_dir!(), &self.name);
+        let _ = fs::remove_dir_all(&extract_to);
+        match &self.action {
+            InstallAction::Extract {
+                include,
+                exclude,
+                keep_folders,
+            } => {
+                let reader = std::io::Cursor::new(data.unwrap());
+                match self.file.split('.').next_back() {
+                    Some("zip") => {
+                        self.files = Self::extract_zip(
+                            reader,
+                            &extract_to,
+                            include,
+                            &exclude.clone().unwrap_or_else(|| [].into()),
+                            keep_folders.unwrap_or_default(),
+                        )?;
+                    }
+                    Some("tar") => {}
+                    Some("gz") => {
+                        self.files = Self::extract_tar_gz(
+                            reader,
+                            &extract_to,
+                            include,
+                            &exclude.clone().unwrap_or_else(|| [].into()),
+                            keep_folders.unwrap_or_default(),
+                        )?;
+                    }
+                    Some("xz") => {
+                        self.files = Self::extract_tar_xz(
+                            reader,
+                            &extract_to,
+                            include,
+                            &exclude.clone().unwrap_or_else(|| [].into()),
+                            keep_folders.unwrap_or_default(),
+                        )?;
+                    }
+                    Some(_) => return Err(format!("Unsupported archive extension: {}", self.file)),
+                    None => {
+                        return Err(format!("Archive requires a file extension: {}", self.file))
+                    }
+                }
+            }
+            InstallAction::SingleFile => {
+                fs::create_dir_all(&extract_to).map_err(|e| e.to_string())?;
+                let file = self.url.split('/').next_back().unwrap();
+                self.files.push(file.to_string());
+                fs::write(extract_to + file, data.unwrap()).map_err(|e| e.to_string())?;
             }
         }
 
@@ -262,138 +319,215 @@ impl Installer {
     }
 
     fn extract_zip(
-        &self,
         reader: std::io::Cursor<Vec<u8>>,
         extract_to: &str,
-    ) -> Result<(), String> {
+        include: &[String],
+        exclude: &[String],
+        keep_folders: bool,
+    ) -> Result<Vec<String>, String> {
         print!("Attempting extraction... ");
         let _ = io::stdout().flush();
 
         let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
-            println_red!("Failed");
+            println_red!("Failed to read the archive");
             e.to_string()
         })?;
 
-        // TODO: Extract selectively (instead of selectively moving in `install_font()`)
-        zip::ZipArchive::extract(&mut zip_archive, extract_to).map_err(|e| {
-            println_red!("Failed");
+        let files: Vec<String> = zip_archive
+            .file_names()
+            .map(ToString::to_string)
+            .filter(|file| {
+                // FIX: This creates all paths, regardless if they're included or not
+                if file.ends_with('/') {
+                    if keep_folders {
+                        let _ = fs::create_dir_all(extract_to.to_owned() + file);
+                    }
+                    return false;
+                }
+                match_any_wildcard(file, include) && !match_any_wildcard(file, exclude)
+            })
+            .collect();
+        fs::create_dir_all(extract_to).map_err(|e| {
+            println_red!("{e}");
             e.to_string()
         })?;
+
+        for file in &files {
+            let mut file_contents = Vec::new();
+            zip_archive
+                .by_name(file)
+                .map_err(|e| {
+                    println_red!("{e}");
+                    e.to_string()
+                })?
+                .read_to_end(&mut file_contents)
+                .map_err(|e| {
+                    println_red!("{e}");
+                    e.to_string()
+                })?;
+
+            fs::write(
+                extract_to.to_owned()
+                    + match keep_folders {
+                        true => file,
+                        false => file.split('/').next_back().unwrap(),
+                    },
+                file_contents,
+            )
+            .map_err(|e| {
+                println_red!("{e}");
+                e.to_string()
+            })?;
+        }
+
         println_green!("Done");
 
-        Ok(())
+        Ok(files)
+    }
+
+    fn extract_tar<R: io::Read>(
+        mut archive: Archive<R>,
+        extract_to: &str,
+        include: &[String],
+        exclude: &[String],
+        keep_folders: bool,
+    ) -> Result<Vec<String>, String> {
+        print!("Attempting extraction... ");
+        fs::create_dir_all(extract_to).map_err(|e| {
+            println_red!("{e}");
+            e.to_string()
+        })?;
+
+        let mut fonts = Vec::new();
+        for mut entry in archive.entries().map_err(|e| e.to_string())? {
+            let entry = entry.as_mut().unwrap();
+            let path = match keep_folders {
+                true => entry.path().unwrap().to_string_lossy().into_owned(),
+                false => entry
+                    .path()
+                    .unwrap()
+                    .to_string_lossy()
+                    .split('/')
+                    .next_back()
+                    .unwrap()
+                    .to_string(),
+            };
+
+            if !match_any_wildcard(&path, include) || match_any_wildcard(&path, exclude) {
+                continue;
+            }
+            if path.is_empty() || path.ends_with('/') {
+                // FIX: This creates all paths, regardless if they're included or not
+                fs::create_dir_all(extract_to.to_owned() + &path).map_err(|e| {
+                    println_red!("{e}");
+                    e.to_string()
+                })?;
+                continue;
+            }
+
+            let mut file_contents = Vec::new();
+            entry.read_to_end(&mut file_contents).map_err(|e| {
+                println_red!("{e}");
+                e.to_string()
+            })?;
+
+            fs::write(&(extract_to.to_owned() + &path), file_contents)
+                .map_err(|e| e.to_string())?;
+            fonts.push(path);
+        }
+
+        println_green!("Done");
+
+        Ok(fonts)
     }
 
     fn extract_tar_gz(
-        &self,
         reader: std::io::Cursor<Vec<u8>>,
         extract_to: &str,
-    ) -> Result<(), String> {
-        print!("Attempting extraction... ");
+        include: &[String],
+        exclude: &[String],
+        keep_folders: bool,
+    ) -> Result<Vec<String>, String> {
         let _ = io::stdout().flush();
 
         let mut tar_gz_archive = GzDecoder::new(reader);
 
-        // TODO: Extract selectively (instead of selectively moving in `install_font()`)
-        Archive::new(&mut tar_gz_archive)
-            .unpack(extract_to)
-            .map_err(|e| {
-                println_red!("Failed");
-                e.to_string()
-            })?;
-        println_green!("Done");
-
-        Ok(())
+        Self::extract_tar(
+            Archive::new(&mut tar_gz_archive),
+            extract_to,
+            include,
+            exclude,
+            keep_folders,
+        )
     }
 
     fn extract_tar_xz(
-        &self,
         _reader: std::io::Cursor<Vec<u8>>,
         _extract_to: &str,
-    ) -> Result<(), String> {
+        _include: &[String],
+        _exclude: &[String],
+        _keep_folders: bool,
+    ) -> Result<Vec<String>, String> {
         todo!("XZ format is currently unsupported");
 
         // NOTE: `tar.xz` support is currently disabled due to
         // outdated `xz` crate dependencies for `zip` and `bzip2`
 
-        // print!("Attempting extraction... ");
         // let _ = io::stdout().flush();
 
         // let mut tar_xz_archive = XzDecoder::new(reader);
 
-        // Archive::new(&mut tar_xz_archive)
-        //     .unpack(extract_to)
-        //     .map_err(|e| {
-        //         println_red!("Failed");
-        //         e.to_string()
-        //     })?;
-        // println_green!("Done");
-
-        // Ok(())
+        // Self::extract_tar(
+        //     Archive::new(&mut tar_gz_archive),
+        //     extract_to,
+        //     include,
+        //     exclude,
+        //     keep_folders,
+        // )
     }
 
-    pub fn install_font(
+    pub fn finalize_install(
         &self,
         args: &Args,
         installed_fonts: &mut InstalledFonts,
     ) -> Result<(), String> {
-        let temp_dir = format!("{}/{}/{}/", cache_dir!(), &self.name, &self.tag);
+        let staging_dir = format!("{}/{}/", staging_dir!(), &self.name);
 
-        let dest_dir = installed_fonts
+        let target_dir = installed_fonts
             .uninstall(&self.installer_name, args)?
             .unwrap_or_else(|| format!("{}/{}/", args.config.install_dir, &self.name));
 
         // Move the files specified by the installer into the target directory
         println!("Installing:");
 
-        fs::create_dir_all(&dest_dir).map_err(|err| err.to_string())?;
+        fs::create_dir_all(&target_dir).map_err(|err| err.to_string())?;
         let mut errors = false;
 
-        let mut files = Vec::new();
-        visit_dirs(Path::new(&temp_dir), &mut |file| {
-            let partial_path = &file.path().display().to_string().replace(&temp_dir, "");
-
-            // Ignore files which don't satisfy the 'include' and 'exclude' patterns
-            if !match_any_wildcard(partial_path, &self.include)
-                || match_any_wildcard(partial_path, &self.exclude)
+        for file in &self.files {
+            if let Err(e) =
+                fs::create_dir_all(Path::new(&format!("{target_dir}/{file}")).parent().unwrap())
             {
-                return;
+                println!("   {file} ... {}", red!(&e.to_string()));
+                errors = true;
+                continue;
             }
 
-            let target_path = match self.keep_folders {
-                true => {
-                    if let Err(e) = fs::create_dir_all(
-                        Path::new(&format!("{dest_dir}/{partial_path}"))
-                            .parent()
-                            .unwrap(),
-                    ) {
-                        println!("   {partial_path} ... {}", red!(&e.to_string()));
-                        errors = true;
-                        return;
-                    }
-                    partial_path
-                }
-                false => partial_path.split('/').next_back().unwrap(),
-            };
-
-            print!("   {target_path} ... ");
+            print!("   {file} ... ");
             let _ = io::stdout().flush();
 
             match fs::rename(
-                format!("{temp_dir}/{partial_path}"),
-                format!("{dest_dir}/{target_path}"),
+                format!("{staging_dir}/{file}"),
+                format!("{target_dir}/{file}"),
             ) {
                 Ok(()) => {
                     println_green!("Done");
-                    files.push(target_path.to_owned());
                 }
                 Err(e) => {
                     println_red!("{e}");
                     errors = true;
                 }
             }
-        })
-        .map_err(|e| e.to_string())?;
+        }
 
         match errors {
             false => {
@@ -402,8 +536,8 @@ impl Installer {
                     &self.installer_name,
                     InstalledFont {
                         url: self.url.clone(),
-                        dir: dest_dir,
-                        files,
+                        dir: target_dir,
+                        files: self.files.clone(),
                     },
                 );
             }
@@ -420,20 +554,4 @@ impl Installer {
             .get(&self.installer_name)
             .is_none_or(|installed| self.url != installed.url.clone())
     }
-}
-
-// https://doc.rust-lang.org/nightly/std/fs/fn.read_dir.html#examples
-fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
-    if dir.is_dir() {
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                visit_dirs(&path, cb)?;
-            } else {
-                cb(&entry);
-            }
-        }
-    }
-    Ok(())
 }

@@ -54,7 +54,7 @@ pub fn run(
             }
 
             println!("Installing: ");
-            Args::list_fonts_green(&fonts);
+            Args::list_fonts_green(fonts);
 
             if !user_prompt("Proceed?", args) {
                 break 'reinstall;
@@ -71,7 +71,7 @@ pub fn run(
             }
 
             println!("Updating: ");
-            Args::list_fonts_green(&fonts);
+            Args::list_fonts_green(fonts);
 
             if !user_prompt("Proceed?", args) {
                 break 'update;
@@ -86,13 +86,13 @@ pub fn run(
             }
 
             println!("Removing: ");
-            Args::list_fonts_red(&fonts);
+            Args::list_fonts_red(fonts);
 
             if !user_prompt("Proceed?", args) {
                 break 'remove;
             }
 
-            remove_fonts(args, &fonts, installed_fonts)?;
+            remove_fonts(args, fonts, installed_fonts)?;
         }
         Action::List => {
             fonts
@@ -144,7 +144,7 @@ fn install_fonts(
     fonts.iter_mut().for_each(|font| {
         if let Some(installer) = &mut font.installer {
             match download_and_install(args, installer, installed_fonts) {
-                Ok(_) => (),
+                Ok(()) => (),
                 Err(e) => {
                     println!("Failed to install {}:\n{}", installer.name, red!(&e));
                     errors.push(format!("{font}: {}", red!(&e)));
@@ -177,8 +177,8 @@ fn download_and_install(
 ) -> Result<(), String> {
     installer
         .download_font()?
-        .extract_archive()?
-        .install_font(args, installed_fonts)
+        .prepare_install()?
+        .finalize_install(args, installed_fonts)
 }
 
 fn remove_fonts(

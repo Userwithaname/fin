@@ -1,6 +1,8 @@
 name = "0xProto"
 tag = "latest"
 url = "https://api.github.com/repos/0xType/0xProto/releases/$tag"
-archive = "0xProto*.zip"
+file = "0xProto*.zip"
+
+[action.Extract]
 include = [ "*.ttf" ]
 exclude = [ "No-Ligatures/*", "__MACOSX/*" ]

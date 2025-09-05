@@ -1,5 +1,7 @@
 name = "Adwaita Mono Nerd Font"
 tag = "latest"
 url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
-archive = "AdwaitaMono.zip"
+file = "AdwaitaMono.zip"
+
+[action.Extract]
 include = [ "*" ]

@@ -1,0 +1,7 @@
+name = "Monaspace"
+tag = "latest"
+url = "https://api.github.com/repos/githubnext/monaspace/releases/$tag"
+file = "monaspace-variable-*.zip"
+
+[action.Extract]
+include = [ "*" ]

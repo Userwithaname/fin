@@ -1,5 +1,7 @@
 name = "Inter"
 tag = "latest"
 url = "https://api.github.com/repos/rsms/inter/releases/$tag"
-archive = "Inter-*.zip"
+file = "Inter-*.zip"
+
+[action.Extract]
 include = [ "*.txt", "Inter.ttc", "InterVariable*.ttf" ]

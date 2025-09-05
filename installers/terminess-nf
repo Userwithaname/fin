@@ -1,5 +1,7 @@
 name = "Terminess Nerd Font"
 tag = "latest"
 url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
-archive = "Terminus.zip"
+file = "Terminus.zip"
+
+[action.Extract]
 include = [ "*" ]
