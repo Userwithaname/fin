@@ -68,7 +68,7 @@ Supported fields are as follows:
 
 - `name` - name of the font, used for the installation directory
 - `tag` - the tag/version of the font to install
-- `url` - the URL of the font's download page, which should include a direct link to the font file
+- `url` - the URL to the font's download page (append `$file` for direct links)
 - `file` - the name of the file to download
 - `action` - what to do with the file:
     - `[action.Extract]` - extract files from the archive; required fields:
@@ -77,9 +77,10 @@ Supported fields are as follows:
         - `keep_folders` - follow the same directory structure as the archive (defaults to `false`)
     - `[action.SingleFile]` - place the downloaded file into the installation directory directly
 
-> [!NOTE]
-> If the site layout or archive name or structure changes, the installer
-> may need to be updated to reflect those changes as well.
+> [!IMPORTANT]
+> Unless using direct links, the font download is found within a plain
+> text version of the webpage. If the site layout or font assets change,
+> the installer may need to be updated as well.
 
 > [!NOTE]
 > You can use `$name` or `$tag` as placeholders for their values
@@ -87,10 +88,7 @@ Supported fields are as follows:
 
 > [!NOTE]
 > The `file`/`include`/`exclude` fields support wildcards.
-
-> [!NOTE]
-> In the future, Fin may also support downloading fonts using a direct
-> link provided as the URL, but this is not currently supported.
+> Wildcards are not supported inside direct link URLs.
 
 ## Example installer
 
@@ -108,13 +106,6 @@ file = "MapleMono-Variable.zip"
 [action.Extract]
 include = [ "LICENSE.txt", "*.ttf" ]
 ````
-
-## Limitations
-
-- The installer URL may not be a direct download link
-- The installer URL must be a page which contains a direct link
-to the `file` in plain text (e.g. it must be accessible without
-JavaScript)
 
 # Configuration
 

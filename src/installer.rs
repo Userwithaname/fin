@@ -74,12 +74,15 @@ impl Installer {
         }
 
         let reqwest_client = reqwest::blocking::Client::new();
-        installer.url = installer.find_direct_link(FontPage::get_font_page(
-            &installer.url.replace("$tag", &installer.tag),
-            args,
-            &reqwest_client,
-            cached_pages,
-        )?)?;
+        installer.url = match installer.url.ends_with("$file") {
+            true => installer.url.replace("$file", &installer.file),
+            false => installer.find_direct_link(FontPage::get_font_page(
+                &installer.url.replace("$tag", &installer.tag),
+                args,
+                &reqwest_client,
+                cached_pages,
+            )?)?,
+        };
 
         if !match_wildcard(&installer.file, "*.*") {
             return Err(format!(
