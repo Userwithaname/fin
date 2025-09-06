@@ -120,13 +120,16 @@ impl InstalledFonts {
                     if print_name {
                         println!("\n{dir_name}: ");
                     }
-                    print!("Removing:    ");
+                    print!("… Removing:    ");
                 }
             }
             let _ = io::stdout().flush();
 
             if !Path::new(&dir).exists() {
-                println_orange!("Not found");
+                match verbose {
+                    true => println!("{} Removing:    {}", orange!("✓"), orange!("Not found")),
+                    false => println_orange!("Not found"),
+                }
                 return self.remove_entry(font).map(|()| Some(dir));
             }
 
@@ -168,7 +171,7 @@ impl InstalledFonts {
             } else {
                 progress += 1.0;
                 bar::show_progress(
-                    "Removing:   ",
+                    "… Removing:   ",
                     progress / installed_font.files.len() as f64,
                     &format!(" {progress} / {}", installed_font.files.len()),
                 );
@@ -210,10 +213,6 @@ impl InstalledFonts {
             }
         });
 
-        if !verbose {
-            println!();
-        }
-
         directories.iter().rev().for_each(|subdir| {
             if verbose {
                 print!("   ../{dir_name}/{subdir} ... ");
@@ -246,11 +245,29 @@ impl InstalledFonts {
             }
         });
 
-        print!("{messages}");
-
         match errors {
-            false => Ok(()),
-            true => Err(()),
+            false => {
+                if !verbose {
+                    bar::show_progress(
+                        &format!("{} Removing:   ", green!("✓")),
+                        1.0,
+                        &format!(" {progress} / {}\n", &installed_font.files.len()),
+                    );
+                }
+                print!("{messages}");
+                Ok(())
+            }
+            true => {
+                if !verbose {
+                    bar::show_progress(
+                        &format!("{} Removing:   ", red!("×")),
+                        1.0,
+                        &format!(" {progress} / {}\n", &installed_font.files.len()),
+                    );
+                }
+                print!("{messages}");
+                Err(())
+            }
         }
     }
 

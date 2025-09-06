@@ -329,18 +329,23 @@ impl Installer {
                         print!("   {file} ... ");
                         let _ = io::stdout().flush();
                     }
-                    false => bar::show_progress("Staging:    ", 0.0, " 1 / 1"),
+                    false => bar::show_progress("… Staging:    ", 0.0, " 0 / 1"),
                 }
 
                 self.files.push(file.to_string());
                 fs::write(extract_to + file, data.unwrap()).map_err(|e| {
+                    bar::show_progress(&format!("{} Staging:    ", green!("✓")), 1.0, " 1 / 1\n");
                     println_red!("{e}");
                     e.to_string()
                 })?;
 
                 match verbose {
                     true => println_green!("Done"),
-                    false => bar::show_progress("Staging:    ", 1.0, " 1 / 1\n"),
+                    false => bar::show_progress(
+                        &format!("{} Staging:    ", green!("✓")),
+                        1.0,
+                        " 1 / 1\n",
+                    ),
                 }
             }
         }
@@ -403,7 +408,7 @@ impl Installer {
                     let _ = io::stdout().flush();
                 }
                 false => bar::show_progress(
-                    "Staging:    ",
+                    "… Staging:    ",
                     progress as f64 / file_count,
                     &format!(" {progress} / {file_count}"),
                 ),
@@ -413,15 +418,29 @@ impl Installer {
             zip_archive
                 .by_name(file)
                 .map_err(|e| {
-                    if verbose {
-                        println_red!("{e}");
+                    match verbose {
+                        true => println_red!("{e}"),
+                        false => {
+                            bar::show_progress(
+                                &format!("{} Staging:   ", green!("×")),
+                                1.0,
+                                &format!(" {progress} / {file_count}\n"),
+                            );
+                        }
                     }
                     e.to_string()
                 })?
                 .read_to_end(&mut file_contents)
                 .map_err(|e| {
-                    if verbose {
-                        println_red!("{e}");
+                    match verbose {
+                        true => println_red!("{e}"),
+                        false => {
+                            bar::show_progress(
+                                &format!("{} Installing: ", green!("×")),
+                                1.0,
+                                &format!(" {progress} / {file_count}\n"),
+                            );
+                        }
                     }
                     e.to_string()
                 })?;
@@ -431,16 +450,28 @@ impl Installer {
             }
 
             fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
+                if !verbose {
+                    bar::show_progress(
+                        &format!("{} Staging:    ", green!("×")),
+                        1.0,
+                        &format!(" {progress} / {file_count}\n"),
+                    );
+                }
                 println_red!("{e}");
                 e.to_string()
             })?;
+
             if verbose {
                 println_green!("Done");
             }
         }
 
         if !verbose {
-            println!();
+            bar::show_progress(
+                &format!("{} Staging:    ", green!("✓")),
+                1.0,
+                &format!(" {progress} / {file_count}\n"),
+            );
         }
 
         Ok(files)
@@ -496,7 +527,7 @@ impl Installer {
                 }
                 false => {
                     progress += 1;
-                    bar::show_progress("Staging:    ", 1.0, &format!(" {progress} / {progress}"));
+                    bar::show_progress("… Staging:    ", 1.0, &format!(" {progress} / {progress}"));
                 }
             }
 
@@ -504,7 +535,17 @@ impl Installer {
                 if keep_folders {
                     // NOTE: This creates all paths, regardless if they're included or not
                     fs::create_dir_all(extract_to.to_owned() + &file).map_err(|e| {
-                        println_red!("{e}");
+                        match verbose {
+                            true => println_red!("{e}"),
+                            false => {
+                                bar::show_progress(
+                                    &format!("{} Staging:    ", red!("×")),
+                                    1.0,
+                                    &format!(" {progress} / {progress}\n"),
+                                );
+                                println!("{file}: {}", format_red!("{e}"));
+                            }
+                        }
                         e.to_string()
                     })?;
                 }
@@ -513,12 +554,31 @@ impl Installer {
 
             let mut file_contents = Vec::new();
             entry.read_to_end(&mut file_contents).map_err(|e| {
-                println_red!("{e}");
+                match verbose {
+                    true => println_red!("{e}"),
+                    false => {
+                        bar::show_progress(
+                            &format!("{} Staging:    ", red!("×")),
+                            1.0,
+                            &format!(" {progress} / {progress}\n"),
+                        );
+                        println!("{file}: {}", format_red!("{e}"));
+                    }
+                }
                 e.to_string()
             })?;
 
-            fs::write(&(extract_to.to_owned() + &file), file_contents)
-                .map_err(|e| e.to_string())?;
+            fs::write(&(extract_to.to_owned() + &file), file_contents).map_err(|e| {
+                if !verbose {
+                    bar::show_progress(
+                        "… Staging:    ",
+                        1.0,
+                        &format!("{} {progress} / {progress}\n", red!("×")),
+                    );
+                    println!("{file}: {}", format_red!("{e}"));
+                }
+                e.to_string()
+            })?;
             fonts.push(file);
 
             if verbose {
@@ -527,6 +587,11 @@ impl Installer {
         }
 
         if !verbose {
+            bar::show_progress(
+                &format!("{} Staging:    ", green!("✓")),
+                1.0,
+                &format!(" {progress} / {progress}"),
+            );
             println!();
         }
 
@@ -629,7 +694,7 @@ impl Installer {
                 }
                 false => {
                     bar::show_progress(
-                        "Installing: ",
+                        "… Installing: ",
                         progress as f64 / self.files.len() as f64,
                         &format!(" {progress} / {}", self.files.len()),
                     );
@@ -654,13 +719,16 @@ impl Installer {
             }
         }
 
-        if !verbose {
-            println!();
-        }
-
         match errors {
             false => {
-                // println!("Successfully installed {}", self.name);
+                if !verbose {
+                    bar::show_progress(
+                        &format!("{} Installing: ", green!("✓")),
+                        1.0,
+                        &format!(" {progress} / {}\n", &self.files.len()),
+                    );
+                }
+
                 installed_fonts.lock().unwrap().update_entry(
                     &self.installer_name,
                     InstalledFont {
@@ -670,7 +738,14 @@ impl Installer {
                     },
                 );
             }
-            true => println!("Errors were encountered while installing {}", self.name),
+            true => {
+                bar::show_progress(
+                    &format!("{} Installing: ", red!("×")),
+                    1.0,
+                    &format!(" {progress} / {}\n", &self.files.len()),
+                );
+                println!("Errors were encountered while installing {}", self.name)
+            }
         }
 
         Ok(())
