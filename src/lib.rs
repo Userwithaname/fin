@@ -5,192 +5,72 @@ use crate::font::Font;
 use crate::installed::InstalledFonts;
 use crate::installer::Installer;
 
+use std::error::Error;
 use std::fs;
 use std::io::{self, Write};
+use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+
+#[macro_use]
+pub mod colors;
+#[macro_use]
+pub mod paths;
 
 pub mod action;
 pub mod args;
-pub mod colors;
 pub mod config;
 pub mod font;
 pub mod font_page;
 pub mod installed;
 pub mod options;
-pub mod paths;
 pub mod wildcards;
 
 mod installer;
 
-pub fn run(
-    args: &Args,
-    fonts: &mut Box<[Font]>,
-    installed_fonts: &mut InstalledFonts,
-) -> Result<(), String> {
-    match args.action {
-        Action::Install => 'install: {
-            args.config.panic_if_invalid();
+pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
+    let installed_fonts = Arc::new(Mutex::new(InstalledFonts::read()?));
 
-            if fonts.is_empty() {
-                println!("Nothing new to install.");
-                return Ok(());
-            }
-
-            println!("Installing: ");
-            Args::list_fonts_green(fonts);
-
-            // TODO: Inform the user of the total download size
-            if !user_prompt("Proceed?", args) {
-                break 'install;
-            }
-
-            install_fonts(args, fonts, installed_fonts)?;
+    let interrupt_signal = Arc::new(AtomicBool::new(false));
+    ctrlc::set_handler({
+        let interrupt_signal = Arc::clone(&interrupt_signal);
+        move || {
+            interrupt_signal.store(true, std::sync::atomic::Ordering::Relaxed);
         }
-        Action::Reinstall => 'reinstall: {
-            args.config.panic_if_invalid();
+    })
+    .expect("Error setting Ctrl-C handler");
 
-            if fonts.is_empty() {
-                println!("Nothing to reinstall.");
-                return Ok(());
-            }
+    let (args, items) = Args::build()?;
+    let handle = thread::Builder::new()
+        .name("fin".to_string())
+        .spawn({
+            let lock_state = lock_state.clone();
+            let installed_fonts = Arc::clone(&installed_fonts);
+            move || action::perform(&args, &items, lock_state.as_ref(), &installed_fonts)
+        })
+        .unwrap();
 
-            println!("Installing: ");
-            Args::list_fonts_green(fonts);
-
-            if !user_prompt("Proceed?", args) {
-                break 'reinstall;
-            }
-
-            install_fonts(args, fonts, installed_fonts)?;
+    let result = loop {
+        thread::sleep(Duration::from_millis(20));
+        if handle.is_finished() {
+            break handle
+                .join()
+                .unwrap_or_else(|_| Err("Thread panicked".to_string()))
+                .map_err(|e| e.into());
         }
-        Action::Update => 'update: {
-            args.config.panic_if_invalid();
-
-            if fonts.is_empty() {
-                println!("No updates found.");
-                return Ok(());
-            }
-
-            println!("Updating: ");
-            Args::list_fonts_green(fonts);
-
-            if !user_prompt("Proceed?", args) {
-                break 'update;
-            }
-
-            install_fonts(args, fonts, installed_fonts)?;
+        if interrupt_signal.load(std::sync::atomic::Ordering::Relaxed) {
+            drop(handle);
+            break Ok(());
         }
-        Action::Remove => 'remove: {
-            if fonts.is_empty() {
-                println!("Nothing to remove.");
-                return Ok(());
-            }
+    };
 
-            println!("Removing: ");
-            Args::list_fonts_red(fonts);
-
-            if !user_prompt("Proceed?", args) {
-                break 'remove;
-            }
-
-            remove_fonts(args, fonts, installed_fonts)?;
-        }
-        Action::List => {
-            fonts
-                .iter()
-                .for_each(|font| match installed_fonts.installed.get(&font.name) {
-                    Some(installed) => {
-                        if Font::has_installer(&font.name) {
-                            match args.options.verbose || args.config.verbose_list {
-                                true => {
-                                    println!("{}\n ↪ {}", format_green!("{font}"), installed.dir)
-                                }
-                                false => println_green!("{font}"),
-                            }
-                        } else {
-                            match args.options.verbose {
-                                true => println!(
-                                    "{}\n ↪ {}",
-                                    format_orange!("{font} (missing installer)"),
-                                    installed.dir
-                                ),
-                                false => println_orange!("{font} (missing installer)"),
-                            }
-                        }
-                    }
-                    None => {
-                        println!("{font}");
-                    }
-                });
-        }
-        Action::Clean => {
-            fs::remove_dir_all(cache_dir!()).map_err(|e| e.to_string())?;
-            println!("Removed the cache directory: {}", cache_dir!());
-        }
-        Action::Init | Action::Help => (),
+    installed_fonts.lock().unwrap().write()?;
+    if lock_state.is_none() {
+        let _ = fs::remove_file(lock_file_path!());
     }
 
-    installed_fonts.write()?;
-
-    Ok(())
-}
-
-// IDEA: Parallel downloads, only install after all downloads are done
-fn install_fonts(
-    args: &Args,
-    fonts: &mut Box<[Font]>,
-    installed_fonts: &mut InstalledFonts,
-) -> Result<(), String> {
-    let mut errors = Vec::new();
-    fonts.iter_mut().for_each(|font| {
-        if let Some(installer) = &mut font.installer {
-            match download_and_install(args, installer, installed_fonts) {
-                Ok(()) => (),
-                Err(e) => {
-                    println!("Failed to install {}:\n{}", installer.name, red!(&e));
-                    errors.push(format!("{font}: {}", red!(&e)));
-                }
-            }
-        } else {
-            println!("Failed to install {font}");
-            println_red!("Installer for '{font}' has not been loaded");
-            errors.push(format!(
-                "{}: {}",
-                font,
-                red!("Installer has not been loaded")
-            ));
-        }
-    });
-
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        println!("\nFailed:");
-        errors.iter().for_each(|e| println!("   {e}"));
-        Err("One or more fonts failed to install".to_string())
-    }
-}
-
-fn download_and_install(
-    args: &Args,
-    installer: &mut Installer,
-    installed_fonts: &mut InstalledFonts,
-) -> Result<(), String> {
-    installer
-        .download_font()?
-        .prepare_install()?
-        .finalize_install(args, installed_fonts)
-}
-
-fn remove_fonts(
-    args: &Args,
-    fonts: &[Font],
-    installed_fonts: &mut InstalledFonts,
-) -> Result<(), String> {
-    fonts.iter().try_for_each(|font| {
-        println!();
-        installed_fonts.uninstall(&font.name, args).map(|_| ())
-    })?;
-    Ok(())
+    result
 }
 
 #[inline]

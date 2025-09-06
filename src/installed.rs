@@ -113,15 +113,11 @@ impl InstalledFonts {
                 true => Self::remove_dir_all(&dir, dir_name),
             };
 
-            match result {
-                Ok(()) => self
-                    .remove_entry(font)
-                    // .inspect(|()| println!("Removed: {dir_name}"))
-                    .map(|()| Some(dir)),
-                Err(()) => {
-                    println!("Errors were encountered while removing: {dir_name}");
-                    Err("Failed to remove font".to_string())
-                }
+            if result.is_ok() {
+                self.remove_entry(font).map(|()| Some(dir))
+            } else {
+                println!("Errors were encountered while removing: {dir_name}");
+                Err("Failed to remove font".to_string())
             }
         } else {
             Ok(None)

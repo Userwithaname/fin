@@ -8,7 +8,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -45,6 +46,7 @@ impl FontPage {
                         .get(&url_hash)
                         .is_some_and(|entry| entry.contents.is_none())
                     {
+                        thread::sleep(Duration::from_millis(20));
                         continue;
                     }
 
@@ -61,7 +63,7 @@ impl FontPage {
             },
         );
 
-        let cache_file = format!("{}{}", cache_dir!(), &url_hash);
+        let cache_file = format!("{}{}", page_cache_dir!(), &url_hash);
         let mut font_page: FontPage =
             toml::from_str(&fs::read_to_string(&cache_file).unwrap_or_default())
                 .unwrap_or_default();

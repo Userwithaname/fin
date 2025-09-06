@@ -66,7 +66,7 @@ impl Config {
         Ok(config)
     }
 
-    pub fn write_default_config() -> Result<Self, String> {
+    pub fn write_default_config() -> Result<(), String> {
         fs::create_dir_all(config_dir_path!()).map_err(|e| e.to_string())?;
 
         let config_file_path = config_file_path!();
@@ -75,12 +75,7 @@ impl Config {
             let _ = fs::rename(config_file, Path::new(&(config_file_path!() + "~")));
         }
 
-        fs::write(config_file_path!(), default_config!()).map_err(|e| e.to_string())?;
-        println!(
-            "Created a new configuration file on disk:\n{}",
-            config_file_path!()
-        );
-        Ok(Self::default())
+        fs::write(config_file_path!(), default_config!()).map_err(|e| e.to_string())
     }
 
     pub fn panic_if_invalid(&self) {

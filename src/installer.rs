@@ -184,8 +184,11 @@ impl Installer {
     /// Returns the installer names of all installed fonts matched by
     /// any of the provided filter patterns
     #[must_use]
-    pub fn filter_installed(filters: &[String], installed_fonts: &InstalledFonts) -> Vec<String> {
-        let installed_fonts = installed_fonts.get_names();
+    pub fn filter_installed(
+        filters: &[String],
+        installed_fonts: &Arc<Mutex<InstalledFonts>>,
+    ) -> Vec<String> {
+        let installed_fonts = installed_fonts.lock().unwrap().get_names();
 
         let matches = match_wildcards_multi(&installed_fonts, filters);
         let mut installed = BTreeSet::new();
@@ -389,7 +392,7 @@ impl Installer {
                 *file = file.split('/').next_back().unwrap().to_owned();
             }
 
-            fs::write(extract_to.to_owned() + &file, file_contents).map_err(|e| {
+            fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
                 println_red!("{e}");
                 e.to_string()
             })?;
@@ -510,11 +513,13 @@ impl Installer {
     pub fn finalize_install(
         &self,
         args: &Args,
-        installed_fonts: &mut InstalledFonts,
+        installed_fonts: &Arc<Mutex<InstalledFonts>>,
     ) -> Result<(), String> {
         let staging_dir = format!("{}/{}/", staging_dir!(), &self.name);
 
         let target_dir = installed_fonts
+            .lock()
+            .unwrap()
             .uninstall(&self.installer_name, args)?
             .unwrap_or_else(|| format!("{}/{}/", args.config.install_dir, &self.name));
 
@@ -553,7 +558,7 @@ impl Installer {
         match errors {
             false => {
                 // println!("Successfully installed {}", self.name);
-                installed_fonts.update_entry(
+                installed_fonts.lock().unwrap().update_entry(
                     &self.installer_name,
                     InstalledFont {
                         url: self.url.clone(),
@@ -569,8 +574,10 @@ impl Installer {
     }
 
     #[must_use]
-    pub fn has_updates(&self, installed_fonts: &InstalledFonts) -> bool {
+    pub fn has_updates(&self, installed_fonts: &Arc<Mutex<InstalledFonts>>) -> bool {
         installed_fonts
+            .lock()
+            .unwrap()
             .installed
             .get(&self.installer_name)
             .is_none_or(|installed| self.url != installed.url.clone())

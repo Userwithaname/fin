@@ -84,9 +84,9 @@ impl Font {
     }
 
     pub fn get_actionable_fonts(
-        args: Arc<Args>,
+        args: &Arc<Args>,
         filters: &[String],
-        installed_fonts: &InstalledFonts,
+        installed_fonts: &Arc<Mutex<InstalledFonts>>,
     ) -> Result<Vec<Font>, FontParseError> {
         let needs_installer;
         let actionable_fonts: Vec<String> = match args.action {
@@ -175,6 +175,11 @@ impl Font {
                         }
                         fonts.iter().map(ToString::to_string).collect()
                     }
+                    "help" => {
+                        println!("Supported items: [installed/available/all]");
+                        // println!("Usages:\n  fin list\n  fin list all \n  fin list available\n  fin list installed");
+                        return Ok(vec![]);
+                    }
                     item => {
                         println!(
                             "Cannot list: '{item}'\nSupported items: [installed/available/all]"
@@ -192,11 +197,12 @@ impl Font {
         };
 
         let cached_pages = Arc::new(Mutex::new(HashMap::<u64, FontPage>::new()));
-        fs::create_dir_all(cache_dir!()).map_err(|e| FontParseError::Generic(e.to_string()))?;
+        fs::create_dir_all(page_cache_dir!())
+            .map_err(|e| FontParseError::Generic(e.to_string()))?;
 
         let mut handles = Vec::new();
         for font in actionable_fonts {
-            let args = Arc::clone(&args);
+            let args = Arc::clone(args);
             let cached_pages = Arc::clone(&cached_pages);
             handles.push(thread::spawn(move || {
                 Font::parse(args, &font, needs_installer, cached_pages)
