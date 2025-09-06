@@ -11,7 +11,8 @@ pub struct Config {
     pub cache_timeout: u64,
     pub verbose_mode: bool,
     pub verbose_list: bool,
-    pub verbose_cache: bool,
+    pub verbose_urls: bool,
+    pub verbose_files: bool,
 }
 
 impl Default for Config {
@@ -21,7 +22,8 @@ impl Default for Config {
             cache_timeout: 90,
             verbose_mode: false,
             verbose_list: false,
-            verbose_cache: false,
+            verbose_files: false,
+            verbose_urls: false,
         }
     }
 }
@@ -39,11 +41,14 @@ cache_timeout = 90
 # Show verbose output by default (pass --no-verbose to negate)
 verbose_mode = false
 
+# Show verbose cache-related output
+verbose_urls = false
+
 # Show installed paths when running the 'list' command
 verbose_list = false
 
-# Show verbose cache-related output
-verbose_cache = false
+# Show verbose output when adding or removing files
+verbose_files = false
 "#
     };
 }

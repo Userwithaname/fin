@@ -34,7 +34,7 @@ impl FontPage {
         if let Some(font_page) = font_page {
             match font_page.contents.clone() {
                 Some(_) => {
-                    if args.options.verbose | args.config.verbose_cache {
+                    if args.options.verbose | args.config.verbose_urls {
                         println!("Reading cache (RAM):  {url} ({url_hash})");
                     }
                     return Ok(font_page);
@@ -78,7 +78,7 @@ impl FontPage {
             || args.options.refresh
             || system_time.wrapping_sub(font_page.time) >= args.config.cache_timeout
         {
-            if args.options.verbose | args.config.verbose_cache {
+            if args.options.verbose | args.config.verbose_urls {
                 println!("Updating cache:       {url} ({url_hash})");
             }
             let page = client
@@ -107,7 +107,7 @@ impl FontPage {
                 cached_pages.lock().unwrap().remove_entry(&url_hash);
                 e.to_string()
             })?;
-        } else if args.options.verbose | args.config.verbose_cache {
+        } else if args.options.verbose | args.config.verbose_urls {
             println!("Reading cache (disk): {url} ({url_hash})");
         }
 

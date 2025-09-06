@@ -22,14 +22,15 @@ pub mod paths;
 
 pub mod action;
 pub mod args;
+pub mod bar;
 pub mod config;
-pub mod font;
-pub mod font_page;
-pub mod installed;
-pub mod options;
 pub mod wildcards;
 
+mod font;
+mod font_page;
+mod installed;
 mod installer;
+mod options;
 
 pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
     let installed_fonts = Arc::new(Mutex::new(InstalledFonts::read()?));

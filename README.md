@@ -129,11 +129,14 @@ cache_timeout = 90
 # Show verbose output by default (pass --no-verbose to negate)
 verbose_mode = false
 
+# Show verbose cache-related output
+verbose_urls = false
+
 # Show installed paths when running the 'list' command
 verbose_list = false
 
-# Show verbose cache-related output
-verbose_cache = false
+# Show verbose output when adding or removing files
+verbose_files = false
 ```
 
 # Building from source

@@ -53,7 +53,7 @@ Arguments:
                     options.refresh = false;
                 }
                 "--no-verbose" => {
-                    config.verbose_cache = false;
+                    config.verbose_urls = false;
                     config.verbose_list = false;
                     options.verbose = false;
                 }

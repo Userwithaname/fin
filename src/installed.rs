@@ -1,4 +1,5 @@
 use crate::args::Args;
+use crate::bar;
 use crate::home_dir;
 use crate::installed_file_path;
 
@@ -93,7 +94,13 @@ impl InstalledFonts {
     /// - `Ok(Some(dir))`: upon successful removal
     /// - `Ok(None)`: if the font is not installed
     /// - `Err(…)`: if errors were encountered
-    pub fn uninstall(&mut self, font: &str, args: &Args) -> Result<Option<String>, String> {
+    pub fn uninstall(
+        &mut self,
+        font: &str,
+        args: &Args,
+        print_name: bool,
+    ) -> Result<Option<String>, String> {
+        let verbose = args.options.verbose || args.config.verbose_files;
         if let Some(installed_font) = self.installed.get(font) {
             let dir = installed_font.dir.clone();
 
@@ -101,15 +108,34 @@ impl InstalledFonts {
             dir_iter.next_back();
             let dir_name = dir_iter.next_back().unwrap_or("(unknown)");
 
-            println!("Removing {dir_name}: ");
+            match verbose {
+                true => {
+                    if print_name {
+                        print!("Removing {dir_name}: ");
+                    } else {
+                        print!("Removing: ");
+                    }
+                }
+                false => {
+                    if print_name {
+                        println!("\n{dir_name}: ");
+                    }
+                    print!("Removing:    ");
+                }
+            }
+            let _ = io::stdout().flush();
 
             if !Path::new(&dir).exists() {
                 println_orange!("Not found");
                 return self.remove_entry(font).map(|()| Some(dir));
             }
 
+            if verbose {
+                println!();
+            }
+
             let result = match args.options.force {
-                false => Self::remove_files(installed_font, &dir, dir_name),
+                false => Self::remove_files(installed_font, &dir, dir_name, verbose),
                 true => Self::remove_dir_all(&dir, dir_name),
             };
 
@@ -124,26 +150,51 @@ impl InstalledFonts {
         }
     }
 
-    fn remove_files(installed_font: &InstalledFont, dir: &str, dir_name: &str) -> Result<(), ()> {
+    fn remove_files(
+        installed_font: &InstalledFont,
+        dir: &str,
+        dir_name: &str,
+        verbose: bool,
+    ) -> Result<(), ()> {
         let mut errors = false;
 
         let mut directories: BTreeSet<String> = [String::new()].into();
+        let mut progress = 0.0;
+        let mut messages = String::new();
         installed_font.files.iter().for_each(|file| {
-            print!("   {file} ... ");
-            let _ = io::stdout().flush();
+            if verbose {
+                print!("   {file} ... ");
+                let _ = io::stdout().flush();
+            } else {
+                progress += 1.0;
+                bar::show_progress(
+                    "Removing:   ",
+                    progress / installed_font.files.len() as f64,
+                    &format!(" {progress} / {}", installed_font.files.len()),
+                );
+            }
 
             let file_path = format!("{dir}/{file}");
             let file_path = Path::new(&file_path);
             if !file_path.exists() {
-                println_orange!("Missing");
+                if verbose {
+                    println_orange!("Missing");
+                }
                 return;
             }
 
             match fs::remove_file(file_path) {
-                Ok(()) => println_green!("Removed"),
+                Ok(()) => {
+                    if verbose {
+                        println_green!("Removed")
+                    }
+                }
                 Err(e) => {
                     errors = true;
-                    println_red!("{e}");
+                    match verbose {
+                        true => println_red!("{e}"),
+                        false => messages += &format!("{file}: {}", format_red!("{e}")),
+                    }
                 }
             }
 
@@ -159,20 +210,43 @@ impl InstalledFonts {
             }
         });
 
+        if !verbose {
+            println!();
+        }
+
         directories.iter().rev().for_each(|subdir| {
-            print!("   ../{dir_name}/{subdir} ... ");
-            let _ = io::stdout().flush();
+            if verbose {
+                print!("   ../{dir_name}/{subdir} ... ");
+                let _ = io::stdout().flush();
+            }
 
             let target = dir.to_owned() + subdir;
             if fs::read_dir(&target).is_ok_and(|remaining| remaining.count() == 0) {
                 match fs::remove_dir(&target) {
-                    Ok(()) => println_green!("Removed"),
-                    Err(e) => println_red!("{e}"),
+                    Ok(()) => {
+                        if verbose {
+                            println_green!("Removed")
+                        }
+                    }
+                    Err(e) => match verbose {
+                        true => println_red!("{e}"),
+                        false => messages += &format!("../{dir_name}/{subdir}: {e}\n"),
+                    },
                 }
             } else {
-                println_orange!("Not removed: Directory not empty");
+                match verbose {
+                    true => println_orange!("Not removed: Directory not empty"),
+                    false => {
+                        messages += &format!(
+                            "../{dir_name}/{subdir}: {}\n",
+                            format_orange!("Not removed: Directory not empty")
+                        )
+                    }
+                }
             }
         });
+
+        print!("{messages}");
 
         match errors {
             false => Ok(()),

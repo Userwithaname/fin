@@ -1,3 +1,4 @@
+use crate::bar;
 use crate::font_page::FontPage;
 use crate::installed::{InstalledFont, InstalledFonts};
 use crate::wildcards::*;
@@ -21,7 +22,7 @@ pub struct Installer {
     pub name: String,
     #[serde(default)]
     tag: String,
-    url: String,
+    pub url: String,
     file: String,
     action: InstallAction,
 
@@ -230,9 +231,7 @@ impl Installer {
     pub fn download_font(&mut self) -> Result<&mut Self, String> {
         let reqwest_client = reqwest::blocking::Client::new();
 
-        println!("\n{}:", &self.name);
-
-        print!("Awaiting response: {} ... ", &self.url);
+        print!("… Awaiting response");
         let _ = io::stdout().flush();
 
         let mut remote_data = reqwest_client
@@ -240,27 +239,29 @@ impl Installer {
             .header(USER_AGENT, "fin")
             .send()
             .map_err(|e| {
-                println_red!("Error");
+                println!("\r{} Awaiting response", red!("×"));
                 e.to_string()
             })?;
-        println_green!("OK");
+        println!("\r{} Awaiting response", green!("✓"));
 
-        print!("Downloading ... ");
-        let _ = io::stdout().flush();
+        let filename = &self.url.split('/').next_back().unwrap_or_default();
 
         // TODO: Show download progress
+        print!("… Downloading: {filename}");
+        let _ = io::stdout().flush();
+
         let mut archive_buffer = Vec::new();
         remote_data.read_to_end(&mut archive_buffer).map_err(|e| {
-            println_red!("Failed");
+            println!("\r{} Downloading: {filename}", red!("×"));
             e.to_string()
         })?;
         self.download_buffer = Some(archive_buffer);
-        println_green!("Done");
+        println!("\r{} Downloading: {filename}", green!("✓"));
 
         Ok(self)
     }
 
-    pub fn prepare_install(&mut self) -> Result<&Self, String> {
+    pub fn prepare_install(&mut self, args: &Args) -> Result<&Self, String> {
         let data = self.download_buffer.take();
         if data.is_none() {
             return Err(format!(
@@ -282,6 +283,7 @@ impl Installer {
                 match self.file.split('.').next_back() {
                     Some("zip") => {
                         self.files = Self::extract_zip(
+                            args,
                             reader,
                             &extract_to,
                             include,
@@ -292,6 +294,7 @@ impl Installer {
                     Some("tar") => {}
                     Some("gz") => {
                         self.files = Self::extract_tar_gz(
+                            args,
                             reader,
                             &extract_to,
                             include,
@@ -301,6 +304,7 @@ impl Installer {
                     }
                     Some("xz") => {
                         self.files = Self::extract_tar_xz(
+                            args,
                             reader,
                             &extract_to,
                             include,
@@ -315,12 +319,18 @@ impl Installer {
                 }
             }
             InstallAction::SingleFile => {
+                let verbose = args.options.verbose || args.config.verbose_files;
                 fs::create_dir_all(&extract_to).map_err(|e| e.to_string())?;
                 let file = self.url.split('/').next_back().unwrap();
 
-                println!("Writing file:");
-                print!("   {file} ... ");
-                let _ = io::stdout().flush();
+                match verbose {
+                    true => {
+                        println!("Staging:");
+                        print!("   {file} ... ");
+                        let _ = io::stdout().flush();
+                    }
+                    false => bar::show_progress("Staging:    ", 0.0, " 1 / 1"),
+                }
 
                 self.files.push(file.to_string());
                 fs::write(extract_to + file, data.unwrap()).map_err(|e| {
@@ -328,7 +338,10 @@ impl Installer {
                     e.to_string()
                 })?;
 
-                println_green!("Done");
+                match verbose {
+                    true => println_green!("Done"),
+                    false => bar::show_progress("Staging:    ", 1.0, " 1 / 1\n"),
+                }
             }
         }
 
@@ -336,19 +349,25 @@ impl Installer {
     }
 
     fn extract_zip(
+        args: &Args,
         reader: std::io::Cursor<Vec<u8>>,
         extract_to: &str,
         include: &[String],
         exclude: &[String],
         keep_folders: bool,
     ) -> Result<Vec<String>, String> {
-        println!("Extracting:");
-
+        let verbose = args.options.verbose || args.config.verbose_files;
+        match verbose {
+            true => println!("Staging:"),
+            false => print!("Staging:"),
+        }
         let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
             println_red!("Failed to read the archive");
             e.to_string()
         })?;
 
+        let mut progress = 0;
+        let mut file_count = 0f64;
         let mut files: Vec<String> = zip_archive
             .file_names()
             .map(ToString::to_string)
@@ -362,7 +381,12 @@ impl Installer {
                     }
                     return false;
                 }
-                match_any_wildcard(file, include) && !match_any_wildcard(file, exclude)
+                if match_any_wildcard(file, include) && !match_any_wildcard(file, exclude) {
+                    file_count += 1.0;
+                    true
+                } else {
+                    false
+                }
             })
             .collect();
 
@@ -372,19 +396,33 @@ impl Installer {
         })?;
 
         for file in &mut files {
-            print!("   {file} ... ");
-            let _ = io::stdout().flush();
+            progress += 1;
+            match verbose {
+                true => {
+                    print!("   {file} ... ");
+                    let _ = io::stdout().flush();
+                }
+                false => bar::show_progress(
+                    "Staging:    ",
+                    progress as f64 / file_count,
+                    &format!(" {progress} / {file_count}"),
+                ),
+            }
 
             let mut file_contents = Vec::new();
             zip_archive
                 .by_name(file)
                 .map_err(|e| {
-                    println_red!("{e}");
+                    if verbose {
+                        println_red!("{e}");
+                    }
                     e.to_string()
                 })?
                 .read_to_end(&mut file_contents)
                 .map_err(|e| {
-                    println_red!("{e}");
+                    if verbose {
+                        println_red!("{e}");
+                    }
                     e.to_string()
                 })?;
 
@@ -396,28 +434,44 @@ impl Installer {
                 println_red!("{e}");
                 e.to_string()
             })?;
-            println_green!("Done");
+            if verbose {
+                println_green!("Done");
+            }
+        }
+
+        if !verbose {
+            println!();
         }
 
         Ok(files)
     }
 
     fn extract_tar<R: io::Read>(
+        args: &Args,
         mut archive: Archive<R>,
         extract_to: &str,
         include: &[String],
         exclude: &[String],
         keep_folders: bool,
     ) -> Result<Vec<String>, String> {
-        println!("Extracting: ");
+        let verbose = args.options.verbose || args.config.verbose_files;
+        match verbose {
+            true => println!("Staging:"),
+            false => {
+                print!("Staging:");
+                let _ = io::stdout().flush();
+            }
+        }
 
         fs::create_dir_all(extract_to).map_err(|e| {
             println!("   Directory creation error: {}", format_red!("{e}"));
             e.to_string()
         })?;
 
+        let mut progress = 0;
         let mut fonts = Vec::new();
-        for mut entry in archive.entries().map_err(|e| e.to_string())? {
+        let entries = archive.entries().map_err(|e| e.to_string())?.into_iter();
+        for mut entry in entries {
             let entry = entry.as_mut().unwrap();
             let file = match keep_folders {
                 true => entry.path().unwrap().to_string_lossy().into_owned(),
@@ -435,8 +489,16 @@ impl Installer {
                 continue;
             }
 
-            print!("   {file} ... ");
-            let _ = io::stdout().flush();
+            match verbose {
+                true => {
+                    print!("   {file} ... ");
+                    let _ = io::stdout().flush();
+                }
+                false => {
+                    progress += 1;
+                    bar::show_progress("Staging:    ", 1.0, &format!(" {progress} / {progress}"));
+                }
+            }
 
             if file.is_empty() || file.ends_with('/') {
                 if keep_folders {
@@ -459,13 +521,20 @@ impl Installer {
                 .map_err(|e| e.to_string())?;
             fonts.push(file);
 
-            println_green!("Done");
+            if verbose {
+                println_green!("Done");
+            }
+        }
+
+        if !verbose {
+            println!();
         }
 
         Ok(fonts)
     }
 
     fn extract_tar_gz(
+        args: &Args,
         reader: std::io::Cursor<Vec<u8>>,
         extract_to: &str,
         include: &[String],
@@ -477,6 +546,7 @@ impl Installer {
         let mut tar_gz_archive = GzDecoder::new(reader);
 
         Self::extract_tar(
+            args,
             Archive::new(&mut tar_gz_archive),
             extract_to,
             include,
@@ -486,6 +556,7 @@ impl Installer {
     }
 
     fn extract_tar_xz(
+        _args: &Args,
         _reader: std::io::Cursor<Vec<u8>>,
         _extract_to: &str,
         _include: &[String],
@@ -502,6 +573,7 @@ impl Installer {
         // let mut tar_xz_archive = XzDecoder::new(reader);
 
         // Self::extract_tar(
+        //     args,
         //     Archive::new(&mut tar_gz_archive),
         //     extract_to,
         //     include,
@@ -515,44 +587,75 @@ impl Installer {
         args: &Args,
         installed_fonts: &Arc<Mutex<InstalledFonts>>,
     ) -> Result<(), String> {
+        let verbose = args.options.verbose | args.config.verbose_files;
         let staging_dir = format!("{}/{}/", staging_dir!(), &self.name);
-
         let target_dir = installed_fonts
             .lock()
             .unwrap()
-            .uninstall(&self.installer_name, args)?
+            .uninstall(&self.installer_name, args, false)?
             .unwrap_or_else(|| format!("{}/{}/", args.config.install_dir, &self.name));
 
-        // Move the files specified by the installer into the target directory
-        println!("Installing:");
-
         fs::create_dir_all(&target_dir).map_err(|err| err.to_string())?;
-        let mut errors = false;
 
+        match verbose {
+            true => println!("Installing:"),
+            false => {
+                print!("Installing:");
+                let _ = io::stdout().flush();
+            }
+        }
+
+        let mut errors = false;
+        let mut progress = 0;
+
+        // Move the files specified by the installer into the target directory
         for file in &self.files {
             if let Err(e) =
                 fs::create_dir_all(Path::new(&format!("{target_dir}/{file}")).parent().unwrap())
             {
-                println!("   {file} ... {}", red!(&e.to_string()));
+                match verbose {
+                    true => println!("   {file} ... {}", format_red!("{e}")),
+                    false => println!("\n{file}: {}", format_red!("{e}")),
+                }
                 errors = true;
                 continue;
             }
 
-            print!("   {file} ... ");
-            let _ = io::stdout().flush();
+            progress += 1;
+            match verbose {
+                true => {
+                    print!("   {file} ... ");
+                    let _ = io::stdout().flush();
+                }
+                false => {
+                    bar::show_progress(
+                        "Installing: ",
+                        progress as f64 / self.files.len() as f64,
+                        &format!(" {progress} / {}", self.files.len()),
+                    );
+                }
+            }
 
             match fs::rename(
                 format!("{staging_dir}/{file}"),
                 format!("{target_dir}/{file}"),
             ) {
                 Ok(()) => {
-                    println_green!("Done");
+                    if verbose {
+                        println_green!("Done");
+                    }
                 }
                 Err(e) => {
-                    println_red!("{e}");
+                    if verbose {
+                        println_red!("{e}");
+                    }
                     errors = true;
                 }
             }
+        }
+
+        if !verbose {
+            println!();
         }
 
         match errors {

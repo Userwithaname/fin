@@ -339,12 +339,18 @@ fn install_fonts(
             match download_and_install(args, installer, installed_fonts) {
                 Ok(()) => (),
                 Err(e) => {
-                    println!("Failed to install {}:\n{}", installer.name, red!(&e));
+                    match args.options.verbose || args.config.verbose_files {
+                        true => println!("Failed to install {}:\n{}", installer.name, red!(&e)),
+                        false => println!("\nFailed to install {}:\n{}", installer.name, red!(&e)),
+                    }
                     errors.push(format!("{font}: {}", red!(&e)));
                 }
             }
         } else {
-            println!("Failed to install {font}");
+            match args.options.verbose || args.config.verbose_files {
+                true => println!("Failed to install {font}"),
+                false => println!("\nFailed to install {font}"),
+            }
             println_red!("Installer for '{font}' has not been loaded");
             errors.push(format!(
                 "{}: {}",
@@ -368,9 +374,13 @@ fn download_and_install(
     installer: &mut Installer,
     installed_fonts: &Arc<Mutex<InstalledFonts>>,
 ) -> Result<(), String> {
+    match args.options.verbose || args.config.verbose_urls {
+        true => println!("\n{} ({}): ", installer.name, installer.url),
+        false => println!("\n{}:", installer.name),
+    }
     installer
         .download_font()?
-        .prepare_install()?
+        .prepare_install(args)?
         .finalize_install(args, installed_fonts)
 }
 
@@ -380,11 +390,10 @@ fn remove_fonts(
     installed_fonts: &Arc<Mutex<InstalledFonts>>,
 ) -> Result<(), String> {
     fonts.iter().try_for_each(|font| {
-        println!();
         installed_fonts
             .lock()
             .unwrap()
-            .uninstall(&font.name, args)
+            .uninstall(&font.name, args, true)
             .map(|_| ())
     })?;
     Ok(())
