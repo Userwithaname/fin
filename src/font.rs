@@ -199,7 +199,7 @@ Items:
                 needs_installer = false;
                 fonts
             }
-            Action::Clean | Action::Config | Action::Help => {
+            Action::Clean | Action::Config | Action::Version | Action::Help => {
                 return Ok(vec![]);
             }
         };

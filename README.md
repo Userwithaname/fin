@@ -40,6 +40,7 @@ Actions:
     list                  List installed or available fonts
     clean                 Remove temporary cache files
     config                Manage the configuration file
+    version               Show the current version number
     help                  Show this help message
 
 Arguments:

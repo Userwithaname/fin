@@ -13,6 +13,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+pub const VERSION: &'static str = "0.1.0";
+
 #[macro_use]
 pub mod colors;
 #[macro_use]

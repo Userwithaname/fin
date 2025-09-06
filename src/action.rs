@@ -19,6 +19,7 @@ pub enum Action {
     List,
     Clean,
     Config,
+    Version,
     Help,
 }
 
@@ -35,6 +36,7 @@ Actions:
     list                  List installed or available fonts
     clean                 Remove temporary cache files
     config                Manage the configuration file
+    version               Show the current version number
     help                  Show this help message
 "
     }
@@ -47,8 +49,9 @@ Actions:
                 "update" | "upgrade" | "up" => Action::Update,
                 "remove" | "uninstall" | "rm" => Action::Remove,
                 "list" | "ls" => Action::List,
-                "clean" => Action::Clean,
-                "config" => Action::Config,
+                "clean" | "clear" => Action::Clean,
+                "config" | "cfg" => Action::Config,
+                "version" | "ver" | "v" => Action::Version,
                 "help" | "h" => Action::Help,
                 _ => {
                     show_help();
@@ -230,28 +233,28 @@ Items:
                         let target = cache_dir!();
                         if fs::exists(&target).unwrap_or(true) {
                             fs::remove_dir_all(&target).map_err(|e| e.to_string())?;
-                            println!("Removed the cache directory: {}", target);
+                            println!("Removed the cache directory: {target}");
                         }
                     }
                     "pages" => {
                         let target = page_cache_dir!();
                         if fs::exists(&target).unwrap_or(true) {
                             fs::remove_dir_all(&target).map_err(|e| e.to_string())?;
-                            println!("Removed the page cache directory: {}", target);
+                            println!("Removed the page cache directory: {target}");
                         }
                     }
                     "staging" => {
                         let target = staging_dir!();
                         if fs::exists(&target).unwrap_or(true) {
                             fs::remove_dir_all(&target).map_err(|e| e.to_string())?;
-                            println!("Removed the staging directory: {}", target);
+                            println!("Removed the staging directory: {target}");
                         }
                     }
                     "state" => {
                         let target = lock_file_path!();
                         if fs::exists(&target).unwrap_or(true) {
                             fs::remove_file(&target).map_err(|e| e.to_string())?;
-                            println!("Removed the lock file: {}", target);
+                            println!("Removed the lock file: {target}");
                         }
                     }
                     "help" => {
@@ -296,7 +299,7 @@ Items:
                     let target = config_file_path!();
                     if fs::exists(&target).unwrap_or_default() {
                         fs::remove_file(&target).map_err(|e| e.to_string())?;
-                        println!("Deleted the configuration file:\n{}", config_file_path!());
+                        println!("Deleted the configuration file:\n{target}");
                     } else {
                         println!("The configuration file does not exist");
                     }
@@ -308,6 +311,9 @@ Items:
                     println!("{usage}\nUnrecognized item: '{item}'");
                 }
             }
+        }
+        Action::Version => {
+            println!("{}", crate::VERSION);
         }
         Action::Help => {
             show_help();
