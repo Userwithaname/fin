@@ -55,6 +55,7 @@ Arguments:
                 "--no-verbose" => {
                     config.verbose_urls = false;
                     config.verbose_list = false;
+                    config.verbose_files = false;
                     options.verbose = false;
                 }
                 "--verbose" => options.verbose = true,
