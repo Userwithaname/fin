@@ -1,4 +1,4 @@
-const BAR_SIZE: u8 = 32;
+const BAR_SIZE: u8 = 20;
 
 pub fn show_progress(prefix: &str, progress: f64, suffix: &str) {
     use std::io::{stdout, Write};

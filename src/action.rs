@@ -363,8 +363,8 @@ fn install_fonts(
     if errors.is_empty() {
         Ok(())
     } else {
-        println!("\nFailed:");
-        errors.iter().for_each(|e| println!("   {e}"));
+        println!();
+        errors.iter().for_each(|e| println!("{e}"));
         Err("One or more fonts failed to install".to_string())
     }
 }
