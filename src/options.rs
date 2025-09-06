@@ -58,6 +58,12 @@ Arguments:
                     config.verbose_files = false;
                     options.verbose = false;
                 }
+                "--no-verbose-files" => config.verbose_files = false,
+                "--no-verbose-list" => config.verbose_list = false,
+                "--no-verbose-urls" => config.verbose_urls = false,
+                "--verbose-files" => config.verbose_files = true,
+                "--verbose-list" => config.verbose_list = true,
+                "--verbose-urls" => config.verbose_urls = true,
                 "--verbose" => options.verbose = true,
                 "--force" => options.force = true,
                 "--yes" => options.answer = Some(true),
