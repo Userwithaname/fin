@@ -37,9 +37,9 @@ Actions:
     reinstall             Reinstall fonts
     update                Update installed fonts
     remove                Remove installed fonts
-    clean                 Remove temporary cache files
     list                  List installed or available fonts
-    init                  Create a new configuration file
+    clean                 Remove temporary cache files
+    config                Manage the configuration file
     help                  Show this help message
 
 Arguments:
@@ -116,7 +116,7 @@ include = [ "LICENSE.txt", "*.ttf" ]
 Fin can be configured using the `config.toml` file in your `~/.config/fin/`
 directory.
 
-Running `fin init` will create the following configuration:
+Running `fin config default` will create the following configuration:
 
 ```toml
 # Default location for installing new fonts

@@ -20,8 +20,9 @@ mod test_actions {
 
     #[test]
     fn help_includes_all_actions() {
-        let all_actions =
-            ensure_exhaustive!(Action, Install, Reinstall, Update, Remove, List, Clean, Init, Help);
+        let all_actions = ensure_exhaustive!(
+            Action, Install, Reinstall, Update, Remove, List, Clean, Config, Help
+        );
         let help_actions = Action::help_actions();
         print!("{help_actions}");
 

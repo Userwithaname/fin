@@ -17,8 +17,8 @@ pub enum Action {
     Update,
     Remove,
     List,
-    Init,
     Clean,
+    Config,
     Help,
 }
 
@@ -32,9 +32,9 @@ Actions:
     reinstall             Reinstall fonts
     update                Update installed fonts
     remove                Remove installed fonts
-    clean                 Remove temporary cache files
     list                  List installed or available fonts
-    init                  Create a new configuration file
+    clean                 Remove temporary cache files
+    config                Manage the configuration file
     help                  Show this help message
 "
     }
@@ -46,9 +46,9 @@ Actions:
                 "reinstall" => Action::Reinstall,
                 "update" | "upgrade" | "up" => Action::Update,
                 "remove" | "uninstall" | "rm" => Action::Remove,
-                "clean" => Action::Clean,
                 "list" | "ls" => Action::List,
-                "init" | "land" => Action::Init,
+                "clean" => Action::Clean,
+                "config" => Action::Config,
                 "help" | "h" => Action::Help,
                 _ => {
                     show_help();
@@ -94,7 +94,9 @@ pub fn perform(
                 .into();
 
         if fonts.is_empty() {
-            println!("{no_fonts_message}");
+            if !no_fonts_message.is_empty() {
+                println!("{no_fonts_message}");
+            }
             None
         } else {
             Some(fonts)
@@ -164,7 +166,7 @@ pub fn perform(
             remove_fonts(args, &fonts, installed_fonts)?;
         }
         Action::List => {
-            let fonts = match init_fonts(false, None, "Nothing to list") {
+            let fonts = match init_fonts(false, None, "") {
                 Some(fonts) => fonts,
                 None => return Ok(()),
             };
@@ -210,6 +212,18 @@ pub fn perform(
                 false => items,
             };
 
+            let usage = "\
+Usage:
+    fin clean [item(s)]
+
+Items:
+    all                   Remove all cache
+    pages                 Remove cached pages
+    staging               Remove the staging directory
+    state                 Clear the install state lock
+    help                  Show this help message
+";
+
             for item in items {
                 match item.as_str() {
                     "all" => {
@@ -240,19 +254,55 @@ pub fn perform(
                             println!("Removed the lock file: {}", target);
                         }
                     }
+                    "help" => {
+                        print!("{usage}");
+                    }
                     _ => {
-                        println!("Cannot clean {item}");
-                        println!("Supported items: [all/pages/staging/state]");
+                        println!("{usage}\nCannot clean '{item}'");
                     }
                 }
             }
         }
-        Action::Init => {
-            Config::write_default_config()?;
-            println!(
-                "Created a new configuration file on disk:\n{}",
-                config_file_path!()
-            );
+        Action::Config => {
+            let usage = "\
+Usage:
+    fin config [item]
+
+Items:
+    show                  Show the current configuration
+    default               Write the default configuration
+    delete                Delete the configuration file
+    help                  Show this help message
+";
+
+            match items[0].as_str() {
+                "show" => {
+                    let target = config_file_path!();
+                    println!("{}", fs::read_to_string(&target).unwrap_or_default().trim());
+                }
+                "default" => {
+                    Config::write_default_config()?;
+                    println!(
+                        "Created a new configuration file on disk:\n{}",
+                        config_file_path!()
+                    );
+                }
+                "delete" => {
+                    let target = config_file_path!();
+                    if fs::exists(&target).unwrap_or_default() {
+                        fs::remove_file(&target).map_err(|e| e.to_string())?;
+                        println!("Deleted the configuration file:\n{}", config_file_path!());
+                    } else {
+                        println!("The configuration file does not exist");
+                    }
+                }
+                "help" => {
+                    print!("{usage}");
+                }
+                item => {
+                    println!("{usage}\nUnrecognized item: '{item}'");
+                }
+            }
         }
         Action::Help => {
             show_help();

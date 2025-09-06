@@ -154,6 +154,17 @@ impl Font {
                 fonts
             }
             Action::List => {
+                let usage = "\
+Usage:
+    fin list [item]
+
+Items:
+    installed             List installed fonts
+    available             List available installers
+    all                   List all fonts and installers
+    help                  Show this help message
+";
+
                 let item = match filters.is_empty() {
                     false => filters[0].as_str(),
                     true => "all",
@@ -176,14 +187,11 @@ impl Font {
                         fonts.iter().map(ToString::to_string).collect()
                     }
                     "help" => {
-                        println!("Supported items: [installed/available/all]");
-                        // println!("Usages:\n  fin list\n  fin list all \n  fin list available\n  fin list installed");
+                        print!("{usage}");
                         return Ok(vec![]);
                     }
                     item => {
-                        println!(
-                            "Cannot list: '{item}'\nSupported items: [installed/available/all]"
-                        );
+                        println!("{usage}\nCannot list: '{item}'");
                         return Ok(vec![]);
                     }
                 };
@@ -191,7 +199,7 @@ impl Font {
                 needs_installer = false;
                 fonts
             }
-            Action::Clean | Action::Init | Action::Help => {
+            Action::Clean | Action::Config | Action::Help => {
                 return Ok(vec![]);
             }
         };
