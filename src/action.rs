@@ -275,6 +275,11 @@ Items:
     help                  Show this help message
 ";
 
+            if items.is_empty() {
+                print!("{usage}");
+                return Ok(());
+            }
+
             match items[0].as_str() {
                 "show" => {
                     let target = config_file_path!();
