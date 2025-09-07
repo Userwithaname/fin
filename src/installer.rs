@@ -422,8 +422,8 @@ impl Installer {
                         true => println_red!("{e}"),
                         false => {
                             bar::show_progress(
-                                &format!("{} Staging:   ", green!("×")),
-                                1.0,
+                                &format!("{} Staging:   ", red!("×")),
+                                progress as f64 / file_count,
                                 &format!(" {progress} / {file_count}\n"),
                             );
                         }
@@ -436,8 +436,8 @@ impl Installer {
                         true => println_red!("{e}"),
                         false => {
                             bar::show_progress(
-                                &format!("{} Installing: ", green!("×")),
-                                1.0,
+                                &format!("{} Installing: ", red!("×")),
+                                progress as f64 / file_count,
                                 &format!(" {progress} / {file_count}\n"),
                             );
                         }
@@ -452,8 +452,8 @@ impl Installer {
             fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
                 if !verbose {
                     bar::show_progress(
-                        &format!("{} Staging:    ", green!("×")),
-                        1.0,
+                        &format!("{} Staging:    ", red!("×")),
+                        progress as f64 / file_count,
                         &format!(" {progress} / {file_count}\n"),
                     );
                 }
@@ -501,7 +501,7 @@ impl Installer {
 
         let mut progress = 0;
         let mut fonts = Vec::new();
-        let entries = archive.entries().map_err(|e| e.to_string())?.into_iter();
+        let entries = archive.entries().map_err(|e| e.to_string())?;
         for mut entry in entries {
             let entry = entry.as_mut().unwrap();
             let file = match keep_folders {
@@ -695,7 +695,7 @@ impl Installer {
                 false => {
                     bar::show_progress(
                         "… Installing: ",
-                        progress as f64 / self.files.len() as f64,
+                        f64::from(progress) / self.files.len() as f64,
                         &format!(" {progress} / {}", self.files.len()),
                     );
                 }
