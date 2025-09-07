@@ -1,9 +1,10 @@
 const BAR_SIZE: usize = 20;
+const BAR_SIZE_F64: f64 = BAR_SIZE as f64;
 
 pub fn show_progress(prefix: &str, progress: f64, suffix: &str) {
     use std::io::{stdout, Write};
 
-    let cur_pos = (progress * BAR_SIZE as f64).round() as usize;
+    let cur_pos = (progress * BAR_SIZE_F64).round() as usize;
     let remainder = match BAR_SIZE > cur_pos {
         true => BAR_SIZE - cur_pos,
         false => 0,

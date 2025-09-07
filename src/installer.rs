@@ -414,6 +414,8 @@ impl Installer {
                 ),
             }
 
+            // FIX: No such file or directory error when using `keep_folders`
+
             let mut file_contents = Vec::new();
             zip_archive
                 .by_name(file)
@@ -436,7 +438,7 @@ impl Installer {
                         true => println_red!("{e}"),
                         false => {
                             bar::show_progress(
-                                &format!("{} Installing: ", red!("×")),
+                                &format!("{} Staging: ", red!("×")),
                                 progress as f64 / file_count,
                                 &format!(" {progress} / {file_count}\n"),
                             );
