@@ -325,7 +325,7 @@ impl Installer {
 
                 let update_progress_bar = |status_symbol: &str, progress: f64| {
                     bar::show_progress(
-                        &format!("{} Staging:   ", status_symbol),
+                        &format!("{status_symbol} Staging:   "),
                         progress,
                         &format!(" {progress} / 1"),
                     );
@@ -406,7 +406,7 @@ impl Installer {
 
         let update_progress_bar = |status_symbol: &str, files_processed: f64| {
             bar::show_progress(
-                &format!("{} Staging:    ", status_symbol),
+                &format!("{status_symbol} Staging:    "),
                 files_processed / file_count,
                 &format!(" {files_processed} / {file_count}"),
             );
@@ -504,7 +504,7 @@ impl Installer {
 
         let update_progress_bar = |status_symbol: &str, files_processed: f64| {
             bar::show_progress(
-                &format!("{} Staging:    ", status_symbol),
+                &format!("{status_symbol} Staging:    "),
                 1.0,
                 &format!(" {files_processed} / {files_processed}"),
             );
@@ -648,14 +648,24 @@ impl Installer {
         installed_fonts: &Arc<Mutex<InstalledFonts>>,
     ) -> Result<(), String> {
         let verbose = args.options.verbose | args.config.verbose_files;
+
         let staging_dir = format!("{}/{}/", staging_dir!(), &self.name);
-        let target_dir = installed_fonts
+        let (target_dir, old_files) = &installed_fonts
             .lock()
             .unwrap()
-            .uninstall(&self.installer_name, args, false)?
-            .unwrap_or_else(|| format!("{}/{}/", args.config.install_dir, &self.name));
+            .installed
+            .get(&self.installer_name)
+            .map_or_else(
+                || (format!("{}/{}/", args.config.install_dir, &self.name), None),
+                |installed_font| {
+                    (
+                        installed_font.dir.clone(),
+                        Some(installed_font.files.clone()),
+                    )
+                },
+            );
 
-        fs::create_dir_all(&target_dir).map_err(|err| err.to_string())?;
+        fs::create_dir_all(target_dir).map_err(|err| err.to_string())?;
 
         match verbose {
             true => println!("Installing:"),
@@ -667,7 +677,7 @@ impl Installer {
 
         let update_progress_bar = |status_symbol: &str, files_processed: f64| {
             bar::show_progress(
-                &format!("{} Installing: ", status_symbol),
+                &format!("{status_symbol} Installing: "),
                 files_processed / self.files.len() as f64,
                 &format!(" {files_processed} / {}", self.files.len()),
             );
@@ -723,14 +733,19 @@ impl Installer {
                     println!();
                 }
 
-                installed_fonts.lock().unwrap().update_entry(
-                    &self.installer_name,
-                    InstalledFont {
-                        url: self.url.clone(),
-                        dir: target_dir,
-                        files: self.files.clone(),
-                    },
-                );
+                installed_fonts
+                    .lock()
+                    .unwrap()
+                    .update_entry(
+                        &self.installer_name,
+                        InstalledFont {
+                            url: self.url.clone(),
+                            dir: target_dir.to_string(),
+                            files: self.files.clone(),
+                        },
+                    )
+                    .cleanup(args, &self.installer_name, old_files)
+                    .map_err(|()| "Failed to cleanup")?;
             }
             true => {
                 update_progress_bar(&red!("×"), files_processed);

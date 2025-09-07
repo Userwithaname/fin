@@ -5,6 +5,7 @@ use crate::installed_file_path;
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Write as _;
 use std::io::{stdout, Write};
 use std::{fs, path::Path};
 
@@ -72,18 +73,60 @@ impl InstalledFonts {
 
     /// Adds a new entry to the installed fonts
     /// or modifies it if it already exists
-    pub fn update_entry(&mut self, name: &str, data: InstalledFont) {
+    pub fn update_entry(&mut self, name: &str, data: InstalledFont) -> &mut Self {
         match self.installed.get_mut(name) {
             Some(entry) => *entry = data,
             None => _ = self.installed.insert(name.to_string(), data),
         }
         self.changed = true;
+        self
     }
 
     /// Removes an entry from the installed fonts
-    pub fn remove_entry(&mut self, name: &str) -> Result<(), String> {
+    pub fn remove_entry(&mut self, name: &str) {
         self.installed.remove(name);
         self.changed = true;
+    }
+
+    pub fn cleanup(
+        &self,
+        args: &Args,
+        font: &str,
+        old_files: &Option<Vec<String>>,
+    ) -> Result<(), ()> {
+        if let (Some(installed_font), Some(old_files)) = (self.installed.get(font), old_files) {
+            let stray_files: Vec<String> = old_files
+                .iter()
+                .filter_map(|file| match installed_font.files.contains(file) {
+                    true => None,
+                    false => Some(file.to_string()),
+                })
+                .collect();
+
+            if stray_files.is_empty() {
+                return Ok(());
+            }
+
+            let verbose = args.options.verbose | args.config.verbose_files;
+
+            let mut dir_iter = installed_font.dir.split('/');
+            dir_iter.next_back();
+            let dir_name = dir_iter.next_back().unwrap_or("(unknown)");
+
+            if verbose {
+                println!("Cleaning up:");
+            }
+
+            Self::remove_files(
+                &stray_files,
+                &installed_font.dir,
+                dir_name,
+                "Cleaning up:",
+                false,
+                verbose,
+            )?;
+        }
+
         Ok(())
     }
 
@@ -96,8 +139,8 @@ impl InstalledFonts {
     /// - `Err(…)`: if errors were encountered
     pub fn uninstall(
         &mut self,
-        font: &str,
         args: &Args,
+        font: &str,
         print_name: bool,
     ) -> Result<Option<String>, String> {
         let verbose = args.options.verbose || args.config.verbose_files;
@@ -130,7 +173,8 @@ impl InstalledFonts {
                     true => println!("{} Removing:    {}", orange!("✓"), orange!("Not found")),
                     false => println_orange!("Not found"),
                 }
-                return self.remove_entry(font).map(|()| Some(dir));
+                self.remove_entry(font);
+                return Ok(Some(dir));
             }
 
             if verbose {
@@ -138,12 +182,20 @@ impl InstalledFonts {
             }
 
             let result = match args.options.force {
-                false => Self::remove_files(installed_font, &dir, dir_name, verbose),
+                false => Self::remove_files(
+                    &installed_font.files,
+                    &dir,
+                    dir_name,
+                    "Removing:   ",
+                    false,
+                    verbose,
+                ),
                 true => Self::remove_dir_all(&dir, dir_name),
             };
 
             if result.is_ok() {
-                self.remove_entry(font).map(|()| Some(dir))
+                self.remove_entry(font);
+                Ok(Some(dir))
             } else {
                 println!("Errors were encountered while removing: {dir_name}");
                 Err("Failed to remove font".to_string())
@@ -154,31 +206,33 @@ impl InstalledFonts {
     }
 
     fn remove_files(
-        installed_font: &InstalledFont,
+        files: &[String],
         dir: &str,
         dir_name: &str,
+        output_prefix: &str,
+        warn_not_empty: bool,
         verbose: bool,
     ) -> Result<(), ()> {
         let mut errors = false;
 
-        let update_progress_bar = |status_symbol: &str, progress: f64| {
+        let update_progress_bar = |status_symbol: &str, files_processed: f64| {
             bar::show_progress(
-                &format!("{} Removing:   ", status_symbol),
-                progress / installed_font.files.len() as f64,
-                &format!(" {progress} / {}", installed_font.files.len()),
+                &format!("{status_symbol} {}", output_prefix),
+                files_processed / files.len() as f64,
+                &format!(" {files_processed} / {}", files.len()),
             );
         };
 
         let mut directories: BTreeSet<String> = [String::new()].into();
-        let mut progress = 0.0;
+        let mut files_processed = 0.0;
         let mut messages = String::new();
-        installed_font.files.iter().for_each(|file| {
+        files.iter().for_each(|file| {
             if verbose {
                 print!("   {file} ... ");
                 let _ = stdout().flush();
             } else {
-                progress += 1.0;
-                update_progress_bar("…", progress);
+                files_processed += 1.0;
+                update_progress_bar("…", files_processed);
             }
 
             let file_path = format!("{dir}/{file}");
@@ -200,7 +254,9 @@ impl InstalledFonts {
                     errors = true;
                     match verbose {
                         true => println_red!("{e}"),
-                        false => messages += &format!("{file}: {}", format_red!("{e}")),
+                        false => {
+                            let _ = write!(messages, "{file}: {}", format_red!("{e}"));
+                        }
                     }
                 }
             }
@@ -233,17 +289,20 @@ impl InstalledFonts {
                     }
                     Err(e) => match verbose {
                         true => println_red!("{e}"),
-                        false => messages += &format!("../{dir_name}/{subdir}: {e}\n"),
+                        false => {
+                            let _ = writeln!(messages, "../{dir_name}/{subdir}: {e}");
+                        }
                     },
                 }
-            } else {
+            } else if warn_not_empty {
                 match verbose {
                     true => println_orange!("Not removed: Directory not empty"),
                     false => {
-                        messages += &format!(
-                            "../{dir_name}/{subdir}: {}\n",
+                        let _ = writeln!(
+                            messages,
+                            "../{dir_name}/{subdir}: {}",
                             format_orange!("Not removed: Directory not empty")
-                        )
+                        );
                     }
                 }
             }
@@ -252,7 +311,7 @@ impl InstalledFonts {
         match errors {
             false => {
                 if !verbose {
-                    update_progress_bar(&green!("✓"), progress);
+                    update_progress_bar(&green!("✓"), files_processed);
                     println!();
                 }
                 print!("{messages}");
@@ -260,7 +319,7 @@ impl InstalledFonts {
             }
             true => {
                 if !verbose {
-                    update_progress_bar(&red!("×"), progress);
+                    update_progress_bar(&red!("×"), files_processed);
                     println!();
                 }
                 print!("{messages}");

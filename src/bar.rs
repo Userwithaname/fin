@@ -10,8 +10,8 @@ pub fn show_progress(prefix: &str, progress: f64, suffix: &str) {
         false => 0,
     };
 
-    let bar = match progress < 0.995 && cur_pos > 0 {
-        true => "—".repeat(cur_pos - 1) + &"→" + &" ".repeat(remainder),
+    let bar = match progress < 0.999 && cur_pos > 0 {
+        true => "—".repeat(cur_pos - 1) + "→" + &" ".repeat(remainder),
         false => "—".repeat(cur_pos) + &" ".repeat(remainder),
     };
 
