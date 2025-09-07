@@ -5,7 +5,7 @@ use crate::installed_file_path;
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
-use std::io::{self, Write};
+use std::io::{stdout, Write};
 use std::{fs, path::Path};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -123,7 +123,7 @@ impl InstalledFonts {
                     print!("… Removing:    ");
                 }
             }
-            let _ = io::stdout().flush();
+            let _ = stdout().flush();
 
             if !Path::new(&dir).exists() {
                 match verbose {
@@ -161,20 +161,24 @@ impl InstalledFonts {
     ) -> Result<(), ()> {
         let mut errors = false;
 
+        let update_progress_bar = |status_symbol: &str, progress: f64| {
+            bar::show_progress(
+                &format!("{} Removing:   ", status_symbol),
+                progress / installed_font.files.len() as f64,
+                &format!(" {progress} / {}", installed_font.files.len()),
+            );
+        };
+
         let mut directories: BTreeSet<String> = [String::new()].into();
         let mut progress = 0.0;
         let mut messages = String::new();
         installed_font.files.iter().for_each(|file| {
             if verbose {
                 print!("   {file} ... ");
-                let _ = io::stdout().flush();
+                let _ = stdout().flush();
             } else {
                 progress += 1.0;
-                bar::show_progress(
-                    "… Removing:   ",
-                    progress / installed_font.files.len() as f64,
-                    &format!(" {progress} / {}", installed_font.files.len()),
-                );
+                update_progress_bar("…", progress);
             }
 
             let file_path = format!("{dir}/{file}");
@@ -216,7 +220,7 @@ impl InstalledFonts {
         directories.iter().rev().for_each(|subdir| {
             if verbose {
                 print!("   ../{dir_name}/{subdir} ... ");
-                let _ = io::stdout().flush();
+                let _ = stdout().flush();
             }
 
             let target = dir.to_owned() + subdir;
@@ -248,22 +252,16 @@ impl InstalledFonts {
         match errors {
             false => {
                 if !verbose {
-                    bar::show_progress(
-                        &format!("{} Removing:   ", green!("✓")),
-                        1.0,
-                        &format!(" {progress} / {}\n", &installed_font.files.len()),
-                    );
+                    update_progress_bar(&green!("✓"), progress);
+                    println!();
                 }
                 print!("{messages}");
                 Ok(())
             }
             true => {
                 if !verbose {
-                    bar::show_progress(
-                        &format!("{} Removing:   ", red!("×")),
-                        1.0,
-                        &format!(" {progress} / {}\n", &installed_font.files.len()),
-                    );
+                    update_progress_bar(&red!("×"), progress);
+                    println!();
                 }
                 print!("{messages}");
                 Err(())
@@ -275,7 +273,7 @@ impl InstalledFonts {
         let mut errors = false;
 
         print!("   ../{dir_name} ... ");
-        let _ = io::stdout().flush();
+        let _ = stdout().flush();
 
         match fs::remove_dir_all(dir).map_err(|e| e.to_string()) {
             Ok(()) => println_green!("Removed"),

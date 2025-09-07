@@ -6,7 +6,7 @@ use crate::Args;
 
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
-use std::io::{self, Read, Write};
+use std::io::{self, stdout, Read, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -232,7 +232,7 @@ impl Installer {
         let reqwest_client = reqwest::blocking::Client::new();
 
         print!("… Awaiting response");
-        let _ = io::stdout().flush();
+        let _ = stdout().flush();
 
         let mut remote_data = reqwest_client
             .get(&self.url)
@@ -248,7 +248,7 @@ impl Installer {
 
         // TODO: Show download progress
         print!("… Downloading: {filename}");
-        let _ = io::stdout().flush();
+        let _ = stdout().flush();
 
         let mut archive_buffer = Vec::new();
         remote_data.read_to_end(&mut archive_buffer).map_err(|e| {
@@ -323,30 +323,35 @@ impl Installer {
                 fs::create_dir_all(&extract_to).map_err(|e| e.to_string())?;
                 let file = self.url.split('/').next_back().unwrap();
 
+                let update_progress_bar = |status_symbol: &str, progress: f64| {
+                    bar::show_progress(
+                        &format!("{} Staging:   ", status_symbol),
+                        progress,
+                        &format!(" {progress} / 1"),
+                    );
+                };
+
                 match verbose {
                     true => {
                         println!("Staging:");
                         print!("   {file} ... ");
-                        let _ = io::stdout().flush();
+                        let _ = stdout().flush();
                     }
-                    false => bar::show_progress("… Staging:    ", 0.0, " 0 / 1"),
+                    false => update_progress_bar("…", 0.0),
                 }
 
                 self.files.push(file.to_string());
                 fs::write(extract_to + file, data.unwrap()).map_err(|e| {
-                    bar::show_progress(&format!("{} Staging:    ", green!("✓")), 1.0, " 1 / 1\n");
+                    update_progress_bar(&green!("✓"), 1.0);
                     println_red!("{e}");
                     e.to_string()
                 })?;
 
                 match verbose {
                     true => println_green!("Done"),
-                    false => bar::show_progress(
-                        &format!("{} Staging:    ", green!("✓")),
-                        1.0,
-                        " 1 / 1\n",
-                    ),
+                    false => update_progress_bar(&green!("✓"), 1.0),
                 }
+                println!();
             }
         }
 
@@ -371,8 +376,7 @@ impl Installer {
             e.to_string()
         })?;
 
-        let mut progress = 0;
-        let mut file_count = 0f64;
+        let mut file_count = 0.0;
         let mut files: Vec<String> = zip_archive
             .file_names()
             .map(ToString::to_string)
@@ -400,18 +404,24 @@ impl Installer {
             e.to_string()
         })?;
 
+        let update_progress_bar = |status_symbol: &str, progress: f64| {
+            bar::show_progress(
+                &format!("{} Staging:   ", status_symbol),
+                progress / file_count,
+                &format!(" {progress} / {file_count}"),
+            );
+        };
+
+        let mut progress = 0.0;
         for file in &mut files {
-            progress += 1;
+            progress += 1.0;
+
             match verbose {
                 true => {
                     print!("   {file} ... ");
-                    let _ = io::stdout().flush();
+                    let _ = stdout().flush();
                 }
-                false => bar::show_progress(
-                    "… Staging:    ",
-                    progress as f64 / file_count,
-                    &format!(" {progress} / {file_count}"),
-                ),
+                false => update_progress_bar("…", progress),
             }
 
             // FIX: No such file or directory error when using `keep_folders`
@@ -422,13 +432,7 @@ impl Installer {
                 .map_err(|e| {
                     match verbose {
                         true => println_red!("{e}"),
-                        false => {
-                            bar::show_progress(
-                                &format!("{} Staging:   ", red!("×")),
-                                progress as f64 / file_count,
-                                &format!(" {progress} / {file_count}\n"),
-                            );
-                        }
+                        false => update_progress_bar(&red!("×"), progress),
                     }
                     e.to_string()
                 })?
@@ -436,13 +440,7 @@ impl Installer {
                 .map_err(|e| {
                     match verbose {
                         true => println_red!("{e}"),
-                        false => {
-                            bar::show_progress(
-                                &format!("{} Staging: ", red!("×")),
-                                progress as f64 / file_count,
-                                &format!(" {progress} / {file_count}\n"),
-                            );
-                        }
+                        false => update_progress_bar(&red!("×"), progress),
                     }
                     e.to_string()
                 })?;
@@ -453,27 +451,21 @@ impl Installer {
 
             fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
                 if !verbose {
-                    bar::show_progress(
-                        &format!("{} Staging:    ", red!("×")),
-                        progress as f64 / file_count,
-                        &format!(" {progress} / {file_count}\n"),
-                    );
+                    update_progress_bar(&red!("×"), progress);
                 }
                 println_red!("{e}");
                 e.to_string()
             })?;
 
-            if verbose {
-                println_green!("Done");
+            match verbose {
+                true => println_green!("Done"),
+                false => println!(),
             }
         }
 
         if !verbose {
-            bar::show_progress(
-                &format!("{} Staging:    ", green!("✓")),
-                1.0,
-                &format!(" {progress} / {file_count}\n"),
-            );
+            update_progress_bar(&green!("✓"), progress);
+            println!();
         }
 
         Ok(files)
@@ -492,7 +484,7 @@ impl Installer {
             true => println!("Staging:"),
             false => {
                 print!("Staging:");
-                let _ = io::stdout().flush();
+                let _ = stdout().flush();
             }
         }
 
@@ -501,7 +493,15 @@ impl Installer {
             e.to_string()
         })?;
 
-        let mut progress = 0;
+        let update_progress_bar = |status_symbol: &str, progress: f64| {
+            bar::show_progress(
+                &format!("{} Staging:   ", status_symbol),
+                1.0,
+                &format!(" {progress} / {progress}"),
+            );
+        };
+
+        let mut progress = 0.0;
         let mut fonts = Vec::new();
         let entries = archive.entries().map_err(|e| e.to_string())?;
         for mut entry in entries {
@@ -525,11 +525,11 @@ impl Installer {
             match verbose {
                 true => {
                     print!("   {file} ... ");
-                    let _ = io::stdout().flush();
+                    let _ = stdout().flush();
                 }
                 false => {
-                    progress += 1;
-                    bar::show_progress("… Staging:    ", 1.0, &format!(" {progress} / {progress}"));
+                    progress += 1.0;
+                    update_progress_bar("…", progress);
                 }
             }
 
@@ -540,12 +540,8 @@ impl Installer {
                         match verbose {
                             true => println_red!("{e}"),
                             false => {
-                                bar::show_progress(
-                                    &format!("{} Staging:    ", red!("×")),
-                                    1.0,
-                                    &format!(" {progress} / {progress}\n"),
-                                );
-                                println!("{file}: {}", format_red!("{e}"));
+                                update_progress_bar(&red!("×"), progress);
+                                println!("\n{file}: {}", format_red!("{e}"));
                             }
                         }
                         e.to_string()
@@ -559,12 +555,8 @@ impl Installer {
                 match verbose {
                     true => println_red!("{e}"),
                     false => {
-                        bar::show_progress(
-                            &format!("{} Staging:    ", red!("×")),
-                            1.0,
-                            &format!(" {progress} / {progress}\n"),
-                        );
-                        println!("{file}: {}", format_red!("{e}"));
+                        update_progress_bar(&red!("×"), progress);
+                        println!("\n{file}: {}", format_red!("{e}"));
                     }
                 }
                 e.to_string()
@@ -572,12 +564,8 @@ impl Installer {
 
             fs::write(&(extract_to.to_owned() + &file), file_contents).map_err(|e| {
                 if !verbose {
-                    bar::show_progress(
-                        "… Staging:    ",
-                        1.0,
-                        &format!("{} {progress} / {progress}\n", red!("×")),
-                    );
-                    println!("{file}: {}", format_red!("{e}"));
+                    update_progress_bar(&red!("×"), progress);
+                    println!("\n{file}: {}", format_red!("{e}"));
                 }
                 e.to_string()
             })?;
@@ -589,11 +577,7 @@ impl Installer {
         }
 
         if !verbose {
-            bar::show_progress(
-                &format!("{} Staging:    ", green!("✓")),
-                1.0,
-                &format!(" {progress} / {progress}"),
-            );
+            update_progress_bar(&green!("✓"), progress);
             println!();
         }
 
@@ -608,7 +592,7 @@ impl Installer {
         exclude: &[String],
         keep_folders: bool,
     ) -> Result<Vec<String>, String> {
-        let _ = io::stdout().flush();
+        let _ = stdout().flush();
 
         let mut tar_gz_archive = GzDecoder::new(reader);
 
@@ -635,7 +619,7 @@ impl Installer {
         // NOTE: `tar.xz` support is currently disabled due to
         // outdated `xz` crate dependencies for `zip` and `bzip2`
 
-        // let _ = io::stdout().flush();
+        // let _ = stdout().flush();
 
         // let mut tar_xz_archive = XzDecoder::new(reader);
 
@@ -668,12 +652,12 @@ impl Installer {
             true => println!("Installing:"),
             false => {
                 print!("Installing:");
-                let _ = io::stdout().flush();
+                let _ = stdout().flush();
             }
         }
 
         let mut errors = false;
-        let mut progress = 0;
+        let mut progress = 0.0;
 
         // Move the files specified by the installer into the target directory
         for file in &self.files {
@@ -688,16 +672,16 @@ impl Installer {
                 continue;
             }
 
-            progress += 1;
+            progress += 1.0;
             match verbose {
                 true => {
                     print!("   {file} ... ");
-                    let _ = io::stdout().flush();
+                    let _ = stdout().flush();
                 }
                 false => {
                     bar::show_progress(
                         "… Installing: ",
-                        f64::from(progress) / self.files.len() as f64,
+                        progress / self.files.len() as f64,
                         &format!(" {progress} / {}", self.files.len()),
                     );
                 }

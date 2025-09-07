@@ -7,13 +7,13 @@ use crate::installer::Installer;
 
 use std::error::Error;
 use std::fs;
-use std::io::{self, Write};
+use std::io::{stdin, stdout, Write};
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-pub const VERSION: &'static str = "0.1.0";
+pub const VERSION: &str = "0.1.0";
 
 #[macro_use]
 pub mod colors;
@@ -94,8 +94,8 @@ pub fn user_prompt(message: &str, args: &Args) -> bool {
     }
 
     let mut input = String::new();
-    let _ = io::stdout().flush();
-    io::stdin().read_line(&mut input).unwrap();
+    let _ = stdout().flush();
+    stdin().read_line(&mut input).unwrap();
 
     match input.to_lowercase().as_str() {
         "y\n" | "yes\n" | "yabadabadoo\n" => true,
