@@ -404,24 +404,25 @@ impl Installer {
             e.to_string()
         })?;
 
-        let update_progress_bar = |status_symbol: &str, progress: f64| {
+        let update_progress_bar = |status_symbol: &str, files_processed: f64| {
             bar::show_progress(
-                &format!("{} Staging:   ", status_symbol),
-                progress / file_count,
-                &format!(" {progress} / {file_count}"),
+                &format!("{} Staging:    ", status_symbol),
+                files_processed / file_count,
+                &format!(" {files_processed} / {file_count}"),
             );
         };
 
-        let mut progress = 0.0;
+        let mut files_processed = 0.0;
+
         for file in &mut files {
-            progress += 1.0;
+            files_processed += 1.0;
 
             match verbose {
                 true => {
                     print!("   {file} ... ");
                     let _ = stdout().flush();
                 }
-                false => update_progress_bar("…", progress),
+                false => update_progress_bar("…", files_processed),
             }
 
             // FIX: No such file or directory error when using `keep_folders`
@@ -432,7 +433,10 @@ impl Installer {
                 .map_err(|e| {
                     match verbose {
                         true => println_red!("{e}"),
-                        false => update_progress_bar(&red!("×"), progress),
+                        false => {
+                            update_progress_bar(&red!("×"), files_processed);
+                            println!();
+                        }
                     }
                     e.to_string()
                 })?
@@ -440,7 +444,10 @@ impl Installer {
                 .map_err(|e| {
                     match verbose {
                         true => println_red!("{e}"),
-                        false => update_progress_bar(&red!("×"), progress),
+                        false => {
+                            update_progress_bar(&red!("×"), files_processed);
+                            println!();
+                        }
                     }
                     e.to_string()
                 })?;
@@ -450,21 +457,23 @@ impl Installer {
             }
 
             fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
-                if !verbose {
-                    update_progress_bar(&red!("×"), progress);
+                match verbose {
+                    true => println_red!("{e}"),
+                    false => {
+                        update_progress_bar(&red!("×"), files_processed);
+                        println!();
+                    }
                 }
-                println_red!("{e}");
                 e.to_string()
             })?;
 
-            match verbose {
-                true => println_green!("Done"),
-                false => println!(),
+            if verbose {
+                println_green!("Done");
             }
         }
 
         if !verbose {
-            update_progress_bar(&green!("✓"), progress);
+            update_progress_bar(&green!("✓"), files_processed);
             println!();
         }
 
@@ -493,15 +502,15 @@ impl Installer {
             e.to_string()
         })?;
 
-        let update_progress_bar = |status_symbol: &str, progress: f64| {
+        let update_progress_bar = |status_symbol: &str, files_processed: f64| {
             bar::show_progress(
-                &format!("{} Staging:   ", status_symbol),
+                &format!("{} Staging:    ", status_symbol),
                 1.0,
-                &format!(" {progress} / {progress}"),
+                &format!(" {files_processed} / {files_processed}"),
             );
         };
 
-        let mut progress = 0.0;
+        let mut files_processed = 0.0;
         let mut fonts = Vec::new();
         let entries = archive.entries().map_err(|e| e.to_string())?;
         for mut entry in entries {
@@ -528,8 +537,8 @@ impl Installer {
                     let _ = stdout().flush();
                 }
                 false => {
-                    progress += 1.0;
-                    update_progress_bar("…", progress);
+                    files_processed += 1.0;
+                    update_progress_bar("…", files_processed);
                 }
             }
 
@@ -540,7 +549,7 @@ impl Installer {
                         match verbose {
                             true => println_red!("{e}"),
                             false => {
-                                update_progress_bar(&red!("×"), progress);
+                                update_progress_bar(&red!("×"), files_processed);
                                 println!("\n{file}: {}", format_red!("{e}"));
                             }
                         }
@@ -555,7 +564,7 @@ impl Installer {
                 match verbose {
                     true => println_red!("{e}"),
                     false => {
-                        update_progress_bar(&red!("×"), progress);
+                        update_progress_bar(&red!("×"), files_processed);
                         println!("\n{file}: {}", format_red!("{e}"));
                     }
                 }
@@ -564,7 +573,7 @@ impl Installer {
 
             fs::write(&(extract_to.to_owned() + &file), file_contents).map_err(|e| {
                 if !verbose {
-                    update_progress_bar(&red!("×"), progress);
+                    update_progress_bar(&red!("×"), files_processed);
                     println!("\n{file}: {}", format_red!("{e}"));
                 }
                 e.to_string()
@@ -577,7 +586,7 @@ impl Installer {
         }
 
         if !verbose {
-            update_progress_bar(&green!("✓"), progress);
+            update_progress_bar(&green!("✓"), files_processed);
             println!();
         }
 
@@ -656,8 +665,16 @@ impl Installer {
             }
         }
 
+        let update_progress_bar = |status_symbol: &str, files_processed: f64| {
+            bar::show_progress(
+                &format!("{} Installing: ", status_symbol),
+                files_processed / self.files.len() as f64,
+                &format!(" {files_processed} / {}", self.files.len()),
+            );
+        };
+
         let mut errors = false;
-        let mut progress = 0.0;
+        let mut files_processed = 0.0;
 
         // Move the files specified by the installer into the target directory
         for file in &self.files {
@@ -672,19 +689,13 @@ impl Installer {
                 continue;
             }
 
-            progress += 1.0;
+            files_processed += 1.0;
             match verbose {
                 true => {
                     print!("   {file} ... ");
                     let _ = stdout().flush();
                 }
-                false => {
-                    bar::show_progress(
-                        "… Installing: ",
-                        progress / self.files.len() as f64,
-                        &format!(" {progress} / {}", self.files.len()),
-                    );
-                }
+                false => update_progress_bar("…", files_processed),
             }
 
             match fs::rename(
@@ -708,11 +719,8 @@ impl Installer {
         match errors {
             false => {
                 if !verbose {
-                    bar::show_progress(
-                        &format!("{} Installing: ", green!("✓")),
-                        1.0,
-                        &format!(" {progress} / {}\n", &self.files.len()),
-                    );
+                    update_progress_bar(&green!("✓"), files_processed);
+                    println!();
                 }
 
                 installed_fonts.lock().unwrap().update_entry(
@@ -725,12 +733,8 @@ impl Installer {
                 );
             }
             true => {
-                bar::show_progress(
-                    &format!("{} Installing: ", red!("×")),
-                    1.0,
-                    &format!(" {progress} / {}\n", &self.files.len()),
-                );
-                println!("Errors were encountered while installing {}", self.name)
+                update_progress_bar(&red!("×"), files_processed);
+                println!("\nErrors were encountered while installing {}", self.name)
             }
         }
 
