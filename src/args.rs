@@ -2,7 +2,6 @@ use crate::font::Font;
 use crate::options::Options;
 use crate::Action;
 use crate::Config;
-use crate::{println_green, println_red};
 
 use std::env;
 

@@ -5,13 +5,13 @@ use crate::font::Font;
 use crate::installed::InstalledFonts;
 use crate::installer::Installer;
 
-use std::error::Error;
+use core::error::Error;
+use core::sync::atomic::{AtomicBool, Ordering};
+use core::time::Duration;
 use std::fs;
 use std::io::{stdin, stdout, Write};
-use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
 
 pub const VERSION: &str = "0.1.0";
 
@@ -39,7 +39,7 @@ pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
     ctrlc::set_handler({
         let interrupt_signal = Arc::clone(&interrupt_signal);
         move || {
-            interrupt_signal.store(true, std::sync::atomic::Ordering::Relaxed);
+            interrupt_signal.store(true, Ordering::Relaxed);
         }
     })
     .expect("Error setting Ctrl-C handler");
@@ -62,7 +62,7 @@ pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
                 .unwrap_or_else(|_| Err("Thread panicked".to_string()))
                 .map_err(|e| e.into());
         }
-        if interrupt_signal.load(std::sync::atomic::Ordering::Relaxed) {
+        if interrupt_signal.load(Ordering::Relaxed) {
             drop(handle);
             break Ok(());
         }

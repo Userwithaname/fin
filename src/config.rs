@@ -1,6 +1,3 @@
-use crate::config_dir_path;
-use crate::config_file_path;
-use crate::home_dir;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 

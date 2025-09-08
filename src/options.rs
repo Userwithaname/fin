@@ -1,5 +1,6 @@
-use crate::show_help;
 use crate::Config;
+
+use crate::show_help;
 
 #[derive(Default, Clone)]
 pub struct Options {

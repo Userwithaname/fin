@@ -1,5 +1,3 @@
-use crate::cache_dir;
-use crate::home_dir;
 use crate::Args;
 
 use reqwest::header::USER_AGENT;
