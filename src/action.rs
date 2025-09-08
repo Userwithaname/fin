@@ -390,7 +390,7 @@ fn remove_fonts(
         installed_fonts
             .lock()
             .unwrap()
-            .uninstall(args, &font.name, true)
+            .uninstall(args, &font.name)
             .map(|_| ())
     })?;
     Ok(())

@@ -136,12 +136,7 @@ impl InstalledFonts {
     /// - `Ok(Some(dir))`: upon successful removal
     /// - `Ok(None)`: if the font is not installed
     /// - `Err(…)`: if errors were encountered
-    pub fn uninstall(
-        &mut self,
-        args: &Args,
-        font: &str,
-        print_name: bool,
-    ) -> Result<Option<String>, String> {
+    pub fn uninstall(&mut self, args: &Args, font: &str) -> Result<Option<String>, String> {
         let verbose = args.options.verbose || args.config.verbose_files;
         if let Some(installed_font) = self.installed.get(font) {
             let dir = installed_font.dir.clone();
@@ -150,27 +145,20 @@ impl InstalledFonts {
             dir_iter.next_back();
             let dir_name = dir_iter.next_back().unwrap_or("(unknown)");
 
-            match verbose {
-                true => {
-                    if print_name {
-                        print!("Removing {dir_name}: ");
-                    } else {
-                        print!("Removing: ");
-                    }
-                }
-                false => {
-                    if print_name {
-                        println!("\n{dir_name}: ");
-                    }
-                    print!("… Removing:    ");
-                }
+            print!("\nRemoving {dir_name}: ");
+            if !verbose {
+                print!("\n… Removing:    ");
             }
             let _ = stdout().flush();
 
             if !Path::new(&dir).exists() {
                 match verbose {
-                    true => println!("{} Removing:    {}", orange!("✓"), orange!("Not found")),
-                    false => println_orange!("Not found"),
+                    true => println_orange!("Directory not found"),
+                    false => println!(
+                        "\r{} Removing:    {}",
+                        orange!("✓"),
+                        orange!("Directory not found")
+                    ),
                 }
                 self.remove_entry(font);
                 return Ok(Some(dir));
