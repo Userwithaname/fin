@@ -33,21 +33,32 @@ macro_rules! default_config {
     // Remember to update README.md
     () => {
         r#"# Default location for installing new fonts
+# Override:  --install-dir=[path]
 install_dir = "~/.local/share/fonts"
 
 # How long (in minutes) until cache is considered outdated
+# Override:  --cache-timeout=[time]
+# Related:   --refresh, --no-refresh
 cache_timeout = 90
 
-# Show verbose output by default (pass --no-verbose to negate)
+# Show verbose output by default
+# Enable:   --verbose
+# Disable:  --no-verbose
 verbose_mode = false
 
-# Show verbose cache-related output
-verbose_urls = false
-
-# Show installed paths when running the 'list' command
+# Show installed paths when running the list command
+# Enable:   --verbose-list,    --verbose
+# Disable:  --no-verbose-list, --no-verbose
 verbose_list = false
 
+# Show URLs in the output
+# Enable:   --verbose-urls,    --verbose
+# Disable:  --no-verbose-urls, --no-verbose
+verbose_urls = false
+
 # Show verbose output when adding or removing files
+# Enable:   --verbose-files,    --verbose
+# Disable:  --no-verbose-files, --no-verbose
 verbose_files = false
 "#
     };

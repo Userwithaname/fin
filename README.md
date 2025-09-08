@@ -72,7 +72,7 @@ Supported fields are as follows:
 - `url` - the URL to the font's download page (append `$file` for direct links)
 - `file` - the name of the file to download
 - `action` - what to do with the file:
-    - `[action.Extract]` - extract files from the archive; required fields:
+    - `[action.Extract]` - extract files from the archive
         - `include` - specify which files within the archive to install
         - `exclude` - specify which files to ignore (takes precedence over `include`, defaults to none)
         - `keep_folders` - follow the same directory structure as the archive (defaults to `false`)
@@ -121,21 +121,32 @@ Running `fin config default` will create the following configuration:
 
 ```toml
 # Default location for installing new fonts
+# Override:  --install-dir=[path]
 install_dir = "~/.local/share/fonts"
 
 # How long (in minutes) until cache is considered outdated
+# Override:  --cache-timeout=[time]
+# Related:   --refresh, --no-refresh
 cache_timeout = 90
 
-# Show verbose output by default (pass --no-verbose to negate)
+# Show verbose output by default
+# Enable:   --verbose
+# Disable:  --no-verbose
 verbose_mode = false
 
-# Show verbose cache-related output
-verbose_urls = false
-
-# Show installed paths when running the 'list' command
+# Show installed paths when running the list command
+# Enable:   --verbose-list,    --verbose
+# Disable:  --no-verbose-list, --no-verbose
 verbose_list = false
 
+# Show URLs in the output
+# Enable:   --verbose-urls,    --verbose
+# Disable:  --no-verbose-urls, --no-verbose
+verbose_urls = false
+
 # Show verbose output when adding or removing files
+# Enable:   --verbose-files,    --verbose
+# Disable:  --no-verbose-files, --no-verbose
 verbose_files = false
 ```
 
@@ -148,10 +159,10 @@ If you wish to use Fin, you must first build it from source:
 3. Enter the cloned directory: `cd fin`
 4. Build it using `cargo build` — the program binary will appear in `…/target/debug/fin`
 5. To run it, either:
-    - Run it using Cargo: `cargo run -- [action] [items]`, or
+    - Put the program binary into a location within your `$PATH` to run it
+    using the `fin` command, or
     - Run `./target/debug/fin` from the `fin` directory, or
-    - Put the program binary into a location within your `$PATH` (such as `~/.local/bin/`)
-    so you can run it from anywhere using the `fin` command
+    - Run it using Cargo: `cargo run -- [action] [items]`
 
 To learn more, see the Cargo documentation for
 [`cargo build`](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
