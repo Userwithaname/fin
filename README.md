@@ -11,11 +11,12 @@
 
 # About Fin
 
-Fin is a font installer and manager for your terminal, which lets you create
-your own installers. Installers tell Fin how and where to obtain each font
-directly from its source (such as GitHub releases) and manage them on your
-system. Fonts can be managed using the `install`/`update`/`remove` commands,
-akin to a standard package manager.
+Fin is a font manager which allows you to install and manage fonts using
+custom installers. Installers tell Fin how each font should be obtained
+and how to install it. This allows fonts to be installed directly from
+the source (such as release assets of GitHub repositories).
+Fonts can be managed using the `install`/`update`/`remove` commands, akin
+to a standard package manager.
 
 "Fin" is a contraction of "font installer".
 
@@ -44,10 +45,9 @@ Actions:
     help                  Show this help message
 
 Arguments:
-    --install-dir=[path]  Set the installation directory
-    --reinstall     -i    Skip version checks and reinstall
     --refresh       -r    Ignore cache and fetch new data
-    --cache-only    -c    Do not fetch new data if possible
+    --no-refresh    -c    Do not fetch new data if possible
+    --reinstall     -i    Skip version checks and reinstall
     --verbose       -v    Show more detailed output
     --force         -F    Forcefully perform action (unsafe)
     --yes           -y    Automatically accept prompts
@@ -82,6 +82,8 @@ Supported fields are as follows:
 > Unless using direct links, Fin looks for the font's download
 > link within the webpage source. If the site layout, links, or
 > files change, the installer may need to be updated as well.
+> Note that in order for installers to work, the download link
+> must be accessible without JavaScript.
 
 > [!NOTE]
 > Installers using direct links currently cannot detect updates
@@ -114,10 +116,11 @@ include = [ "LICENSE.txt", "*.ttf" ]
 
 # Configuration
 
-Fin can be configured using the `config.toml` file in your `~/.config/fin/`
-directory.
+Fin can be configured using the `config.toml` file located in
+`~/.config/fin/`.
 
-Running `fin config default` will create the following configuration:
+Running `fin config default` will write the following (default)
+configuration:
 
 ```toml
 # Default location for installing new fonts
@@ -134,6 +137,11 @@ cache_timeout = 90
 # Disable:  --no-verbose
 verbose_mode = false
 
+# Show verbose output when adding or removing files
+# Enable:   --verbose-files,    --verbose
+# Disable:  --no-verbose-files, --no-verbose
+verbose_files = false
+
 # Show installed paths when running the list command
 # Enable:   --verbose-list,    --verbose
 # Disable:  --no-verbose-list, --no-verbose
@@ -143,16 +151,9 @@ verbose_list = false
 # Enable:   --verbose-urls,    --verbose
 # Disable:  --no-verbose-urls, --no-verbose
 verbose_urls = false
-
-# Show verbose output when adding or removing files
-# Enable:   --verbose-files,    --verbose
-# Disable:  --no-verbose-files, --no-verbose
-verbose_files = false
 ```
 
 # Building from source
-
-If you wish to use Fin, you must first build it from source:
 
 1. [Install Rust and Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 2. Clone this repository: `git clone https://github.com/Userwithaname/fin.git`
@@ -163,6 +164,9 @@ If you wish to use Fin, you must first build it from source:
     using the `fin` command, or
     - Run `./target/debug/fin` from the `fin` directory, or
     - Run it using Cargo: `cargo run -- [action] [items]`
+
+> [!NOTE]
+> Building may require `openssl-devel` to be installed on your system.
 
 To learn more, see the Cargo documentation for
 [`cargo build`](https://doc.rust-lang.org/cargo/commands/cargo-build.html)

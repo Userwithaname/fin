@@ -17,10 +17,9 @@ impl Options {
         // Remember to update README.md
         "\
 Arguments:
-    --install-dir=[path]  Set the installation directory
-    --reinstall     -i    Skip version checks and reinstall
     --refresh       -r    Ignore cache and fetch new data
-    --cache-only    -c    Do not fetch new data if possible
+    --no-refresh    -c    Do not fetch new data if possible
+    --reinstall     -i    Skip version checks and reinstall
     --verbose       -v    Show more detailed output
     --force         -F    Forcefully perform action (unsafe)
     --yes           -y    Automatically accept prompts
@@ -49,7 +48,7 @@ Arguments:
                 // Arguments not requiring a value (--argument)
                 "--reinstall" => options.reinstall = true,
                 "--refresh" => options.refresh = true,
-                "--cache-only" | "--no-refresh" => {
+                "--no-refresh" | "--cache-only" => {
                     config.cache_timeout = u64::MAX;
                     options.refresh = false;
                 }

@@ -7,9 +7,9 @@ pub struct Config {
     pub install_dir: String,
     pub cache_timeout: u64,
     pub verbose_mode: bool,
+    pub verbose_files: bool,
     pub verbose_list: bool,
     pub verbose_urls: bool,
-    pub verbose_files: bool,
 }
 
 impl Default for Config {
@@ -18,8 +18,8 @@ impl Default for Config {
             install_dir: "~/.local/share/fonts".to_string(),
             cache_timeout: 90,
             verbose_mode: false,
-            verbose_list: false,
             verbose_files: false,
+            verbose_list: false,
             verbose_urls: false,
         }
     }
@@ -43,6 +43,11 @@ cache_timeout = 90
 # Disable:  --no-verbose
 verbose_mode = false
 
+# Show verbose output when adding or removing files
+# Enable:   --verbose-files,    --verbose
+# Disable:  --no-verbose-files, --no-verbose
+verbose_files = false
+
 # Show installed paths when running the list command
 # Enable:   --verbose-list,    --verbose
 # Disable:  --no-verbose-list, --no-verbose
@@ -52,11 +57,6 @@ verbose_list = false
 # Enable:   --verbose-urls,    --verbose
 # Disable:  --no-verbose-urls, --no-verbose
 verbose_urls = false
-
-# Show verbose output when adding or removing files
-# Enable:   --verbose-files,    --verbose
-# Disable:  --no-verbose-files, --no-verbose
-verbose_files = false
 "#
     };
 }
