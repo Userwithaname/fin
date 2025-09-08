@@ -178,20 +178,17 @@ pub fn perform(
                 match installed_fonts.lock().unwrap().installed.get(&font.name) {
                     Some(installed) => {
                         if Font::has_installer(&font.name) {
-                            match args.options.verbose || args.config.verbose_list {
-                                true => {
-                                    println!("{}\n ↪ {}", format_green!("{font}"), installed.dir);
-                                }
-                                false => println_green!("{font}"),
+                            match fs::exists(&installed.dir).unwrap_or_default() {
+                                true => println_green!("{font}"),
+                                false => println_orange!("{font} (missing directory)"),
+                            }
+                            if args.options.verbose || args.config.verbose_list {
+                                println!(" ↪ {}", installed.dir);
                             }
                         } else {
-                            match args.options.verbose {
-                                true => println!(
-                                    "{}\n ↪ {}",
-                                    format_orange!("{font} (missing installer)"),
-                                    installed.dir
-                                ),
-                                false => println_orange!("{font} (missing installer)"),
+                            println_orange!("{font} (missing installer)");
+                            if args.options.verbose {
+                                println!(" ↪ {}", installed.dir);
                             }
                         }
                     }
