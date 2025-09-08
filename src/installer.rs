@@ -763,6 +763,8 @@ impl Installer {
             .unwrap()
             .installed
             .get(&self.installer_name)
-            .is_none_or(|installed| self.url != installed.url.clone())
+            .is_none_or(|installed| {
+                self.url != installed.url || !fs::exists(&installed.dir).unwrap_or_default()
+            })
     }
 }
