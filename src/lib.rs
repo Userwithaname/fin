@@ -1,5 +1,5 @@
 use crate::action::Action;
-use crate::args::{show_help, Args};
+use crate::args::Args;
 use crate::config::Config;
 use crate::font::Font;
 use crate::installed::InstalledFonts;
@@ -13,14 +13,13 @@ use std::io::{stdin, stdout, Write};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-pub const VERSION: &str = "0.1.0";
-
 #[macro_use]
 pub mod colors;
 #[macro_use]
 pub mod paths;
 
 pub mod action;
+pub mod actions;
 pub mod args;
 pub mod bar;
 pub mod config;
@@ -33,8 +32,6 @@ mod installer;
 mod options;
 
 pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
-    let installed_fonts = Arc::new(Mutex::new(InstalledFonts::read()?));
-
     let interrupt_signal = Arc::new(AtomicBool::new(false));
     ctrlc::set_handler({
         let interrupt_signal = Arc::clone(&interrupt_signal);
@@ -45,6 +42,7 @@ pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
     .expect("Error setting Ctrl-C handler");
 
     let (args, items) = Args::build()?;
+    let installed_fonts = Arc::new(Mutex::new(InstalledFonts::read()?));
     let handle = thread::Builder::new()
         .name("fin".to_string())
         .spawn({
@@ -68,11 +66,11 @@ pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
         }
     };
 
-    installed_fonts.lock().unwrap().write()?;
     if lock_state.is_none() {
         let _ = fs::remove_file(lock_file_path!());
     }
 
+    installed_fonts.lock().unwrap().write()?;
     result
 }
 

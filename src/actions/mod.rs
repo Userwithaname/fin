@@ -1,0 +1,9 @@
+pub mod clean;
+pub mod config;
+pub mod help;
+pub mod install;
+pub mod list;
+pub mod reinstall;
+pub mod remove;
+pub mod update;
+pub mod version;

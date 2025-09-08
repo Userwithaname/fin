@@ -18,7 +18,7 @@ impl Args {
         let mut args = env::args();
         args.next();
 
-        let action = Action::parse(args.next())?;
+        let action = Action::parse(args.next().as_ref())?;
 
         let mut flags = Vec::new();
         let mut items = Vec::new();
@@ -56,22 +56,4 @@ impl Args {
         fonts.iter().for_each(|font| println_red!("   {font}"));
         println!();
     }
-}
-
-pub fn show_help() -> String {
-    // Remember to update README.md
-    let help_message = format!(
-        "\
-Usage:
-    fin [action] [items]
-
-{}
-{}",
-        Action::help_actions(),
-        Options::help_options()
-    );
-
-    print!("{help_message}");
-
-    help_message
 }

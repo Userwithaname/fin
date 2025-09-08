@@ -28,10 +28,33 @@ mod test_action {
         print!("{help_actions}");
 
         all_actions.iter().for_each(|action| {
-            let action = format!("  {action:?} ").to_lowercase();
+            let action = format!("  {action:?} ").trim().to_lowercase();
             if !help_actions.contains(&action) {
+                panic!("The '{action}' action is missing from the help message");
+            }
+        });
+    }
+
+    #[test]
+    fn help_for_every_action() {
+        // todo!("Ensure each output contains a 'Description' and 'Usage'");
+
+        let all_actions = ensure_exhaustive!(
+            Action, Install, Reinstall, Update, Remove, List, Clean, Config, Version, Help
+        );
+
+        all_actions.iter().for_each(|action| {
+            let help = fin::actions::help::HelpAction::run(action);
+            let action = format!("  {action:?} ").trim().to_lowercase();
+            // if !help.contains("Description") {
+            //     panic!(
+            //         "The '{}' action help message is missing a description",
+            //         action.trim()
+            //     );
+            // }
+            if !help.contains("Usage") || !help.contains(&format!("{action}")) {
                 panic!(
-                    "The '{}' action is missing from the help message",
+                    "The '{}' action help message is missing a usage section",
                     action.trim()
                 );
             }
@@ -52,6 +75,8 @@ mod test_action {
     fn consistent_version_numbers() {
         use std::fs;
 
+        use fin::actions::version::VERSION;
+
         let cargo_toml_path = env!("CARGO_MANIFEST_DIR").to_owned() + "/Cargo.toml";
         let cargo_info: CargoInfo =
             toml::from_str(&fs::read_to_string(cargo_toml_path).unwrap()).unwrap();
@@ -61,12 +86,11 @@ mod test_action {
             "\
 Version:    {}
 Cargo.toml: {}",
-            fin::VERSION,
-            cmp_version
+            VERSION, cmp_version
         );
 
         assert!(
-            fin::VERSION == cmp_version,
+            VERSION == cmp_version,
             "Version number reported by the program differs from Cargo.toml"
         );
     }

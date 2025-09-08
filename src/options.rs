@@ -1,6 +1,4 @@
-use crate::Config;
-
-use crate::show_help;
+use crate::{action::Action, actions::help::HelpAction, Config};
 
 #[derive(Default, Clone)]
 pub struct Options {
@@ -86,19 +84,19 @@ Arguments:
                                 'y' => options.answer = Some(true),
                                 'n' => options.answer = Some(false),
                                 '-' => {
-                                    show_help();
+                                    HelpAction::run(&Action::Help);
                                     println!();
                                     return Err(format!("Unknown argument: {opt}"));
                                 }
                                 o => {
-                                    show_help();
+                                    HelpAction::run(&Action::Help);
                                     println!();
                                     return Err(format!("Unknown argument: -{o}"));
                                 }
                             }
                         }
                     } else {
-                        show_help();
+                        HelpAction::run(&Action::Help);
                         println!();
                         return Err(format!("Unknown argument: {opt}"));
                     }

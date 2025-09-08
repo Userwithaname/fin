@@ -22,9 +22,10 @@ to a standard package manager.
 
 # Usage
 
-- `fin install` - installs the specified fonts
-- `fin update` - updates your installed fonts
-- `fin remove` - removes the specified fonts
+- `fin install [fonts]` - installs the specified fonts
+- `fin update [fonts (optional)]` - updates your installed fonts
+- `fin remove [fonts]` - removes the specified fonts
+- `fin help [action]` - help messages for each action
 
 See the output of `fin help` for more information:
 
@@ -42,7 +43,7 @@ Actions:
     clean                 Remove temporary cache files
     config                Manage the configuration file
     version               Show the current version number
-    help                  Show this help message
+    help                  Show help for any action
 
 Arguments:
     --refresh       -r    Ignore cache and fetch new data

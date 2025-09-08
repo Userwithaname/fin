@@ -11,7 +11,10 @@ mod test_readme {
 
     #[test]
     fn consistent_help_message() {
-        if !readme().contains(&fin::args::show_help()) {
+        use fin::action::Action;
+        use fin::actions::help::HelpAction;
+
+        if !readme().contains(&HelpAction::run(&Action::Help)) {
             panic!("Help message in the README needs to be updated");
         }
     }
