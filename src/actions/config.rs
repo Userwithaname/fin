@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::Config;
+use crate::{default_config, Config};
 
 pub struct ConfigAction;
 
@@ -37,6 +37,9 @@ Items:
             "show" => {
                 let target = config_file_path!();
                 println!("{}", fs::read_to_string(&target).unwrap_or_default().trim());
+            }
+            "show-default" => {
+                print!("{}", default_config!());
             }
             "default" => {
                 Config::write_default_config()?;
