@@ -147,7 +147,7 @@ pub fn perform(
         Action::Config => ConfigAction::run(items)?,
         Action::Version => VersionAction::run(),
         Action::Help => {
-            let action = Action::parse(items.iter().next()).unwrap_or(Action::Help);
+            let action = Action::parse(items.iter().next())?;
             HelpAction::run(&action);
         }
     }
