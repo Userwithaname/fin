@@ -1,20 +1,15 @@
-use crate::actions::clean::CleanAction;
-use crate::actions::config::ConfigAction;
-use crate::actions::help::HelpAction;
-use crate::actions::install::InstallAction;
-use crate::actions::list::ListAction;
-use crate::actions::reinstall::ReinstallAction;
-use crate::actions::remove::RemoveAction;
-use crate::actions::update::UpdateAction;
-use crate::actions::version::VersionAction;
+use crate::actions::{
+    clean::CleanAction, config::ConfigAction, help::HelpAction, install::InstallAction,
+    list::ListAction, reinstall::ReinstallAction, remove::RemoveAction, update::UpdateAction,
+    version::VersionAction,
+};
 
 use crate::Args;
 use crate::Font;
 use crate::InstalledFonts;
 
 use std::fs;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 pub enum Action {

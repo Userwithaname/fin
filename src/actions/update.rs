@@ -12,9 +12,14 @@ pub struct UpdateAction;
 impl UpdateAction {
     pub fn show_help() -> String {
         let help = "\
+Action:
+    Check for updates and install them
+    Updates all fonts when unspecified
+
 Usages:
     fin update
-    fin update [font(s)]
+    fin update [font]
+    fin update [font]:[tag]
 "
         .to_string();
 

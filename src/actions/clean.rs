@@ -7,8 +7,13 @@ pub struct CleanAction;
 impl CleanAction {
     pub fn show_help() -> String {
         let help = "\
+Action:
+    Clean the program cache
+    Clears all cache when unspecified
+
 Usage:
-    fin clean [item(s)]
+    fin clean
+    fin clean [item]
 
 Items:
     all                   Remove all cache

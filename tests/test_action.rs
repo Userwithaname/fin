@@ -28,35 +28,43 @@ mod test_action {
         print!("{help_actions}");
 
         all_actions.iter().for_each(|action| {
-            let action = format!("  {action:?} ").trim().to_lowercase();
+            let action = format!("  {action:?} ").to_lowercase();
             if !help_actions.contains(&action) {
-                panic!("The '{action}' action is missing from the help message");
+                panic!(
+                    "The '{}' action is missing from the help message",
+                    action.trim()
+                );
             }
         });
     }
 
     #[test]
     fn help_for_every_action() {
-        // todo!("Ensure each output contains a 'Description' and 'Usage'");
-
         let all_actions = ensure_exhaustive!(
             Action, Install, Reinstall, Update, Remove, List, Clean, Config, Version, Help
         );
 
         all_actions.iter().for_each(|action| {
+            use fin::wildcards::match_wildcard;
+
+            println!("\n{action:?}:");
             let help = fin::actions::help::HelpAction::run(action);
-            let action = format!("  {action:?} ").trim().to_lowercase();
-            // if !help.contains("Description") {
-            //     panic!(
-            //         "The '{}' action help message is missing a description",
-            //         action.trim()
-            //     );
-            // }
+            let action = format!("{action:?}").trim().to_lowercase();
+            if action == "help" {
+                return;
+            }
             if !help.contains("Usage") || !help.contains(&format!("{action}")) {
+                panic!("The '{action}' action help message is missing a usage section",);
+            }
+            if !help.contains("Action") {
                 panic!(
-                    "The '{}' action help message is missing a usage section",
-                    action.trim()
+                    "The '{action}' action help message is missing a description:
+Action:
+    [Explanation of what it does]",
                 );
+            }
+            if !match_wildcard(&help, "Action:\n*\n\nUsage*:\n    fin*") {
+                panic!("The '{action}' action help message format is incorrect",);
             }
         });
     }

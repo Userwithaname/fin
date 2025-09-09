@@ -10,6 +10,9 @@ pub struct RemoveAction;
 impl RemoveAction {
     pub fn show_help() -> String {
         let help = "\
+Action:
+    Remove the specified fonts
+
 Usage:
     fin remove [font(s)]
 "

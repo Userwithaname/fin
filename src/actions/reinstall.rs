@@ -12,8 +12,12 @@ pub struct ReinstallAction;
 impl ReinstallAction {
     pub fn show_help() -> String {
         let help = "\
+Action:
+    Reinstall the specified fonts
+
 Usage:
-    fin reinstall [font(s)]
+    fin reinstall [font]
+    fin reinstall [font]:[tag]
 "
         .to_string();
 

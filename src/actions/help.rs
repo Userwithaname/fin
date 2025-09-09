@@ -1,11 +1,7 @@
-use crate::actions::clean::CleanAction;
-use crate::actions::config::ConfigAction;
-use crate::actions::install::InstallAction;
-use crate::actions::list::ListAction;
-use crate::actions::reinstall::ReinstallAction;
-use crate::actions::remove::RemoveAction;
-use crate::actions::update::UpdateAction;
-use crate::actions::version::VersionAction;
+use crate::actions::{
+    clean::CleanAction, config::ConfigAction, install::InstallAction, list::ListAction,
+    reinstall::ReinstallAction, remove::RemoveAction, update::UpdateAction, version::VersionAction,
+};
 
 use crate::action::Action;
 use crate::options::Options;
@@ -33,15 +29,15 @@ Usage:
 
     pub fn run(action: &Action) -> String {
         match action {
-            Action::Clean => CleanAction::show_help(),
-            Action::Config => ConfigAction::show_help(),
-            Action::Help => Self::show_help(),
-            Action::List => ListAction::show_help(),
             Action::Install => InstallAction::show_help(),
             Action::Reinstall => ReinstallAction::show_help(),
             Action::Update => UpdateAction::show_help(),
             Action::Remove => RemoveAction::show_help(),
+            Action::List => ListAction::show_help(),
+            Action::Clean => CleanAction::show_help(),
+            Action::Config => ConfigAction::show_help(),
             Action::Version => VersionAction::show_help(),
+            Action::Help => Self::show_help(),
         }
     }
 }

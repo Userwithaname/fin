@@ -7,11 +7,15 @@ pub struct ConfigAction;
 impl ConfigAction {
     pub fn show_help() -> String {
         let help = "\
+Action:
+    Manage the configuration file
+
 Usage:
     fin config [item]
 
 Items:
     show                  Show the current configuration
+    show-default          Show the default configuration
     default               Write the default configuration
     delete                Delete the configuration file
     help                  Show this help message

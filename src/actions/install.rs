@@ -11,8 +11,12 @@ pub struct InstallAction;
 impl InstallAction {
     pub fn show_help() -> String {
         let help = "\
+Action:
+    Install the specified fonts
+
 Usage:
-    fin install [font(s)]
+    fin install [font]
+    fin install [font]:[tag]
 "
         .to_string();
 

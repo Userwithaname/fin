@@ -9,6 +9,10 @@ pub struct ListAction;
 impl ListAction {
     pub fn show_help() -> String {
         let help = "\
+Action:
+    List installed or available fonts
+    Lists all when unspecified
+
 Usages:
     fin list
     fin list [item]
