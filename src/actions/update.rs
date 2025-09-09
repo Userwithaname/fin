@@ -5,9 +5,9 @@ use crate::font::Font;
 use crate::installed::InstalledFonts;
 use crate::user_prompt;
 
-pub struct UpdateAction;
-
 use crate::actions::install::install_fonts;
+
+pub struct UpdateAction;
 
 impl UpdateAction {
     pub fn show_help() -> String {
@@ -29,7 +29,7 @@ Usages:
         installed_fonts: &Arc<Mutex<InstalledFonts>>,
     ) -> Result<(), String> {
         println!("Updating: ");
-        Args::list_fonts_green(&fonts);
+        Args::list_fonts_green(fonts);
         if !user_prompt("Proceed?", args) {
             return Ok(());
         }

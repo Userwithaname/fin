@@ -27,7 +27,8 @@ Usage:
         installed_fonts: &Arc<Mutex<InstalledFonts>>,
     ) -> Result<(), String> {
         println!("Installing: ");
-        Args::list_fonts_green(&fonts);
+        Args::list_fonts_green(fonts);
+
         if !user_prompt("Proceed?", args) {
             return Ok(());
         }

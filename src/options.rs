@@ -70,35 +70,34 @@ Arguments:
                 // Short arguments and unknown argument errors
                 opt => {
                     let mut opts = opt.chars();
-                    if opts.next().unwrap() == '-' {
-                        for o in opts {
-                            match o {
-                                'i' => options.reinstall = true,
-                                'r' => options.refresh = true,
-                                'c' => {
-                                    config.cache_timeout = u64::MAX;
-                                    options.refresh = false;
-                                }
-                                'v' => options.verbose = true,
-                                'F' => options.force = true,
-                                'y' => options.answer = Some(true),
-                                'n' => options.answer = Some(false),
-                                '-' => {
-                                    HelpAction::run(&Action::Help);
-                                    println!();
-                                    return Err(format!("Unknown argument: {opt}"));
-                                }
-                                o => {
-                                    HelpAction::run(&Action::Help);
-                                    println!();
-                                    return Err(format!("Unknown argument: -{o}"));
-                                }
-                            }
-                        }
-                    } else {
+                    if opts.next().unwrap() != '-' {
                         HelpAction::run(&Action::Help);
                         println!();
                         return Err(format!("Unknown argument: {opt}"));
+                    }
+                    for o in opts {
+                        match o {
+                            'i' => options.reinstall = true,
+                            'r' => options.refresh = true,
+                            'c' => {
+                                config.cache_timeout = u64::MAX;
+                                options.refresh = false;
+                            }
+                            'v' => options.verbose = true,
+                            'F' => options.force = true,
+                            'y' => options.answer = Some(true),
+                            'n' => options.answer = Some(false),
+                            '-' => {
+                                HelpAction::run(&Action::Help);
+                                println!();
+                                return Err(format!("Unknown argument: {opt}"));
+                            }
+                            o => {
+                                HelpAction::run(&Action::Help);
+                                println!();
+                                return Err(format!("Unknown argument: -{o}"));
+                            }
+                        }
                     }
                 }
             }

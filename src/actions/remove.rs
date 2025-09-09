@@ -26,13 +26,13 @@ Usage:
         installed_fonts: &Arc<Mutex<InstalledFonts>>,
     ) -> Result<(), String> {
         println!("Removing: ");
-        Args::list_fonts_red(&fonts);
+        Args::list_fonts_red(fonts);
 
         if !user_prompt("Proceed?", args) {
             return Ok(());
         }
 
-        remove_fonts(args, &fonts, installed_fonts)
+        remove_fonts(args, fonts, installed_fonts)
     }
 }
 
