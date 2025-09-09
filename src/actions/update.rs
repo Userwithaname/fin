@@ -16,7 +16,7 @@ Action:
     Check for updates and install them
     Updates all fonts when unspecified
 
-Usages:
+Usage:
     fin update
     fin update [font]
     fin update [font]:[tag]

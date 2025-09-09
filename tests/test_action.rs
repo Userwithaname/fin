@@ -63,7 +63,7 @@ Action:
     [Explanation of what it does]",
                 );
             }
-            if !match_wildcard(&help, "Action:\n*\n\nUsage*:\n    fin*") {
+            if !match_wildcard(&help, "Action:\n*\n\nUsage:\n    fin*") {
                 panic!("The '{action}' action help message format is incorrect",);
             }
         });

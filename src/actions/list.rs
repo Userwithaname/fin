@@ -13,7 +13,7 @@ Action:
     List installed or available fonts
     Lists all when unspecified
 
-Usages:
+Usage:
     fin list
     fin list [item]
 
