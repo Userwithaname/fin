@@ -53,12 +53,12 @@ impl Installer {
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
             &fs::read_to_string(installer_path!(&font_name)).map_err(|err| {
-                eprintln!("Error: Could not read the installer file for '{font_name}'");
+                eprintln!("Error reading the installer: {font_name}");
                 err.to_string()
             })?,
         )
         .map_err(|err| {
-            eprintln!("Could not parse the installer for '{font_name}'");
+            eprintln!("Error parsing the installer: {font_name}");
             err.to_string()
         })?;
 
@@ -69,15 +69,11 @@ impl Installer {
         }
 
         if !match_wildcard(&installer.url, "*://*.*/*") {
-            return Err(format!(
-                "Installer for '{font_name}' did not specify a valid URL"
-            ));
+            return Err(format!("Invalid installer URL: {font_name}"));
         }
 
         if !match_wildcard(&installer.file, "*.*") {
-            return Err(format!(
-                "Installer for '{font_name}' did not specify a valid archive"
-            ));
+            return Err(format!("Invalid archive: {font_name}"));
         }
         installer.file = installer.file.replace("$tag", &installer.tag);
 
@@ -137,7 +133,7 @@ impl Installer {
             .map_or_else(
                 || {
                     Err(format!(
-                        "Archive download link not found for {} ({})",
+                        "Archive download link not found: {} ({})",
                         self.name, self.tag
                     ))
                 },
