@@ -16,7 +16,7 @@ Usage:
 Items:
     show                  Show the current configuration
     show-default          Show the default configuration
-    default               Write the default configuration
+    write-default         Write the default configuration
     delete                Delete the configuration file
     help                  Show this help message
 "
@@ -41,7 +41,7 @@ Items:
             "show-default" => {
                 print!("{}", default_config!());
             }
-            "default" => {
+            "write-default" => {
                 Config::write_default_config()?;
                 println!(
                     "Created a new configuration file on disk:\n{}",

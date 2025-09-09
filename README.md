@@ -120,7 +120,7 @@ include = [ "LICENSE.txt", "*.ttf" ]
 Fin can be configured using the `config.toml` file located in
 `~/.config/fin/`.
 
-Running `fin config default` will write the following (default)
+Running `fin config write-default` will create the following default
 configuration:
 
 ```toml
