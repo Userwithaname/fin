@@ -123,89 +123,6 @@ impl Installer {
         Ok(installer)
     }
 
-    /// Returns the installer names of all available installers matched
-    /// by any of the provided filter patterns
-    pub fn filter_installers(filters: &[String]) -> Result<Vec<String>, String> {
-        let installers_dir = installers_dir_path!();
-        if !Path::new(&installers_dir).exists() {
-            return Err(format!(
-                "Installers directory does not exist: {installers_dir}"
-            ));
-        }
-
-        let installers: Vec<String> = fs::read_dir(installers_dir)
-            .map_err(|e| e.to_string())?
-            .filter_map(|installer| {
-                installer.ok().and_then(|i| {
-                    i.path()
-                        .file_name()
-                        .and_then(|n| n.to_str().map(String::from))
-                })
-            })
-            .collect();
-
-        let mut matches = HashMap::<String, Vec<String>>::new();
-        for filter in filters {
-            let mut p_t = filter.split(':');
-            let (pattern, tag) = (p_t.next().unwrap(), p_t.next());
-
-            for input in &installers {
-                if !match_wildcard(input, pattern) {
-                    continue;
-                }
-
-                let font = match tag {
-                    Some(tag) => input.to_string() + ":" + tag,
-                    None => input.to_string(),
-                };
-
-                match matches.get_mut(filter) {
-                    Some(entry) => entry.push(font),
-                    None => {
-                        let _ = matches.insert(filter.to_string(), vec![font]);
-                    }
-                }
-            }
-        }
-
-        let mut installers = BTreeSet::new();
-
-        filters.iter().for_each(|filter| match matches.get(filter) {
-            Some(fonts) => {
-                for font in fonts {
-                    installers.replace(font.to_owned());
-                }
-            }
-            None => println!("No installers: '{filter}'"),
-        });
-
-        Ok(installers.iter().map(ToString::to_string).collect())
-    }
-
-    /// Returns the installer names of all installed fonts matched by
-    /// any of the provided filter patterns
-    #[must_use]
-    pub fn filter_installed(
-        filters: &[String],
-        installed_fonts: &Arc<Mutex<InstalledFonts>>,
-    ) -> Vec<String> {
-        let installed_fonts = installed_fonts.lock().unwrap().get_names();
-
-        let matches = match_wildcards_multi(&installed_fonts, filters);
-        let mut installed = BTreeSet::new();
-
-        filters.iter().for_each(|filter| match matches.get(filter) {
-            Some(fonts) => {
-                for font in fonts {
-                    installed.replace(font.to_owned());
-                }
-            }
-            None => println!("Not installed: '{filter}'"),
-        });
-
-        installed.iter().map(ToString::to_string).collect()
-    }
-
     /// Returns a direct link to the font archive
     /// Note: `self.url` is expected to lead to a webpage, which has the direct link
     /// discoverable in plain text within its source.
@@ -754,6 +671,89 @@ impl Installer {
         }
 
         Ok(())
+    }
+
+    /// Returns the installer names of all available installers matched
+    /// by any of the provided filter patterns
+    pub fn filter_installers(filters: &[String]) -> Result<Vec<String>, String> {
+        let installers_dir = installers_dir_path!();
+        if !Path::new(&installers_dir).exists() {
+            return Err(format!(
+                "Installers directory does not exist: {installers_dir}"
+            ));
+        }
+
+        let installers: Vec<String> = fs::read_dir(installers_dir)
+            .map_err(|e| e.to_string())?
+            .filter_map(|installer| {
+                installer.ok().and_then(|i| {
+                    i.path()
+                        .file_name()
+                        .and_then(|n| n.to_str().map(String::from))
+                })
+            })
+            .collect();
+
+        let mut matches = HashMap::<String, Vec<String>>::new();
+        for filter in filters {
+            let mut p_t = filter.split(':');
+            let (pattern, tag) = (p_t.next().unwrap(), p_t.next());
+
+            for input in &installers {
+                if !match_wildcard(input, pattern) {
+                    continue;
+                }
+
+                let font = match tag {
+                    Some(tag) => input.to_string() + ":" + tag,
+                    None => input.to_string(),
+                };
+
+                match matches.get_mut(filter) {
+                    Some(entry) => entry.push(font),
+                    None => {
+                        let _ = matches.insert(filter.to_string(), vec![font]);
+                    }
+                }
+            }
+        }
+
+        let mut installers = BTreeSet::new();
+
+        filters.iter().for_each(|filter| match matches.get(filter) {
+            Some(fonts) => {
+                for font in fonts {
+                    installers.replace(font.to_owned());
+                }
+            }
+            None => println!("No installers: '{filter}'"),
+        });
+
+        Ok(installers.iter().map(ToString::to_string).collect())
+    }
+
+    /// Returns the installer names of all installed fonts matched by
+    /// any of the provided filter patterns
+    #[must_use]
+    pub fn filter_installed(
+        filters: &[String],
+        installed_fonts: &Arc<Mutex<InstalledFonts>>,
+    ) -> Vec<String> {
+        let installed_fonts = installed_fonts.lock().unwrap().get_names();
+
+        let matches = match_wildcards_multi(&installed_fonts, filters);
+        let mut installed = BTreeSet::new();
+
+        filters.iter().for_each(|filter| match matches.get(filter) {
+            Some(fonts) => {
+                for font in fonts {
+                    installed.replace(font.to_owned());
+                }
+            }
+            None => println!("Not installed: '{filter}'"),
+        });
+
+        installed.iter().map(ToString::to_string).collect()
     }
 
     #[must_use]
