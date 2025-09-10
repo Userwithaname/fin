@@ -47,28 +47,28 @@ enum InstallAction {
 impl Installer {
     pub fn parse(
         args: Arc<Args>,
-        font_name: &str,
+        installer_dir: String,
+        installer_name: &str,
         override_version: Option<&str>,
         cached_pages: Arc<Mutex<HashMap<u64, FontPage>>>,
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
-            &fs::read_to_string(installer_path!(&font_name)).map_err(|err| {
-                eprintln!("Error reading the installer: {font_name}");
+            &fs::read_to_string(installer_dir + installer_name).map_err(|err| {
+                eprintln!("Error reading the installer: {installer_name}");
                 err.to_string()
             })?,
         )
         .map_err(|err| {
-            eprintln!("Error parsing the installer: {font_name}");
+            eprintln!("Error parsing the installer: {installer_name}");
             err.to_string()
         })?;
 
-        installer.installer_name = font_name.to_string();
-
-        Self::validate_name(&installer.name, font_name)?;
+        installer.installer_name = installer_name.to_string();
+        Self::validate_name(&installer.name, installer_name)?;
         Self::validate_tag(&mut installer.tag, override_version);
-        Self::validate_file(&mut installer.file, &installer.tag, &font_name)?;
+        Self::validate_file(&mut installer.file, &installer.tag, &installer_name)?;
         Self::validate_action(&mut installer.action, &installer.tag);
-        installer.validate_url(args, cached_pages, font_name)?;
+        installer.validate_url(args, cached_pages, installer_name)?;
 
         Ok(installer)
     }
@@ -693,7 +693,7 @@ impl Installer {
     /// Returns the installer names of all available installers matched
     /// by any of the provided filter patterns
     pub fn filter_installers(filters: &[String]) -> Result<Vec<String>, String> {
-        let installers_dir = installers_dir_path!();
+        let installers_dir = installers_dir!();
         if !Path::new(&installers_dir).exists() {
             return Err(format!(
                 "Installers directory does not exist: {installers_dir}"

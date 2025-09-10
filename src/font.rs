@@ -65,7 +65,13 @@ impl Font {
             return Ok(Self {
                 name: name.to_string(),
                 installer: match needs_installer {
-                    true => match Installer::parse(args, name, version, cached_pages) {
+                    true => match Installer::parse(
+                        args,
+                        installers_dir!(),
+                        name,
+                        version,
+                        cached_pages,
+                    ) {
                         Ok(installer) => Some(installer),
                         Err(e) => {
                             eprintln!("{e}");
@@ -240,6 +246,6 @@ Items:
 
     #[must_use]
     pub fn has_installer(name: &str) -> bool {
-        Path::new(&(installers_dir_path!() + name)).exists()
+        Path::new(&(installers_dir!() + name)).exists()
     }
 }

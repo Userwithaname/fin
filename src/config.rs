@@ -80,7 +80,7 @@ impl Config {
     }
 
     pub fn write_default_config() -> Result<(), String> {
-        fs::create_dir_all(config_dir_path!()).map_err(|e| e.to_string())?;
+        fs::create_dir_all(config_dir!()).map_err(|e| e.to_string())?;
 
         let config_file_path = config_file_path!();
         let config_file = Path::new(&config_file_path);

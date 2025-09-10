@@ -23,13 +23,13 @@ pub mod actions;
 pub mod args;
 pub mod bar;
 pub mod config;
+pub mod font_page;
+pub mod installer;
+pub mod options;
 pub mod wildcards;
 
 mod font;
-mod font_page;
 mod installed;
-mod installer;
-mod options;
 
 pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
     let interrupt_signal = Arc::new(AtomicBool::new(false));

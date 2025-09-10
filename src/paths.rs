@@ -6,7 +6,7 @@ macro_rules! home_dir {
 }
 
 #[macro_export]
-macro_rules! config_dir_path {
+macro_rules! config_dir {
     () => {
         home_dir!() + "/.config/fin/"
     };
@@ -15,28 +15,21 @@ macro_rules! config_dir_path {
 #[macro_export]
 macro_rules! config_file_path {
     () => {
-        config_dir_path!() + "config.toml"
+        config_dir!() + "config.toml"
     };
 }
 
 #[macro_export]
-macro_rules! installers_dir_path {
+macro_rules! installers_dir {
     () => {
-        config_dir_path!() + "installers/"
-    };
-}
-
-#[macro_export]
-macro_rules! installer_path {
-    ($name:expr) => {
-        installers_dir_path!() + $name
+        config_dir!() + "installers/"
     };
 }
 
 #[macro_export]
 macro_rules! installed_file_path {
     () => {
-        config_dir_path!() + "installed.toml"
+        config_dir!() + "installed.toml"
     };
 }
 
