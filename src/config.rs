@@ -29,7 +29,7 @@ impl Default for Config {
 macro_rules! default_config {
     // Remember to update README.md
     () => {
-        r#"# Default location for installing new fonts
+        r#"# Location where new fonts will be installed
 # Override:  --install-dir=[path]
 install_dir = "~/.local/share/fonts"
 

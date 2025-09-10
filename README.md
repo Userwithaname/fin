@@ -124,7 +124,7 @@ Running `fin config write-default` will create the following default
 configuration:
 
 ```toml
-# Default location for installing new fonts
+# Location where new fonts will be installed
 # Override:  --install-dir=[path]
 install_dir = "~/.local/share/fonts"
 
