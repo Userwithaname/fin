@@ -64,16 +64,32 @@ impl Installer {
 
         installer.installer_name = font_name.to_string();
 
+        if installer.name.replace(['.', '/'], "").len() == 0 || installer.name.contains("..") {
+            return Err(format!("{font_name}: Invalid name: \"{}\"", installer.name));
+        }
+
         if let Some(version) = override_version {
             installer.tag = version.to_string();
         }
 
         if !match_wildcard(&installer.url, "*://*.*/*") {
-            return Err(format!("Invalid installer URL: {font_name}"));
+            return Err(format!("{font_name}: Invalid URL: \"{}\"", installer.url));
         }
 
         if !match_wildcard(&installer.file, "*.*") {
-            return Err(format!("Invalid archive: {font_name}"));
+            return Err(format!(
+                "{font_name}: File must specify an extension: \"{}\"",
+                installer.file
+            ));
+        }
+        if installer.file.ends_with('*') {
+            return Err(format!(
+                "{font_name}: File must not end with a '*': \"{}\"",
+                installer.file
+            ));
+        }
+        if installer.file.len() < 2 {
+            return Err(format!("{font_name}: Invalid file: \"{}\"", installer.file));
         }
         installer.file = installer.file.replace("$tag", &installer.tag);
 
@@ -119,9 +135,7 @@ impl Installer {
         Ok(installer)
     }
 
-    /// Returns a direct link to the font archive
-    /// Note: `self.url` is expected to lead to a webpage, which has the direct link
-    /// discoverable in plain text within its source.
+    /// Returns a direct link to the font archive found within `font_page`
     fn find_direct_link(&self, font_page: FontPage) -> Result<String, String> {
         font_page
             .contents
