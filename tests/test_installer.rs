@@ -15,7 +15,10 @@ mod test_installer {
             if let Err(e) = Installer::parse(
                 Arc::new(fin::args::Args {
                     action: fin::action::Action::Install,
-                    config: Config::default(),
+                    config: Config {
+                        cache_timeout: u64::MAX,
+                        ..Config::default()
+                    },
                     options: Options {
                         reinstall: true,
                         refresh: false,
