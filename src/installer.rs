@@ -64,75 +64,82 @@ impl Installer {
 
         installer.installer_name = font_name.to_string();
 
-        if installer.name.replace(['.', '/'], "").len() == 0 || installer.name.contains("..") {
-            return Err(format!("{font_name}: Invalid name: \"{}\"", installer.name));
-        }
+        Self::validate_name(&installer.name, font_name)?;
+        Self::validate_tag(&mut installer.tag, override_version);
+        Self::validate_file(&mut installer.file, &installer.tag, &font_name)?;
+        Self::validate_action(&mut installer.action, &installer.tag);
+        installer.validate_url(args, cached_pages, font_name)?;
 
+        Ok(installer)
+    }
+
+    fn validate_name(name: &str, font_name: &str) -> Result<(), String> {
+        if name.replace(['.', '/'], "").len() == 0 || name.contains("..") {
+            return Err(format!("{font_name}: Invalid name: \"{}\"", name));
+        }
+        Ok(())
+    }
+    fn validate_tag(tag: &mut String, override_version: Option<&str>) {
         if let Some(version) = override_version {
-            installer.tag = version.to_string();
+            *tag = version.to_string();
         }
-
-        if !match_wildcard(&installer.url, "*://*.*/*") {
-            return Err(format!("{font_name}: Invalid URL: \"{}\"", installer.url));
-        }
-
-        if !match_wildcard(&installer.file, "*.*") {
+    }
+    fn validate_file(file: &mut String, tag: &str, installer: &str) -> Result<(), String> {
+        if !match_wildcard(&file, "*.*") {
             return Err(format!(
-                "{font_name}: File must specify an extension: \"{}\"",
-                installer.file
+                "{installer}: File must specify an extension: \"{}\"",
+                file
             ));
         }
-        if installer.file.ends_with('*') {
+        if file.ends_with('*') {
             return Err(format!(
-                "{font_name}: File must not end with a '*': \"{}\"",
-                installer.file
+                "{installer}: File must not end with a '*': \"{}\"",
+                file
             ));
         }
-        if installer.file.len() < 2 {
-            return Err(format!("{font_name}: Invalid file: \"{}\"", installer.file));
+        if file.len() < 2 {
+            return Err(format!("{installer}: Invalid file: \"{}\"", file));
         }
-        installer.file = installer.file.replace("$tag", &installer.tag);
-
+        *file = file.replace("$tag", tag);
+        Ok(())
+    }
+    fn validate_action(action: &mut InstallAction, tag: &str) {
+        match action {
+            InstallAction::Extract {
+                ref mut include,
+                ref mut exclude,
+                ..
+            } => {
+                *include = include.iter().map(|p| p.replace("$tag", &tag)).collect();
+                *exclude = exclude.clone().map_or_else(
+                    || None,
+                    |p| Some(p.iter().map(|p| p.replace("$tag", &tag)).collect()),
+                );
+            }
+            InstallAction::SingleFile => (),
+        }
+    }
+    fn validate_url(
+        &mut self,
+        args: Arc<Args>,
+        cached_pages: Arc<Mutex<HashMap<u64, FontPage>>>,
+        font_name: &str,
+    ) -> Result<(), String> {
+        if !match_wildcard(&self.url, "*://*.*/*") {
+            return Err(format!("{font_name}: Invalid URL: \"{}\"", self.url));
+        }
         let reqwest_client = reqwest::blocking::Client::new();
-        installer.url = match installer.url.ends_with("$file") {
+        self.url = match self.url.ends_with("$file") {
             // TODO: Get the redirected URL for direct links
-            true => installer.url.replace("$file", &installer.file),
-            false => installer.find_direct_link(FontPage::get_font_page(
-                &installer.url.replace("$tag", &installer.tag),
+            true => self.url.replace("$file", &self.file),
+            false => self.find_direct_link(FontPage::get_font_page(
+                &self.url.replace("$tag", &self.tag),
                 args,
                 &reqwest_client,
                 cached_pages,
             )?)?,
         };
-
-        match installer.action {
-            InstallAction::Extract {
-                include,
-                exclude,
-                keep_folders,
-            } => {
-                installer.action = InstallAction::Extract {
-                    include: include
-                        .iter()
-                        .map(|p| p.replace("$tag", &installer.tag))
-                        .collect(),
-                    exclude: exclude.map_or_else(
-                        || None,
-                        |p| {
-                            Some(
-                                p.iter()
-                                    .map(|p| p.replace("$tag", &installer.tag))
-                                    .collect(),
-                            )
-                        },
-                    ),
-                    keep_folders,
-                }
-            }
-            InstallAction::SingleFile => (),
-        }
-
-        Ok(installer)
+        Ok(())
     }
 
     /// Returns a direct link to the font archive found within `font_page`
