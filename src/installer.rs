@@ -238,7 +238,7 @@ impl Installer {
 
                 let update_progress_bar = |status_symbol: &str, progress: f64| {
                     bar::show_progress(
-                        &format!("{status_symbol} Staging:   "),
+                        &format!("{status_symbol} Staging:    "),
                         progress,
                         &format!(" {progress} / 1"),
                     );
