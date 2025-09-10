@@ -19,6 +19,6 @@ Usage:
     }
 
     pub fn run() {
-        println!("{}", VERSION);
+        println!("{VERSION}");
     }
 }

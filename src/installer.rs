@@ -66,7 +66,7 @@ impl Installer {
         installer.installer_name = installer_name.to_string();
         Self::validate_name(&installer.name, installer_name)?;
         Self::validate_tag(&mut installer.tag, override_version);
-        Self::validate_file(&mut installer.file, &installer.tag, &installer_name)?;
+        Self::validate_file(&mut installer.file, &installer.tag, installer_name)?;
         Self::validate_action(&mut installer.action, &installer.tag);
         installer.validate_url(args, cached_pages, installer_name)?;
 
@@ -74,8 +74,8 @@ impl Installer {
     }
 
     fn validate_name(name: &str, font_name: &str) -> Result<(), String> {
-        if name.replace(['.', '/'], "").len() == 0 || name.contains("..") {
-            return Err(format!("{font_name}: Invalid name: \"{}\"", name));
+        if name.replace(['.', '/'], "").is_empty() || name.contains("..") {
+            return Err(format!("{font_name}: Invalid name: \"{name}\""));
         }
         Ok(())
     }
@@ -85,20 +85,18 @@ impl Installer {
         }
     }
     fn validate_file(file: &mut String, tag: &str, installer: &str) -> Result<(), String> {
-        if !match_wildcard(&file, "*.*") {
+        if !match_wildcard(file, "*.*") {
             return Err(format!(
-                "{installer}: File must specify an extension: \"{}\"",
-                file
+                "{installer}: File must specify an extension: \"{file}\"",
             ));
         }
         if file.ends_with('*') {
             return Err(format!(
-                "{installer}: File must not end with a '*': \"{}\"",
-                file
+                "{installer}: File must not end with a '*': \"{file}\"",
             ));
         }
         if file.len() < 2 {
-            return Err(format!("{installer}: Invalid file: \"{}\"", file));
+            return Err(format!("{installer}: Invalid file: \"{file}\"",));
         }
         *file = file.replace("$tag", tag);
         Ok(())
@@ -106,14 +104,12 @@ impl Installer {
     fn validate_action(action: &mut InstallAction, tag: &str) {
         match action {
             InstallAction::Extract {
-                ref mut include,
-                ref mut exclude,
-                ..
+                include, exclude, ..
             } => {
-                *include = include.iter().map(|p| p.replace("$tag", &tag)).collect();
+                *include = include.iter().map(|p| p.replace("$tag", tag)).collect();
                 *exclude = exclude.clone().map_or_else(
                     || None,
-                    |p| Some(p.iter().map(|p| p.replace("$tag", &tag)).collect()),
+                    |p| Some(p.iter().map(|p| p.replace("$tag", tag)).collect()),
                 );
             }
             InstallAction::SingleFile => (),

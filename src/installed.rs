@@ -213,7 +213,7 @@ impl InstalledFonts {
         let mut directories: BTreeSet<String> = [String::new()].into();
         let mut files_processed = 0.0;
         let mut messages = String::new();
-        files.iter().for_each(|file| {
+        for file in files {
             if verbose {
                 print!("   {file} ... ");
                 let _ = stdout().flush();
@@ -228,13 +228,13 @@ impl InstalledFonts {
                 if verbose {
                     println_orange!("Missing");
                 }
-                return;
+                continue;
             }
 
             match fs::remove_file(file_path) {
                 Ok(()) => {
                     if verbose {
-                        println_green!("Removed")
+                        println_green!("Removed");
                     }
                 }
                 Err(e) => {
@@ -258,7 +258,7 @@ impl InstalledFonts {
                 }
                 directories.replace(dirs[i].clone());
             }
-        });
+        }
 
         directories.iter().rev().for_each(|subdir| {
             if verbose {
