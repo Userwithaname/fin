@@ -150,14 +150,13 @@ impl Installer {
         if !match_wildcard(&self.url, "*://*.*/*") {
             return Err(format!("{font_name}: Invalid URL: \"{}\"", self.url));
         }
-        self.url = Self::find_direct_link(font_page_contents, &self.tag, &self.file, &self.name)?;
+        self.url = Self::find_direct_link(font_page_contents, &self.file, &self.installer_name)?;
         Ok(())
     }
 
-    /// Returns a direct link to the font archive found within `font_page`
+    /// Returns a direct link to the `file` found within `font_page`
     fn find_direct_link(
         font_page_contents: &str,
-        tag: &str,
         file: &str,
         name: &str,
     ) -> Result<String, String> {
@@ -165,7 +164,11 @@ impl Installer {
             .split('"')
             .find_map(|line| wildcard_substring(line, &(String::from("https://*") + file), b""))
             .map_or_else(
-                || Err(format!("Archive download link not found: {name} ({tag})")),
+                || {
+                    Err(format!(
+                        "{name}: File \"{file}\" could not be found within the webpage"
+                    ))
+                },
                 |link| Ok(link.to_string()),
             )
     }
@@ -181,7 +184,7 @@ impl Installer {
             Some(Checksum::SHA256 { file }) => {
                 Self::validate_file(file, tag, font_name)?;
                 let file_link =
-                    Self::find_direct_link(font_page_contents, &self.tag, file, &self.name)?;
+                    Self::find_direct_link(font_page_contents, file, &self.installer_name)?;
                 *file = reqwest_client
                     .get(&file_link)
                     .send()
