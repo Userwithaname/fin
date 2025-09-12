@@ -24,7 +24,7 @@ pub struct Installer {
     tag: String,
     pub url: String,
     file: String,
-    action: InstallAction,
+    action: FileAction,
 
     #[serde(default, skip_serializing)]
     installer_name: String,
@@ -35,7 +35,7 @@ pub struct Installer {
 }
 
 #[derive(Debug, Deserialize)]
-enum InstallAction {
+enum FileAction {
     Extract {
         include: Box<[String]>,
         exclude: Option<Box<[String]>>,
@@ -101,13 +101,9 @@ impl Installer {
         *file = file.replace("$tag", tag);
         Ok(())
     }
-    fn validate_action(
-        action: &mut InstallAction,
-        tag: &str,
-        font_name: &str,
-    ) -> Result<(), String> {
+    fn validate_action(action: &mut FileAction, tag: &str, font_name: &str) -> Result<(), String> {
         match action {
-            InstallAction::Extract {
+            FileAction::Extract {
                 include, exclude, ..
             } => {
                 if include.is_empty() {
@@ -120,7 +116,7 @@ impl Installer {
                 );
                 Ok(())
             }
-            InstallAction::SingleFile => Ok(()),
+            FileAction::SingleFile => Ok(()),
         }
     }
     fn validate_url(
@@ -212,7 +208,7 @@ impl Installer {
         let extract_to = format!("{}/{}/", staging_dir!(), &self.name);
         let _ = fs::remove_dir_all(&extract_to);
         match &self.action {
-            InstallAction::Extract {
+            FileAction::Extract {
                 include,
                 exclude,
                 keep_folders,
@@ -256,7 +252,7 @@ impl Installer {
                     }
                 }
             }
-            InstallAction::SingleFile => {
+            FileAction::SingleFile => {
                 let verbose = args.options.verbose || args.config.verbose_files;
                 fs::create_dir_all(&extract_to).map_err(|e| e.to_string())?;
                 let file = self.url.split('/').next_back().unwrap();
