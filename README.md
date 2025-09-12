@@ -78,6 +78,9 @@ Supported fields are as follows:
         - `exclude` - specify which files to ignore (takes precedence over `include`, defaults to none)
         - `keep_folders` - follow the same directory structure as the archive (defaults to `false`)
     - `[action.SingleFile]` - place the downloaded file into the installation directory directly
+- `check` - optionally specify an integrity check method
+    - `[check.SHA256]`
+        - `file` - the file containing the checksum string
 
 > [!IMPORTANT]
 > Unless using direct links, Fin looks for the font's download
