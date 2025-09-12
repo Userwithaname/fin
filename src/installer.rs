@@ -67,7 +67,7 @@ impl Installer {
         Self::validate_name(&installer.name, installer_name)?;
         Self::validate_tag(&mut installer.tag, override_version);
         Self::validate_file(&mut installer.file, &installer.tag, installer_name)?;
-        Self::validate_action(&mut installer.action, &installer.tag);
+        Self::validate_action(&mut installer.action, &installer.tag, installer_name)?;
         installer.validate_url(args, cached_pages, installer_name)?;
 
         Ok(installer)
@@ -101,18 +101,26 @@ impl Installer {
         *file = file.replace("$tag", tag);
         Ok(())
     }
-    fn validate_action(action: &mut InstallAction, tag: &str) {
+    fn validate_action(
+        action: &mut InstallAction,
+        tag: &str,
+        font_name: &str,
+    ) -> Result<(), String> {
         match action {
             InstallAction::Extract {
                 include, exclude, ..
             } => {
+                if include.is_empty() {
+                    return Err(format!("{font_name}: The include field must not be empty"));
+                }
                 *include = include.iter().map(|p| p.replace("$tag", tag)).collect();
                 *exclude = exclude.clone().map_or_else(
                     || None,
                     |p| Some(p.iter().map(|p| p.replace("$tag", tag)).collect()),
                 );
+                Ok(())
             }
-            InstallAction::SingleFile => (),
+            InstallAction::SingleFile => Ok(()),
         }
     }
     fn validate_url(
