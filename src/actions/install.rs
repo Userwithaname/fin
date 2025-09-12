@@ -94,6 +94,7 @@ fn download_and_install(
     }
     installer
         .download_font()?
+        .verify_download()?
         .prepare_install(args)?
         .finalize_install(args, installed_fonts)
 }

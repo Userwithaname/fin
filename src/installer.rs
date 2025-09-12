@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex};
 use reqwest::header::USER_AGENT;
 
 use flate2::read::GzDecoder;
+use sha2::{Digest, Sha256};
 use tar::Archive;
 
 use serde::Deserialize;
@@ -24,6 +25,7 @@ pub struct Installer {
     tag: String,
     pub url: String,
     file: String,
+    check: Option<Checksum>,
     action: FileAction,
 
     #[serde(default, skip_serializing)]
@@ -32,6 +34,11 @@ pub struct Installer {
     download_buffer: Option<Vec<u8>>,
     #[serde(default, skip_serializing)]
     files: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+enum Checksum {
+    SHA256 { file: String },
 }
 
 #[derive(Debug, Deserialize)]
@@ -68,7 +75,29 @@ impl Installer {
         Self::validate_tag(&mut installer.tag, override_version);
         Self::validate_file(&mut installer.file, &installer.tag, installer_name)?;
         Self::validate_action(&mut installer.action, &installer.tag, installer_name)?;
-        installer.validate_url(args, cached_pages, installer_name)?;
+
+        // For direct download links
+        if installer.url.ends_with("$file") {
+            // TODO: Get the redirected URL for direct links
+            installer.url = installer.url.replace("$file", &installer.file);
+            return Ok(installer);
+        };
+
+        let reqwest_client = reqwest::blocking::Client::new();
+        let font_page = FontPage::get_font_page(
+            &installer.url.replace("$tag", &installer.tag),
+            Arc::clone(&args),
+            &reqwest_client,
+            cached_pages,
+        )?;
+        installer.validate_url(font_page.contents.as_ref().unwrap(), installer_name)?;
+        installer.obtain_checksum_file(
+            font_page.contents.as_ref().unwrap(),
+            &installer.tag.clone(),
+            &reqwest_client,
+            installer_name,
+        )?;
+        // installer.obtain_checksum_file(cached_pages)?;
 
         Ok(installer)
     }
@@ -119,47 +148,52 @@ impl Installer {
             FileAction::SingleFile => Ok(()),
         }
     }
-    fn validate_url(
-        &mut self,
-        args: Arc<Args>,
-        cached_pages: Arc<Mutex<HashMap<u64, FontPage>>>,
-        font_name: &str,
-    ) -> Result<(), String> {
+    fn validate_url(&mut self, font_page_contents: &str, font_name: &str) -> Result<(), String> {
         if !match_wildcard(&self.url, "*://*.*/*") {
             return Err(format!("{font_name}: Invalid URL: \"{}\"", self.url));
         }
-        let reqwest_client = reqwest::blocking::Client::new();
-        self.url = match self.url.ends_with("$file") {
-            // TODO: Get the redirected URL for direct links
-            true => self.url.replace("$file", &self.file),
-            false => self.find_direct_link(FontPage::get_font_page(
-                &self.url.replace("$tag", &self.tag),
-                args,
-                &reqwest_client,
-                cached_pages,
-            )?)?,
-        };
+        self.url = Self::find_direct_link(font_page_contents, &self.tag, &self.file, &self.name)?;
         Ok(())
     }
 
     /// Returns a direct link to the font archive found within `font_page`
-    fn find_direct_link(&self, font_page: FontPage) -> Result<String, String> {
-        font_page
-            .contents
-            .unwrap()
+    fn find_direct_link(
+        font_page_contents: &str,
+        tag: &str,
+        file: &str,
+        name: &str,
+    ) -> Result<String, String> {
+        font_page_contents
             .split('"')
-            .find_map(|line| {
-                wildcard_substring(line, &(String::from("https://*") + &self.file), b"")
-            })
+            .find_map(|line| wildcard_substring(line, &(String::from("https://*") + file), b""))
             .map_or_else(
-                || {
-                    Err(format!(
-                        "Archive download link not found: {} ({})",
-                        self.name, self.tag
-                    ))
-                },
+                || Err(format!("Archive download link not found: {name} ({tag})")),
                 |link| Ok(link.to_string()),
             )
+    }
+
+    fn obtain_checksum_file(
+        &mut self,
+        font_page_contents: &str,
+        tag: &str,
+        reqwest_client: &reqwest::blocking::Client,
+        font_name: &str,
+    ) -> Result<(), String> {
+        match &mut self.check {
+            Some(Checksum::SHA256 { file }) => {
+                Self::validate_file(file, tag, font_name)?;
+                let file_link =
+                    Self::find_direct_link(font_page_contents, &self.tag, file, &self.name)?;
+                *file = reqwest_client
+                    .get(&file_link)
+                    .send()
+                    .map_err(|e| e.to_string())?
+                    .text()
+                    .map_err(|e| e.to_string())?;
+                Ok(())
+            }
+            None => Ok(()),
+        }
     }
 
     pub fn download_font(&mut self) -> Result<&mut Self, String> {
@@ -193,6 +227,35 @@ impl Installer {
         println!("\r{} Downloading: {filename}", green!("✓"));
 
         Ok(self)
+    }
+
+    pub fn verify_download(&mut self) -> Result<&mut Self, String> {
+        let data = &self.download_buffer;
+
+        match &self.check {
+            Some(Checksum::SHA256 { file }) => {
+                let filename = &self.url.split('/').next_back().unwrap_or_default();
+                print!("… Verifying:   {filename}");
+                let _ = stdout().flush();
+
+                let mut hasher = Sha256::new();
+                hasher
+                    .write_all(data.as_ref().unwrap())
+                    .map_err(|e| e.to_string())?;
+                let sum = hasher.finalize();
+                match file.contains(&format!("{sum:x}")) {
+                    true => {
+                        println!("\r{} Verifying:   {filename}", green!("✓"));
+                        Ok(self)
+                    }
+                    false => {
+                        println!("\r{} Verifying:   {filename}", red!("×"));
+                        Err(format!("{filename}: Integrity check failed"))
+                    }
+                }
+            }
+            None => Ok(self),
+        }
     }
 
     pub fn prepare_install(&mut self, args: &Args) -> Result<&Self, String> {

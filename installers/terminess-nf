@@ -3,5 +3,8 @@ tag = "latest"
 url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
 file = "Terminus.zip"
 
+[check.SHA256]
+file = "SHA-256.txt"
+
 [action.Extract]
 include = [ "*" ]
