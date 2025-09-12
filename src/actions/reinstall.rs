@@ -17,7 +17,6 @@ Action:
 
 Usage:
     fin reinstall [font]
-    fin reinstall [font]:[tag]
 "
         .to_string();
 

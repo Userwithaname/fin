@@ -19,7 +19,6 @@ Action:
 Usage:
     fin update
     fin update [font]
-    fin update [font]:[tag]
 "
         .to_string();
 
