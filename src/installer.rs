@@ -84,19 +84,19 @@ impl Installer {
             *tag = version.to_string();
         }
     }
-    fn validate_file(file: &mut String, tag: &str, installer: &str) -> Result<(), String> {
+    fn validate_file(file: &mut String, tag: &str, font_name: &str) -> Result<(), String> {
         if !match_wildcard(file, "*.*") {
             return Err(format!(
-                "{installer}: File must specify an extension: \"{file}\"",
+                "{font_name}: File must specify an extension: \"{file}\"",
             ));
         }
         if file.ends_with('*') {
             return Err(format!(
-                "{installer}: File must not end with a '*': \"{file}\"",
+                "{font_name}: File must not end with a '*': \"{file}\"",
             ));
         }
         if file.len() < 2 {
-            return Err(format!("{installer}: Invalid file: \"{file}\"",));
+            return Err(format!("{font_name}: Invalid file: \"{file}\"",));
         }
         *file = file.replace("$tag", tag);
         Ok(())
