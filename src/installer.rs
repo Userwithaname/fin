@@ -97,8 +97,6 @@ impl Installer {
             &reqwest_client,
             installer_name,
         )?;
-        // installer.obtain_checksum_file(cached_pages)?;
-
         Ok(installer)
     }
 
@@ -199,18 +197,11 @@ impl Installer {
     pub fn download_font(&mut self) -> Result<&mut Self, String> {
         let reqwest_client = reqwest::blocking::Client::new();
 
-        print!("… Awaiting response");
-        let _ = stdout().flush();
-
         let mut remote_data = reqwest_client
             .get(&self.url)
             .header(USER_AGENT, "fin")
             .send()
-            .map_err(|e| {
-                println!("\r{} Awaiting response", red!("×"));
-                e.to_string()
-            })?;
-        println!("\r{} Awaiting response", green!("✓"));
+            .map_err(|e| e.to_string())?;
 
         let filename = &self.url.split('/').next_back().unwrap_or_default();
 
