@@ -38,7 +38,7 @@ pub struct Installer {
 
 #[derive(Debug, Deserialize)]
 enum Checksum {
-    SHA256 { file: String },
+    SHA256 { file: Option<String> },
 }
 
 #[derive(Debug, Deserialize)]
@@ -91,7 +91,7 @@ impl Installer {
             cached_pages,
         )?;
         installer.validate_url(font_page.contents.as_ref().unwrap(), installer_name)?;
-        installer.obtain_checksum_file(
+        installer.obtain_checksum(
             font_page.contents.as_ref().unwrap(),
             &installer.tag.clone(),
             &reqwest_client,
@@ -173,7 +173,7 @@ impl Installer {
             )
     }
 
-    fn obtain_checksum_file(
+    fn obtain_checksum(
         &mut self,
         font_page_contents: &str,
         tag: &str,
@@ -182,15 +182,25 @@ impl Installer {
     ) -> Result<(), String> {
         match &mut self.check {
             Some(Checksum::SHA256 { file }) => {
-                Self::validate_file(file, tag, font_name)?;
-                let file_link =
-                    Self::find_direct_link(font_page_contents, file, &self.installer_name)?;
-                *file = reqwest_client
-                    .get(&file_link)
-                    .send()
-                    .map_err(|e| e.to_string())?
-                    .text()
-                    .map_err(|e| e.to_string())?;
+                if file.is_none() {
+                    *file = Some(font_page_contents.to_owned());
+                    return Ok(());
+                }
+
+                Self::validate_file(file.as_mut().unwrap(), tag, font_name)?;
+                let file_link = Self::find_direct_link(
+                    font_page_contents,
+                    &file.as_ref().unwrap(),
+                    &self.installer_name,
+                )?;
+                *file = Some(
+                    reqwest_client
+                        .get(&file_link)
+                        .send()
+                        .map_err(|e| e.to_string())?
+                        .text()
+                        .map_err(|e| e.to_string())?,
+                );
                 Ok(())
             }
             None => Ok(()),
@@ -237,7 +247,7 @@ impl Installer {
                     .write_all(data.as_ref().unwrap())
                     .map_err(|e| e.to_string())?;
                 let sum = hasher.finalize();
-                match file.contains(&format!("{sum:x}")) {
+                match file.as_ref().unwrap().contains(&format!("{sum:x}")) {
                     true => {
                         println!("\r{} Verifying:   {filename}", green!("✓"));
                         Ok(self)

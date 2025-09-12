@@ -80,7 +80,9 @@ Supported fields are as follows:
     - `[action.SingleFile]` - place the downloaded file into the installation directory directly
 - `check` - optionally specify an integrity check method
     - `[check.SHA256]`
-        - `file` - the file containing the checksum string
+        - `file` - (optional) file containing the checksum string — 
+        if unspecified, the checksum is assumed to exist within the
+        page contents
 
 > [!IMPORTANT]
 > Unless using direct links, Fin looks for the font's download

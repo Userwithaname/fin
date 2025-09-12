@@ -3,5 +3,7 @@ tag = "latest"
 url = "https://api.github.com/repos/githubnext/monaspace/releases/$tag"
 file = "monaspace-variable-*.zip"
 
+[check.SHA256]
+
 [action.Extract]
 include = [ "*" ]
