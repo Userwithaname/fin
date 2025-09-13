@@ -1,10 +1,9 @@
 > [!CAUTION]
-> This software is still in early development. Features could be missing,
-> incomplete, or fully or partially broken. Misconfigurations or bugs in
-> the code could potentially result in data loss. Use it at your own risk.
+> This software is still in active development, and may or may not be
+> backward and/or forward compatibile. Some comfigurations may be untested.
 
 > [!NOTE]
-> Fin is a learning project, and my first "real" project written in Rust.
+> Fin is a learning project, and my first actual project written in Rust.
 > As such, the code quality may not be up-to-par with your expectations.
 > Feel free to try it in a VM, report the issues you encounter, share
 > ideas, suggest improvements, etc, etc. Enjoy and have fun! 😄
