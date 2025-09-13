@@ -187,20 +187,16 @@ impl Installer {
                     return Ok(());
                 }
 
-                Self::validate_file(file.as_mut().unwrap(), tag, font_name)?;
-                let file_link = Self::find_direct_link(
-                    font_page_contents,
-                    &file.as_ref().unwrap(),
-                    &self.installer_name,
-                )?;
-                *file = Some(
-                    reqwest_client
-                        .get(&file_link)
-                        .send()
-                        .map_err(|e| e.to_string())?
-                        .text()
-                        .map_err(|e| e.to_string())?,
-                );
+                let file = file.as_mut().unwrap();
+                Self::validate_file(file, tag, font_name)?;
+                let file_link =
+                    Self::find_direct_link(font_page_contents, file, &self.installer_name)?;
+                *file = reqwest_client
+                    .get(&file_link)
+                    .send()
+                    .map_err(|e| e.to_string())?
+                    .text()
+                    .map_err(|e| e.to_string())?;
                 Ok(())
             }
             None => Ok(()),
@@ -234,20 +230,19 @@ impl Installer {
     }
 
     pub fn verify_download(&mut self) -> Result<&mut Self, String> {
-        let data = &self.download_buffer;
+        let data = self.download_buffer.as_ref().unwrap();
 
-        match &self.check {
+        match &mut self.check {
             Some(Checksum::SHA256 { file }) => {
                 let filename = &self.url.split('/').next_back().unwrap_or_default();
                 print!("… Verifying:   {filename}");
                 let _ = stdout().flush();
 
                 let mut hasher = Sha256::new();
-                hasher
-                    .write_all(data.as_ref().unwrap())
-                    .map_err(|e| e.to_string())?;
+                hasher.write_all(data).map_err(|e| e.to_string())?;
                 let sum = hasher.finalize();
-                match file.as_ref().unwrap().contains(&format!("{sum:x}")) {
+
+                match file.take().unwrap().contains(&format!("{sum:x}")) {
                     true => {
                         println!("\r{} Verifying:   {filename}", green!("✓"));
                         Ok(self)
