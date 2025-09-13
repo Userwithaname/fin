@@ -232,7 +232,7 @@ impl Installer {
     pub fn verify_download(&mut self) -> Result<&mut Self, String> {
         let data = self.download_buffer.as_ref().unwrap();
 
-        match &mut self.check {
+        match self.check.take() {
             Some(Checksum::SHA256 { file }) => {
                 let filename = &self.url.split('/').next_back().unwrap_or_default();
                 print!("… Verifying:   {filename}");
@@ -242,7 +242,7 @@ impl Installer {
                 hasher.write_all(data).map_err(|e| e.to_string())?;
                 let sum = hasher.finalize();
 
-                match file.take().unwrap().contains(&format!("{sum:x}")) {
+                match file.as_ref().unwrap().contains(&format!("{sum:x}")) {
                     true => {
                         println!("\r{} Verifying:   {filename}", green!("✓"));
                         Ok(self)
