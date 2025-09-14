@@ -41,11 +41,11 @@ pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let (args, items) = Args::build()?;
     let installed_fonts = Arc::new(Mutex::new(InstalledFonts::read()?));
     let handle = thread::Builder::new()
         .name("fin".to_string())
         .spawn({
+            let (args, items) = Args::build()?;
             let lock_state = lock_state.clone();
             let installed_fonts = Arc::clone(&installed_fonts);
             move || action::perform(&args, &items, lock_state.as_ref(), &installed_fonts)

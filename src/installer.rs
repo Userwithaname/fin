@@ -740,7 +740,7 @@ impl Installer {
                             files: self.files.clone(),
                         },
                     )
-                    .cleanup(args, &self.installer_name, old_files)
+                    .cleanup(args, &self.installer_name, old_files.as_ref())
                     .map_err(|()| "Failed to cleanup")?;
             }
             true => {

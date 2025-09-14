@@ -92,7 +92,7 @@ impl InstalledFonts {
         &self,
         args: &Args,
         font: &str,
-        old_files: &Option<Vec<String>>,
+        old_files: Option<&Vec<String>>,
     ) -> Result<(), ()> {
         if let (Some(installed_font), Some(old_files)) = (self.installed.get(font), old_files) {
             let stray_files: Vec<String> = old_files
@@ -204,7 +204,7 @@ impl InstalledFonts {
 
         let update_progress_bar = |status_symbol: &str, files_processed: f64| {
             bar::show_progress(
-                &format!("{status_symbol} {}", output_prefix),
+                &format!("{status_symbol} {output_prefix}"),
                 files_processed / files.len() as f64,
                 &format!(" {files_processed} / {}", files.len()),
             );

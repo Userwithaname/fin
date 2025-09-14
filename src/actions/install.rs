@@ -48,7 +48,7 @@ pub fn install_fonts(
     installed_fonts: &Arc<Mutex<InstalledFonts>>,
 ) -> Result<(), String> {
     let mut errors = Vec::new();
-    fonts.iter_mut().for_each(|font| {
+    for font in fonts {
         if let Some(installer) = &mut font.installer {
             match download_and_install(args, installer, installed_fonts) {
                 Ok(()) => (),
@@ -72,7 +72,7 @@ pub fn install_fonts(
                 red!("Installer has not been loaded")
             ));
         }
-    });
+    }
 
     if errors.is_empty() {
         Ok(())
