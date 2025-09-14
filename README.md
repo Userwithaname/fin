@@ -1,6 +1,6 @@
 > [!CAUTION]
 > This software is still in active development, and may or may not maintain
-> backward/forward compatibility. Some comfigurations may be untested.
+> backward/forward compatibility. Some configurations may be untested.
 
 > [!NOTE]
 > Fin is a learning project, and my first actual project written in Rust.
