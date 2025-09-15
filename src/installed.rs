@@ -1,7 +1,5 @@
 use crate::args::Args;
 use crate::bar;
-use crate::home_dir;
-use crate::installed_file_path;
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};

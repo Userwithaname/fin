@@ -267,7 +267,7 @@ impl Installer {
             ));
         }
 
-        let extract_to = format!("{}/{}/", staging_dir!(), &self.name);
+        let extract_to = staging_dir!() + &self.name + "/";
         let _ = fs::remove_dir_all(&extract_to);
         match &self.action {
             FileAction::Extract {

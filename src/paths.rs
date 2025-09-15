@@ -1,4 +1,3 @@
-#[macro_export]
 macro_rules! home_dir {
     () => {
         std::env::var("HOME").unwrap()
@@ -36,7 +35,7 @@ macro_rules! page_cache_dir {
 #[macro_export]
 macro_rules! staging_dir {
     () => {
-        cache_dir!() + "staging"
+        cache_dir!() + "staging/"
     };
 }
 
