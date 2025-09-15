@@ -28,12 +28,14 @@ pub struct Installer {
     check: Option<Checksum>,
     action: FileAction,
 
-    #[serde(default, skip_serializing)]
+    #[serde(skip_serializing)]
     installer_name: String,
-    #[serde(default, skip_serializing)]
+    #[serde(skip_serializing)]
     download_buffer: Option<Vec<u8>>,
-    #[serde(default, skip_serializing)]
+    #[serde(skip_serializing)]
     files: Vec<String>,
+    #[serde(skip_serializing)]
+    font_page: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -84,19 +86,14 @@ impl Installer {
         };
 
         let reqwest_client = reqwest::blocking::Client::new();
-        let font_page = FontPage::get_font_page(
+        installer.font_page = FontPage::get_font_page(
             &installer.url.replace("$tag", &installer.tag),
             Arc::clone(&args),
             &reqwest_client,
             cached_pages,
-        )?;
-        installer.validate_url(font_page.contents.as_ref().unwrap(), installer_name)?;
-        installer.obtain_checksum(
-            font_page.contents.as_ref().unwrap(),
-            &installer.tag.clone(),
-            &reqwest_client,
-            installer_name,
-        )?;
+        )?
+        .contents;
+        installer.validate_url(installer_name)?;
         Ok(installer)
     }
 
@@ -146,11 +143,15 @@ impl Installer {
             FileAction::SingleFile => Ok(()),
         }
     }
-    fn validate_url(&mut self, font_page_contents: &str, font_name: &str) -> Result<(), String> {
+    fn validate_url(&mut self, font_name: &str) -> Result<(), String> {
         if !match_wildcard(&self.url, "*://*.*/*") {
             return Err(format!("{font_name}: Invalid URL: \"{}\"", self.url));
         }
-        self.url = Self::find_direct_link(font_page_contents, &self.file, &self.installer_name)?;
+        self.url = Self::find_direct_link(
+            &self.font_page.as_ref().unwrap(),
+            &self.file,
+            &self.installer_name,
+        )?;
         Ok(())
     }
 
@@ -175,7 +176,6 @@ impl Installer {
 
     fn obtain_checksum(
         &mut self,
-        font_page_contents: &str,
         tag: &str,
         reqwest_client: &reqwest::blocking::Client,
         font_name: &str,
@@ -183,14 +183,17 @@ impl Installer {
         match &mut self.check {
             Some(Checksum::SHA256 { file }) => {
                 if file.is_none() {
-                    *file = Some(font_page_contents.to_owned());
+                    *file = Some(self.font_page.take().unwrap());
                     return Ok(());
                 }
 
                 let file = file.as_mut().unwrap();
                 Self::validate_file(file, tag, font_name)?;
-                let file_link =
-                    Self::find_direct_link(font_page_contents, file, &self.installer_name)?;
+                let file_link = Self::find_direct_link(
+                    &self.font_page.take().unwrap(),
+                    file,
+                    &self.installer_name,
+                )?;
                 *file = reqwest_client
                     .get(&file_link)
                     .send()
@@ -205,6 +208,8 @@ impl Installer {
 
     pub fn download_font(&mut self) -> Result<&mut Self, String> {
         let reqwest_client = reqwest::blocking::Client::new();
+
+        self.obtain_checksum(&self.tag.clone(), &reqwest_client, &self.name.clone())?;
 
         let mut remote_data = reqwest_client
             .get(&self.url)
