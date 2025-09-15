@@ -186,7 +186,7 @@ impl Installer {
                 }
 
                 let file = file.as_mut().unwrap();
-                Self::validate_file(&mut self.file, &self.tag, &self.installer_name)?;
+                Self::validate_file(file, &self.tag, &self.installer_name)?;
                 let file_link = Self::find_direct_link(
                     &self.font_page.take().unwrap(),
                     file,
