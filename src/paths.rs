@@ -8,14 +8,14 @@ macro_rules! home_dir {
 #[macro_export]
 macro_rules! config_dir {
     () => {
-        home_dir!() + "/.config/fin/"
+        std::env::var("XDG_CONFIG_HOME").unwrap_or_else(|_| home_dir!() + "/.config") + "/fin/"
     };
 }
 
 #[macro_export]
-macro_rules! config_file_path {
+macro_rules! cache_dir {
     () => {
-        config_dir!() + "config.toml"
+        std::env::var("XDG_CACHE_HOME").unwrap_or_else(|_| home_dir!() + "/.cache") + "/fin/"
     };
 }
 
@@ -27,30 +27,9 @@ macro_rules! installers_dir {
 }
 
 #[macro_export]
-macro_rules! installed_file_path {
-    () => {
-        config_dir!() + "installed.toml"
-    };
-}
-
-#[macro_export]
-macro_rules! cache_dir {
-    () => {
-        home_dir!() + "/.cache/fin/"
-    };
-}
-
-#[macro_export]
 macro_rules! page_cache_dir {
     () => {
         cache_dir!() + "page_cache/"
-    };
-}
-
-#[macro_export]
-macro_rules! lock_file_path {
-    () => {
-        cache_dir!() + "lock_state"
     };
 }
 
@@ -62,8 +41,22 @@ macro_rules! staging_dir {
 }
 
 #[macro_export]
-macro_rules! state_var_name {
+macro_rules! installed_file_path {
     () => {
-        "FIN_STATE"
+        config_dir!() + "installed.toml"
+    };
+}
+
+#[macro_export]
+macro_rules! config_file_path {
+    () => {
+        config_dir!() + "config.toml"
+    };
+}
+
+#[macro_export]
+macro_rules! lock_file_path {
+    () => {
+        cache_dir!() + "lock_state"
     };
 }
