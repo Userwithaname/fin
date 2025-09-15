@@ -28,11 +28,11 @@ pub struct Installer {
     check: Option<Checksum>,
     action: FileAction,
 
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing)]
     installer_name: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing)]
     download_buffer: Option<Vec<u8>>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing)]
     files: Vec<String>,
     #[serde(skip_serializing)]
     font_page: Option<String>,
