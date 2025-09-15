@@ -134,7 +134,7 @@ impl Installer {
                     return Err(format!("{font_name}: The include field must not be empty"));
                 }
                 *include = include.iter().map(|p| p.replace("$tag", tag)).collect();
-                *exclude = exclude.clone().map_or_else(
+                *exclude = exclude.as_ref().map_or_else(
                     || None,
                     |p| Some(p.iter().map(|p| p.replace("$tag", tag)).collect()),
                 );
@@ -176,9 +176,7 @@ impl Installer {
 
     fn obtain_checksum(
         &mut self,
-        tag: &str,
         reqwest_client: &reqwest::blocking::Client,
-        font_name: &str,
     ) -> Result<(), String> {
         match &mut self.check {
             Some(Checksum::SHA256 { file }) => {
@@ -188,7 +186,7 @@ impl Installer {
                 }
 
                 let file = file.as_mut().unwrap();
-                Self::validate_file(file, tag, font_name)?;
+                Self::validate_file(&mut self.file, &self.tag, &self.installer_name)?;
                 let file_link = Self::find_direct_link(
                     &self.font_page.take().unwrap(),
                     file,
@@ -209,7 +207,7 @@ impl Installer {
     pub fn download_font(&mut self) -> Result<&mut Self, String> {
         let reqwest_client = reqwest::blocking::Client::new();
 
-        self.obtain_checksum(&self.tag.clone(), &reqwest_client, &self.name.clone())?;
+        self.obtain_checksum(&reqwest_client)?;
 
         let mut remote_data = reqwest_client
             .get(&self.url)
@@ -274,7 +272,7 @@ impl Installer {
 
         let extract_to = staging_dir!() + &self.name + "/";
         let _ = fs::remove_dir_all(&extract_to);
-        match &self.action {
+        match &mut self.action {
             FileAction::Extract {
                 include,
                 exclude,
@@ -288,7 +286,7 @@ impl Installer {
                             reader,
                             &extract_to,
                             include,
-                            &exclude.clone().unwrap_or_else(|| [].into()),
+                            &exclude.take().unwrap_or_else(|| [].into()),
                             keep_folders.unwrap_or_default(),
                         )?;
                     }
@@ -299,7 +297,7 @@ impl Installer {
                             reader,
                             &extract_to,
                             include,
-                            &exclude.clone().unwrap_or_else(|| [].into()),
+                            &exclude.take().unwrap_or_else(|| [].into()),
                             keep_folders.unwrap_or_default(),
                         )?;
                     }
@@ -309,7 +307,7 @@ impl Installer {
                             reader,
                             &extract_to,
                             include,
-                            &exclude.clone().unwrap_or_else(|| [].into()),
+                            &exclude.take().unwrap_or_else(|| [].into()),
                             keep_folders.unwrap_or_default(),
                         )?;
                     }

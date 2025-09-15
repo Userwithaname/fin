@@ -66,7 +66,7 @@ impl InstalledFonts {
     /// Returns the names of all installed fonts
     #[must_use]
     pub fn get_names(&self) -> Vec<String> {
-        self.installed.clone().into_keys().collect()
+        self.installed.keys().cloned().collect()
     }
 
     /// Adds a new entry to the installed fonts

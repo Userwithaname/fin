@@ -30,7 +30,7 @@ impl FontPage {
         let font_page = cached_pages.lock().unwrap().get(&url_hash).cloned();
 
         if let Some(font_page) = font_page {
-            match font_page.contents.clone() {
+            match font_page.contents.as_ref() {
                 Some(_) => {
                     if args.options.verbose | args.config.verbose_urls {
                         println!("Reading cache (RAM):  {url} ({url_hash})");
