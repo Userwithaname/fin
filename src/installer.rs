@@ -218,7 +218,10 @@ impl Installer {
         let filename = &self.url.split('/').next_back().unwrap_or_default();
 
         // TODO: Show download progress
-        print!("… Downloading: {filename}");
+        print!(
+            "… Downloading: {filename} ({})",
+            Self::format_size(remote_data.content_length().unwrap_or_default() as f64)
+        );
         let _ = stdout().flush();
 
         let mut archive_buffer = Vec::new();
@@ -258,6 +261,16 @@ impl Installer {
             }
             None => Ok(self),
         }
+    }
+
+    fn format_size(mut num_bytes: f64) -> String {
+        const UNITS: &[&str] = &["bytes", "KB", "MB", "GB", "TB"];
+        let mut unit_index = 0;
+        while num_bytes > 1024.0 {
+            num_bytes /= 1024.0;
+            unit_index += 1;
+        }
+        format!("{num_bytes:.1} {}", UNITS[unit_index])
     }
 
     pub fn prepare_install(&mut self, args: &Args) -> Result<&Self, String> {
