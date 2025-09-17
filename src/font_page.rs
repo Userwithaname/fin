@@ -53,13 +53,20 @@ impl FontPage {
             }
         }
 
-        cached_pages.lock().unwrap().insert(
-            url_hash,
-            FontPage {
-                time: 0,
-                contents: None,
-            },
-        );
+        if cached_pages
+            .lock()
+            .unwrap()
+            .insert(
+                url_hash,
+                FontPage {
+                    time: 0,
+                    contents: None,
+                },
+            )
+            .is_some()
+        {
+            return FontPage::get_font_page(url, args, client, cached_pages);
+        }
 
         let cache_file = format!("{}{}", page_cache_dir!(), &url_hash);
         let mut font_page: FontPage =
