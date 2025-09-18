@@ -244,7 +244,7 @@ impl Installer {
             downloaded_bytes += chunk.len();
             let progress_text = Self::format_size(downloaded_bytes as f64);
             let len = progress_text.len();
-            let len_diff = if len > last_len { 0 } else { last_len - len };
+            let len_diff = if len < last_len { last_len - len } else { 0 };
             last_len = len;
 
             bar::show_progress(
