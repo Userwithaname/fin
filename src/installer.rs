@@ -577,11 +577,12 @@ impl Installer {
         for mut entry in entries {
             let entry = entry.as_mut().unwrap();
             let file = match keep_folders {
-                true => entry.path().unwrap().to_string_lossy().into_owned(),
+                true => entry.path().unwrap().to_str().unwrap().to_owned(),
                 false => entry
                     .path()
                     .unwrap()
-                    .to_string_lossy()
+                    .to_str()
+                    .unwrap()
                     .split('/')
                     .next_back()
                     .unwrap()

@@ -1,5 +1,6 @@
 use crate::font::Font;
 use crate::options::Options;
+use crate::wildcards::wildcard_substring;
 use crate::Action;
 use crate::Config;
 
@@ -33,9 +34,9 @@ impl Args {
         let mut config = Config::load()?;
         let options = Options::build(&flags, &mut config)?;
 
-        config.install_dir = config
-            .install_dir
-            .replace("~/", &format!("{}/", env::var("HOME").unwrap()));
+        if wildcard_substring(&config.install_dir, "^~/", b"").is_some() {
+            config.install_dir = home_dir!() + &config.install_dir[1..]
+        }
 
         Ok((
             Args {

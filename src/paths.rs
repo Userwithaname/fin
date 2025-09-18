@@ -1,20 +1,32 @@
+macro_rules! temp_dir {
+    () => {
+        std::env::temp_dir().to_str().unwrap().to_owned()
+    };
+}
+
+#[macro_export]
 macro_rules! home_dir {
     () => {
-        std::env::var("HOME").unwrap()
+        std::env::home_dir()
+            .expect("Home directory not found")
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + "/"
     };
 }
 
 #[macro_export]
 macro_rules! config_dir {
     () => {
-        std::env::var("XDG_CONFIG_HOME").unwrap_or_else(|_| home_dir!() + "/.config") + "/fin/"
+        std::env::var("XDG_CONFIG_HOME").unwrap_or_else(|_| home_dir!() + ".config") + "/fin/"
     };
 }
 
 #[macro_export]
 macro_rules! cache_dir {
     () => {
-        std::env::var("XDG_CACHE_HOME").unwrap_or_else(|_| home_dir!() + "/.cache") + "/fin/"
+        std::env::var("XDG_CACHE_HOME").unwrap_or_else(|_| temp_dir!()) + "/fin/"
     };
 }
 
