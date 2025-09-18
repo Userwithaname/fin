@@ -32,7 +32,7 @@ pub struct Installer {
     #[serde(default, skip_serializing)]
     installer_name: String,
     #[serde(default, skip_serializing)]
-    download_buffer: Option<Vec<u8>>,
+    data: Option<Vec<u8>>,
     #[serde(default, skip_serializing)]
     files: Vec<String>,
     #[serde(skip_serializing)]
@@ -204,6 +204,16 @@ impl Installer {
         }
     }
 
+    fn format_size(mut num_bytes: f64) -> String {
+        const UNITS: &[&str] = &["bytes", "KB", "MB", "GB"];
+        let mut unit_index = 0;
+        while num_bytes > 1023.0 && unit_index < UNITS.len() {
+            num_bytes /= 1024.0;
+            unit_index += 1;
+        }
+        format!("{num_bytes:.1} {}", UNITS[unit_index])
+    }
+
     pub async fn download_font(&mut self) -> Result<&mut Self, String> {
         let reqwest_client = reqwest::Client::new();
 
@@ -258,7 +268,7 @@ impl Installer {
             );
         }
 
-        self.download_buffer = Some(buffer);
+        self.data = Some(buffer);
 
         println!("\r{}", green!("✓"));
 
@@ -266,7 +276,7 @@ impl Installer {
     }
 
     pub fn verify_download(&mut self) -> Result<&mut Self, String> {
-        let data = self.download_buffer.as_ref().unwrap();
+        let data = self.data.as_ref().unwrap();
 
         match self.check.take() {
             Some(Checksum::SHA256 { file }) => {
@@ -293,18 +303,8 @@ impl Installer {
         }
     }
 
-    fn format_size(mut num_bytes: f64) -> String {
-        const UNITS: &[&str] = &["bytes", "KB", "MB", "GB", "TB"];
-        let mut unit_index = 0;
-        while num_bytes > 1024.0 {
-            num_bytes /= 1024.0;
-            unit_index += 1;
-        }
-        format!("{num_bytes:.1} {}", UNITS[unit_index])
-    }
-
     pub fn prepare_install(&mut self, args: &Args) -> Result<&Self, String> {
-        let data = self.download_buffer.take();
+        let data = self.data.take();
         if data.is_none() {
             return Err(format!(
                 "{}: {}",
@@ -682,12 +682,7 @@ impl Installer {
             .get(&self.installer_name)
             .map_or_else(
                 || (format!("{}/{}/", args.config.install_dir, &self.name), None),
-                |installed_font| {
-                    (
-                        installed_font.dir.clone(),
-                        Some(installed_font.files.clone()),
-                    )
-                },
+                |installed| (installed.dir.clone(), Some(installed.files.clone())),
             );
 
         fs::create_dir_all(target_dir).map_err(|err| err.to_string())?;
