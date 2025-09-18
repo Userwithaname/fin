@@ -34,6 +34,8 @@ pub struct Installer {
     #[serde(default, skip_serializing)]
     data: Option<Vec<u8>>,
     #[serde(default, skip_serializing)]
+    data_size: f64,
+    #[serde(default, skip_serializing)]
     files: Vec<String>,
     #[serde(skip_serializing)]
     font_page: Option<String>,
@@ -234,8 +236,8 @@ impl Installer {
                 e.to_string()
             })?;
 
-        let file_size_bytes = remote_data.content_length().unwrap_or_default() as f64;
-        let file_size = Self::format_size(file_size_bytes);
+        self.data_size = remote_data.content_length().unwrap_or_default() as f64;
+        let file_size = Self::format_size(self.data_size);
 
         let mut buffer = Vec::new();
         let mut stream = remote_data.bytes_stream();
@@ -259,7 +261,7 @@ impl Installer {
 
             bar::show_progress(
                 "… Downloading:",
-                downloaded_bytes as f64 / file_size_bytes,
+                downloaded_bytes as f64 / self.data_size,
                 &format!(
                     " {progress_text} / {file_size}{}",
                     // Clear extra characters if the output shrunk
@@ -276,7 +278,7 @@ impl Installer {
     }
 
     pub fn verify_download(&mut self) -> Result<&mut Self, String> {
-        let data = self.data.as_ref().unwrap();
+        let mut data = self.data.as_ref().unwrap().as_slice();
 
         match self.check.take() {
             Some(Checksum::SHA256 { file }) => {
@@ -284,19 +286,49 @@ impl Installer {
                 print!("… Verifying:   {filename}");
                 let _ = stdout().flush();
 
-                let mut hasher = Sha256::new();
-                hasher.write_all(data).map_err(|e| e.to_string())?;
-                let sum = hasher.finalize();
+                let bytes_total_text = Self::format_size(self.data_size);
+                let mut bytes_progress = 0;
+                let mut last_len = 0;
 
-                match file.as_ref().unwrap().contains(&format!("{sum:x}")) {
-                    true => {
-                        println!("\r{} Verifying:   {filename}", green!("✓"));
-                        Ok(self)
+                let mut hasher = Sha256::new();
+                let mut buffer = [0; 8192];
+
+                loop {
+                    let bytes_read = data.read(&mut buffer).map_err(|e| {
+                        println!("\r{}", red!("×"));
+                        e.to_string()
+                    })?;
+
+                    if bytes_read == 0 {
+                        break;
                     }
-                    false => {
-                        println!("\r{} Verifying:   {filename}", red!("×"));
-                        Err(format!("{filename}: Integrity check failed"))
-                    }
+                    hasher.update(&buffer[..bytes_read]);
+
+                    bytes_progress += bytes_read;
+                    let progress_text = Self::format_size(bytes_progress as f64);
+                    let len = progress_text.len();
+                    let len_diff = if len < last_len { last_len - len } else { 0 };
+                    last_len = len;
+
+                    bar::show_progress(
+                        "… Verifying:  ",
+                        bytes_progress as f64 / self.data_size,
+                        &format!(
+                            " {} / {bytes_total_text}{}",
+                            Self::format_size(bytes_progress as f64),
+                            // TODO: Refactor progress bars to avoid repetition
+                            " ".repeat(len_diff)
+                        ),
+                    );
+                }
+
+                let sum = hasher.finalize();
+                if file.as_ref().unwrap().contains(&format!("{sum:x}")) {
+                    println!("\r{}", green!("✓"));
+                    Ok(self)
+                } else {
+                    println!("\r{}", red!("×"));
+                    Err(format!("{filename}: Integrity check failed: sum mismatch"))
                 }
             }
             None => Ok(self),
