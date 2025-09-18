@@ -174,10 +174,7 @@ impl Installer {
             )
     }
 
-    fn obtain_checksum(
-        &mut self,
-        reqwest_client: &reqwest::blocking::Client,
-    ) -> Result<(), String> {
+    async fn obtain_checksum(&mut self, reqwest_client: &reqwest::Client) -> Result<(), String> {
         match &mut self.check {
             Some(Checksum::SHA256 { file }) => {
                 if file.is_none() {
@@ -195,8 +192,10 @@ impl Installer {
                 *file = reqwest_client
                     .get(&file_link)
                     .send()
+                    .await
                     .map_err(|e| e.to_string())?
                     .text()
+                    .await
                     .map_err(|e| e.to_string())?;
                 Ok(())
             }
@@ -204,15 +203,16 @@ impl Installer {
         }
     }
 
-    pub fn download_font(&mut self) -> Result<&mut Self, String> {
-        let reqwest_client = reqwest::blocking::Client::new();
+    pub async fn download_font(&mut self) -> Result<&mut Self, String> {
+        let reqwest_client = reqwest::Client::new();
 
-        self.obtain_checksum(&reqwest_client)?;
+        self.obtain_checksum(&reqwest_client).await?;
 
-        let mut remote_data = reqwest_client
+        let remote_data = reqwest_client
             .get(&self.url)
             .header(USER_AGENT, "fin")
             .send()
+            .await
             .map_err(|e| e.to_string())?;
 
         let filename = &self.url.split('/').next_back().unwrap_or_default();
@@ -224,12 +224,11 @@ impl Installer {
         );
         let _ = stdout().flush();
 
-        let mut archive_buffer = Vec::new();
-        remote_data.read_to_end(&mut archive_buffer).map_err(|e| {
+        let archive_buffer = remote_data.bytes().await.map_err(|e| {
             println!("\r{} Downloading: {filename}", red!("×"));
             e.to_string()
         })?;
-        self.download_buffer = Some(archive_buffer);
+        self.download_buffer = Some(archive_buffer.to_vec());
         println!("\r{} Downloading: {filename}", green!("✓"));
 
         Ok(self)

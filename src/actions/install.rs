@@ -92,9 +92,13 @@ fn download_and_install(
         true => println!("\n{} ({}): ", installer.name, installer.url),
         false => println!("\n{}:", installer.name),
     }
-    installer
-        .download_font()?
-        .verify_download()?
-        .prepare_install(args)?
-        .finalize_install(args, installed_fonts)
+    let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+    runtime.block_on(async {
+        installer
+            .download_font()
+            .await?
+            .verify_download()?
+            .prepare_install(args)?
+            .finalize_install(args, installed_fonts)
+    })
 }
