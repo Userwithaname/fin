@@ -231,8 +231,7 @@ impl Installer {
         let mut stream = remote_data.bytes_stream();
 
         let mut downloaded_bytes = 0;
-        let mut max_len = 0isize;
-        let mut len_diff;
+        let mut last_len = 0;
 
         while let Some(chunk) = stream.next().await {
             let chunk = chunk.map_err(|e| {
@@ -243,20 +242,21 @@ impl Installer {
             io::copy(&mut chunk.as_ref(), &mut buffer).map_err(|e| e.to_string())?;
 
             downloaded_bytes += chunk.len();
-            let downloaded = Self::format_size(downloaded_bytes as f64);
-            len_diff = max_len - downloaded.len() as isize;
-            if len_diff < 0 {
-                max_len -= len_diff;
-                len_diff = 0;
-            }
+            let progress_text = Self::format_size(downloaded_bytes as f64);
+            let len = progress_text.len();
+            let len_diff = match len {
+                len if len > last_len => 0,
+                len => last_len - len,
+            };
+            last_len = len;
 
             bar::show_progress(
                 "… Downloading:",
                 downloaded_bytes as f64 / file_size_bytes,
                 &format!(
-                    " {downloaded} / {file_size}{}",
+                    " {progress_text} / {file_size}{}",
                     // Clear extra characters if the output shrunk
-                    " ".repeat(len_diff as usize)
+                    " ".repeat(len_diff)
                 ),
             );
         }
