@@ -1,4 +1,4 @@
-use crate::bar;
+use crate::bar::{self, show_progress};
 use crate::font_page::FontPage;
 use crate::installed::{InstalledFont, InstalledFonts};
 use crate::wildcards::*;
@@ -10,6 +10,7 @@ use std::io::{self, stdout, Read, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use futures::stream::StreamExt;
 use reqwest::header::USER_AGENT;
 
 use flate2::read::GzDecoder;
@@ -206,30 +207,62 @@ impl Installer {
     pub async fn download_font(&mut self) -> Result<&mut Self, String> {
         let reqwest_client = reqwest::Client::new();
 
-        self.obtain_checksum(&reqwest_client).await?;
+        print!("… Downloading…",);
+        let _ = stdout().flush();
+
+        self.obtain_checksum(&reqwest_client)
+            .await
+            .inspect_err(|_| println!("\r{}", red!("×")))?;
 
         let remote_data = reqwest_client
             .get(&self.url)
             .header(USER_AGENT, "fin")
             .send()
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                println!("\r{}", red!("×"));
+                e.to_string()
+            })?;
 
-        let filename = &self.url.split('/').next_back().unwrap_or_default();
+        let file_size_bytes = remote_data.content_length().unwrap_or_default() as f64;
+        let file_size = Self::format_size(file_size_bytes);
 
-        // TODO: Show download progress
-        print!(
-            "… Downloading: {filename} ({})",
-            Self::format_size(remote_data.content_length().unwrap_or_default() as f64)
-        );
-        let _ = stdout().flush();
+        let mut buffer = Vec::new();
+        let mut stream = remote_data.bytes_stream();
 
-        let archive_buffer = remote_data.bytes().await.map_err(|e| {
-            println!("\r{} Downloading: {filename}", red!("×"));
-            e.to_string()
-        })?;
-        self.download_buffer = Some(archive_buffer.to_vec());
-        println!("\r{} Downloading: {filename}", green!("✓"));
+        let mut downloaded_bytes = 0;
+        let mut max_len = 0isize;
+        let mut len_diff;
+
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk.map_err(|e| {
+                println!("\r{}", red!("×"));
+                e.to_string()
+            })?;
+
+            io::copy(&mut chunk.as_ref(), &mut buffer).map_err(|e| e.to_string())?;
+
+            downloaded_bytes += chunk.len();
+            let downloaded = Self::format_size(downloaded_bytes as f64);
+            len_diff = max_len - downloaded.len() as isize;
+            if len_diff < 0 {
+                max_len -= len_diff;
+                len_diff = 0;
+            }
+
+            show_progress(
+                "… Downloading:",
+                downloaded_bytes as f64 / file_size_bytes,
+                &format!(" {downloaded} / {file_size}"),
+            );
+
+            // Clear extra characters if the output shrunk
+            print!("{}", " ".repeat(len_diff as usize));
+        }
+
+        self.download_buffer = Some(buffer);
+
+        println!("\r{}", green!("✓"));
 
         Ok(self)
     }
