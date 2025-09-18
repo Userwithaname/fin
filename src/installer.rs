@@ -1,4 +1,4 @@
-use crate::bar::{self, show_progress};
+use crate::bar;
 use crate::font_page::FontPage;
 use crate::installed::{InstalledFont, InstalledFonts};
 use crate::wildcards::*;
@@ -149,7 +149,7 @@ impl Installer {
             return Err(format!("{font_name}: Invalid URL: \"{}\"", self.url));
         }
         self.url = Self::find_direct_link(
-            &self.font_page.as_ref().unwrap(),
+            self.font_page.as_ref().unwrap(),
             &self.file,
             &self.installer_name,
         )?;
@@ -250,14 +250,15 @@ impl Installer {
                 len_diff = 0;
             }
 
-            show_progress(
+            bar::show_progress(
                 "… Downloading:",
                 downloaded_bytes as f64 / file_size_bytes,
-                &format!(" {downloaded} / {file_size}"),
+                &format!(
+                    " {downloaded} / {file_size}{}",
+                    // Clear extra characters if the output shrunk
+                    " ".repeat(len_diff as usize)
+                ),
             );
-
-            // Clear extra characters if the output shrunk
-            print!("{}", " ".repeat(len_diff as usize));
         }
 
         self.download_buffer = Some(buffer);
@@ -464,13 +465,11 @@ impl Installer {
                     print!("   {file} ... ");
                     let _ = stdout().flush();
                 }
-                false => {
-                    bar::show_progress(
-                        &format!("… Staging:    "),
-                        files_processed / file_count,
-                        &format!(" {files_processed} / {file_count}"),
-                    );
-                }
+                false => bar::show_progress(
+                    "… Staging:    ",
+                    files_processed / file_count,
+                    &format!(" {files_processed} / {file_count}"),
+                ),
             }
 
             // FIX: No such file or directory error when using `keep_folders`
@@ -572,7 +571,7 @@ impl Installer {
                 false => {
                     files_processed += 1.0;
                     bar::show_progress(
-                        &format!("… Staging:    "),
+                        "… Staging:    ",
                         1.0,
                         &format!(" {files_processed} / {files_processed}"),
                     );
@@ -727,7 +726,7 @@ impl Installer {
                     let _ = stdout().flush();
                 }
                 false => bar::show_progress(
-                    &format!("… Installing: "),
+                    "… Installing: ",
                     files_processed / self.files.len() as f64,
                     &format!(" {files_processed} / {}", self.files.len()),
                 ),
