@@ -386,7 +386,7 @@ impl Installer {
 
                 self.files.push(file.to_string());
                 fs::write(extract_to + file, data.unwrap()).map_err(|e| {
-                    update_progress_bar(&green!("✓"), 1.0);
+                    println!("\r{}", red!("×"));
                     println_red!("{e}");
                     e.to_string()
                 })?;
@@ -413,9 +413,12 @@ impl Installer {
         let verbose = args.options.verbose || args.config.verbose_files;
         match verbose {
             true => println!("Staging:"),
-            false => print!("Staging:"),
+            false => print!("… Staging…"),
         }
         let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
+            if !verbose {
+                println!("\r{}", red!("×"))
+            }
             println_red!("Failed to read the archive");
             e.to_string()
         })?;
@@ -444,17 +447,12 @@ impl Installer {
             .collect();
 
         fs::create_dir_all(extract_to).map_err(|e| {
-            println!("   Directory creation error: {}", format_red!("{e}"));
+            if !verbose {
+                println!("\r{}", red!("×"))
+            }
+            println!("Directory creation error: {}", format_red!("{e}"));
             e.to_string()
         })?;
-
-        let update_progress_bar = |status_symbol: &str, files_processed: f64| {
-            bar::show_progress(
-                &format!("{status_symbol} Staging:    "),
-                files_processed / file_count,
-                &format!(" {files_processed} / {file_count}"),
-            );
-        };
 
         let mut files_processed = 0.0;
 
@@ -466,7 +464,13 @@ impl Installer {
                     print!("   {file} ... ");
                     let _ = stdout().flush();
                 }
-                false => update_progress_bar("…", files_processed),
+                false => {
+                    bar::show_progress(
+                        &format!("… Staging:    "),
+                        files_processed / file_count,
+                        &format!(" {files_processed} / {file_count}"),
+                    );
+                }
             }
 
             // FIX: No such file or directory error when using `keep_folders`
@@ -477,10 +481,7 @@ impl Installer {
                 .map_err(|e| {
                     match verbose {
                         true => println_red!("{e}"),
-                        false => {
-                            update_progress_bar(&red!("×"), files_processed);
-                            println!();
-                        }
+                        false => println!("\r{}", red!("×")),
                     }
                     e.to_string()
                 })?
@@ -488,10 +489,7 @@ impl Installer {
                 .map_err(|e| {
                     match verbose {
                         true => println_red!("{e}"),
-                        false => {
-                            update_progress_bar(&red!("×"), files_processed);
-                            println!();
-                        }
+                        false => println!("\r{}", red!("×")),
                     }
                     e.to_string()
                 })?;
@@ -503,10 +501,7 @@ impl Installer {
             fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
                 match verbose {
                     true => println_red!("{e}"),
-                    false => {
-                        update_progress_bar(&red!("×"), files_processed);
-                        println!();
-                    }
+                    false => println!("\r{}", red!("×")),
                 }
                 e.to_string()
             })?;
@@ -517,8 +512,7 @@ impl Installer {
         }
 
         if !verbose {
-            update_progress_bar(&green!("✓"), files_processed);
-            println!();
+            println!("\r{}", green!("✓"));
         }
 
         Ok(files)
@@ -536,23 +530,18 @@ impl Installer {
         match verbose {
             true => println!("Staging:"),
             false => {
-                print!("Staging:");
+                print!("… Staging…");
                 let _ = stdout().flush();
             }
         }
 
         fs::create_dir_all(extract_to).map_err(|e| {
-            println!("   Directory creation error: {}", format_red!("{e}"));
+            if !verbose {
+                println!("\r{}", red!("×"))
+            }
+            println!("Directory creation error: {}", format_red!("{e}"));
             e.to_string()
         })?;
-
-        let update_progress_bar = |status_symbol: &str, files_processed: f64| {
-            bar::show_progress(
-                &format!("{status_symbol} Staging:    "),
-                1.0,
-                &format!(" {files_processed} / {files_processed}"),
-            );
-        };
 
         let mut files_processed = 0.0;
         let mut fonts = Vec::new();
@@ -582,7 +571,11 @@ impl Installer {
                 }
                 false => {
                     files_processed += 1.0;
-                    update_progress_bar("…", files_processed);
+                    bar::show_progress(
+                        &format!("… Staging:    "),
+                        1.0,
+                        &format!(" {files_processed} / {files_processed}"),
+                    );
                 }
             }
 
@@ -592,10 +585,7 @@ impl Installer {
                     fs::create_dir_all(extract_to.to_owned() + &file).map_err(|e| {
                         match verbose {
                             true => println_red!("{e}"),
-                            false => {
-                                update_progress_bar(&red!("×"), files_processed);
-                                println!("\n{file}: {}", format_red!("{e}"));
-                            }
+                            false => println!("\r{}\n{file}: {}", red!("×"), format_red!("{e}")),
                         }
                         e.to_string()
                     })?;
@@ -607,18 +597,14 @@ impl Installer {
             entry.read_to_end(&mut file_contents).map_err(|e| {
                 match verbose {
                     true => println_red!("{e}"),
-                    false => {
-                        update_progress_bar(&red!("×"), files_processed);
-                        println!("\n{file}: {}", format_red!("{e}"));
-                    }
+                    false => println!("\r{}\n{file}: {}", red!("×"), format_red!("{e}")),
                 }
                 e.to_string()
             })?;
 
             fs::write(&(extract_to.to_owned() + &file), file_contents).map_err(|e| {
                 if !verbose {
-                    update_progress_bar(&red!("×"), files_processed);
-                    println!("\n{file}: {}", format_red!("{e}"));
+                    println!("\r{}\n{file}: {}", red!("×"), format_red!("{e}"));
                 }
                 e.to_string()
             })?;
@@ -630,8 +616,7 @@ impl Installer {
         }
 
         if !verbose {
-            update_progress_bar(&green!("✓"), files_processed);
-            println!();
+            println!("\r{}", green!("✓"));
         }
 
         Ok(fonts)
@@ -714,18 +699,10 @@ impl Installer {
         match verbose {
             true => println!("Installing:"),
             false => {
-                print!("Installing:");
+                print!("… Installing…");
                 let _ = stdout().flush();
             }
         }
-
-        let update_progress_bar = |status_symbol: &str, files_processed: f64| {
-            bar::show_progress(
-                &format!("{status_symbol} Installing: "),
-                files_processed / self.files.len() as f64,
-                &format!(" {files_processed} / {}", self.files.len()),
-            );
-        };
 
         let mut errors = false;
         let mut files_processed = 0.0;
@@ -749,7 +726,11 @@ impl Installer {
                     print!("   {file} ... ");
                     let _ = stdout().flush();
                 }
-                false => update_progress_bar("…", files_processed),
+                false => bar::show_progress(
+                    &format!("… Installing: "),
+                    files_processed / self.files.len() as f64,
+                    &format!(" {files_processed} / {}", self.files.len()),
+                ),
             }
 
             match fs::rename(
@@ -773,8 +754,7 @@ impl Installer {
         match errors {
             false => {
                 if !verbose {
-                    update_progress_bar(&green!("✓"), files_processed);
-                    println!();
+                    println!("\r{}", green!("✓"));
                 }
 
                 installed_fonts
@@ -792,7 +772,9 @@ impl Installer {
                     .map_err(|()| "Failed to cleanup")?;
             }
             true => {
-                update_progress_bar(&red!("×"), files_processed);
+                if !verbose {
+                    println!("\r{}", red!("×"));
+                }
                 println!("\nErrors were encountered while installing {}", self.name)
             }
         }

@@ -145,7 +145,7 @@ impl InstalledFonts {
 
             print!("\nRemoving {dir_name}: ");
             if !verbose {
-                print!("\n… Removing:    ");
+                print!("\n… Removing…    ");
             }
             let _ = stdout().flush();
 
@@ -200,14 +200,6 @@ impl InstalledFonts {
     ) -> Result<(), ()> {
         let mut errors = false;
 
-        let update_progress_bar = |status_symbol: &str, files_processed: f64| {
-            bar::show_progress(
-                &format!("{status_symbol} {output_prefix}"),
-                files_processed / files.len() as f64,
-                &format!(" {files_processed} / {}", files.len()),
-            );
-        };
-
         let mut directories: BTreeSet<String> = [String::new()].into();
         let mut files_processed = 0.0;
         let mut messages = String::new();
@@ -217,7 +209,11 @@ impl InstalledFonts {
                 let _ = stdout().flush();
             } else {
                 files_processed += 1.0;
-                update_progress_bar("…", files_processed);
+                bar::show_progress(
+                    &format!("… {output_prefix}"),
+                    files_processed / files.len() as f64,
+                    &format!(" {files_processed} / {}", files.len()),
+                );
             }
 
             let file_path = format!("{dir}/{file}");
@@ -296,16 +292,14 @@ impl InstalledFonts {
         match errors {
             false => {
                 if !verbose {
-                    update_progress_bar(&green!("✓"), files_processed);
-                    println!();
+                    println!("\r{}", green!("✓"));
                 }
                 print!("{messages}");
                 Ok(())
             }
             true => {
                 if !verbose {
-                    update_progress_bar(&red!("×"), files_processed);
-                    println!();
+                    println!("\r{}", red!("×"));
                 }
                 print!("{messages}");
                 Err(())
