@@ -1,4 +1,4 @@
-use crate::bar;
+use crate::bar::ProgressBar;
 use crate::font_page::FontPage;
 use crate::installed::{InstalledFont, InstalledFonts};
 use crate::wildcards::*;
@@ -218,6 +218,7 @@ impl Installer {
     }
 
     pub async fn download_font(&mut self) -> Result<&mut Self, String> {
+        let mut progress_bar = ProgressBar::new("Downloading:");
         let reqwest_client = reqwest::Client::new();
 
         print!("… Downloading…",);
@@ -225,7 +226,7 @@ impl Installer {
 
         self.obtain_checksum(&reqwest_client)
             .await
-            .inspect_err(|_| println!("\r{}", red!("×")))?;
+            .inspect_err(|_| progress_bar.fail())?;
 
         let remote_data = reqwest_client
             .get(&self.url)
@@ -233,22 +234,21 @@ impl Installer {
             .send()
             .await
             .map_err(|e| {
-                println!("\r{}", red!("×"));
+                progress_bar.fail();
                 e.to_string()
             })?;
 
         self.data_size = remote_data.content_length().unwrap_or_default() as f64;
         let file_size = Self::format_size(self.data_size);
 
+        let mut downloaded_bytes = 0;
+
         let mut buffer = Vec::new();
         let mut stream = remote_data.bytes_stream();
 
-        let mut downloaded_bytes = 0;
-        let mut last_len = 0usize;
-
         while let Some(chunk) = stream.next().await {
             let chunk = chunk.map_err(|e| {
-                println!("\r{}", red!("×"));
+                progress_bar.fail();
                 e.to_string()
             })?;
 
@@ -256,24 +256,16 @@ impl Installer {
 
             downloaded_bytes += chunk.len();
             let progress_text = Self::format_size(downloaded_bytes as f64);
-            let len = progress_text.len();
-            let len_diff = last_len.saturating_sub(len);
-            last_len = len;
 
-            bar::show_progress(
-                "… Downloading:",
+            progress_bar.update_progress(
                 downloaded_bytes as f64 / self.data_size,
-                &format!(
-                    " {progress_text} / {file_size}{}",
-                    // Clear extra characters if the output shrunk
-                    " ".repeat(len_diff)
-                ),
+                &format!(" {progress_text} / {file_size}"),
             );
         }
 
         self.data = Some(buffer);
 
-        println!("\r{}", green!("✓"));
+        progress_bar.pass();
 
         Ok(self)
     }
@@ -289,14 +281,14 @@ impl Installer {
 
                 let bytes_total_text = Self::format_size(self.data_size);
                 let mut bytes_progress = 0;
-                let mut last_len = 0usize;
+                let mut progress_bar = ProgressBar::new("Verifying:");
 
                 let mut hasher = Sha256::new();
                 let mut buffer = [0; 8192];
 
                 loop {
                     let bytes_read = data.read(&mut buffer).map_err(|e| {
-                        println!("\r{}", red!("×"));
+                        progress_bar.fail();
                         e.to_string()
                     })?;
 
@@ -306,29 +298,22 @@ impl Installer {
                     hasher.update(&buffer[..bytes_read]);
 
                     bytes_progress += bytes_read;
-                    let progress_text = Self::format_size(bytes_progress as f64);
-                    let len = progress_text.len();
-                    let len_diff = last_len.saturating_sub(len);
-                    last_len = len;
 
-                    bar::show_progress(
-                        "… Verifying:  ",
+                    progress_bar.update_progress(
                         bytes_progress as f64 / self.data_size,
                         &format!(
-                            " {} / {bytes_total_text}{}",
-                            Self::format_size(bytes_progress as f64),
-                            // TODO: Refactor progress bars to avoid repetition
-                            " ".repeat(len_diff)
+                            " {} / {bytes_total_text}",
+                            Self::format_size(bytes_progress as f64)
                         ),
                     );
                 }
 
                 let sum = hasher.finalize();
                 if file.as_ref().unwrap().contains(&format!("{sum:x}")) {
-                    println!("\r{}", green!("✓"));
+                    progress_bar.pass();
                     Ok(self)
                 } else {
-                    println!("\r{}", red!("×"));
+                    progress_bar.fail();
                     Err(format!("{filename}: Integrity check failed: sum mismatch"))
                 }
             }
@@ -398,13 +383,7 @@ impl Installer {
                 fs::create_dir_all(&extract_to).map_err(|e| e.to_string())?;
                 let file = self.url.split('/').next_back().unwrap();
 
-                let update_progress_bar = |status_symbol: &str, progress: f64| {
-                    bar::show_progress(
-                        &format!("{status_symbol} Staging:    "),
-                        progress,
-                        &format!(" {progress} / 1"),
-                    );
-                };
+                let mut progress_bar = ProgressBar::new("Staging:");
 
                 match verbose {
                     true => {
@@ -412,19 +391,22 @@ impl Installer {
                         print!("   {file} ... ");
                         let _ = stdout().flush();
                     }
-                    false => update_progress_bar("…", 0.0),
+                    false => progress_bar.update_progress(0.0, "0 / 1"),
                 }
 
                 self.files.push(file.to_string());
                 fs::write(extract_to + file, data.unwrap()).map_err(|e| {
-                    println!("\r{}", red!("×"));
+                    progress_bar.fail();
                     println_red!("{e}");
                     e.to_string()
                 })?;
 
                 match verbose {
                     true => println_green!("Done"),
-                    false => update_progress_bar(&green!("✓"), 1.0),
+                    false => {
+                        progress_bar.update_progress(1.0, "1 / 1");
+                        progress_bar.pass();
+                    }
                 }
                 println!();
             }
@@ -446,9 +428,12 @@ impl Installer {
             true => println!("Staging:"),
             false => print!("… Staging…"),
         }
+
+        let mut progress_bar = ProgressBar::new("Staging:");
+
         let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
             if !verbose {
-                println!("\r{}", red!("×"));
+                progress_bar.fail();
             }
             println_red!("Failed to read the archive");
             e.to_string()
@@ -479,7 +464,7 @@ impl Installer {
 
         fs::create_dir_all(extract_to).map_err(|e| {
             if !verbose {
-                println!("\r{}", red!("×"));
+                progress_bar.fail();
             }
             println!("Directory creation error: {}", format_red!("{e}"));
             e.to_string()
@@ -495,8 +480,7 @@ impl Installer {
                     print!("   {file} ... ");
                     let _ = stdout().flush();
                 }
-                false => bar::show_progress(
-                    "… Staging:    ",
+                false => progress_bar.update_progress(
                     files_processed / file_count,
                     &format!(" {files_processed} / {file_count}"),
                 ),
@@ -510,7 +494,7 @@ impl Installer {
                 .map_err(|e| {
                     match verbose {
                         true => println_red!("{e}"),
-                        false => println!("\r{}", red!("×")),
+                        false => progress_bar.fail(),
                     }
                     e.to_string()
                 })?
@@ -518,7 +502,7 @@ impl Installer {
                 .map_err(|e| {
                     match verbose {
                         true => println_red!("{e}"),
-                        false => println!("\r{}", red!("×")),
+                        false => progress_bar.fail(),
                     }
                     e.to_string()
                 })?;
@@ -530,7 +514,7 @@ impl Installer {
             fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
                 match verbose {
                     true => println_red!("{e}"),
-                    false => println!("\r{}", red!("×")),
+                    false => progress_bar.fail(),
                 }
                 e.to_string()
             })?;
@@ -541,7 +525,7 @@ impl Installer {
         }
 
         if !verbose {
-            println!("\r{}", green!("✓"));
+            progress_bar.pass();
         }
 
         Ok(files)
@@ -564,9 +548,11 @@ impl Installer {
             }
         }
 
+        let mut progress_bar = ProgressBar::new("Staging:");
+
         fs::create_dir_all(extract_to).map_err(|e| {
             if !verbose {
-                println!("\r{}", red!("×"))
+                progress_bar.fail();
             }
             println!("Directory creation error: {}", format_red!("{e}"));
             e.to_string()
@@ -601,11 +587,8 @@ impl Installer {
                 }
                 false => {
                     files_processed += 1.0;
-                    bar::show_progress(
-                        "… Staging:    ",
-                        1.0,
-                        &format!(" {files_processed} / {files_processed}"),
-                    );
+                    progress_bar
+                        .update_progress(1.0, &format!(" {files_processed} / {files_processed}"));
                 }
             }
 
@@ -613,9 +596,11 @@ impl Installer {
                 if keep_folders {
                     // NOTE: This creates all paths, regardless if they're included or not
                     fs::create_dir_all(extract_to.to_owned() + &file).map_err(|e| {
-                        match verbose {
-                            true => println_red!("{e}"),
-                            false => println!("\r{}\n{file}: {}", red!("×"), format_red!("{e}")),
+                        if verbose {
+                            println_red!("{e}")
+                        } else {
+                            progress_bar.fail();
+                            println!("{file}: {}", format_red!("{e}"));
                         }
                         e.to_string()
                     })?;
@@ -625,16 +610,19 @@ impl Installer {
 
             let mut file_contents = Vec::new();
             entry.read_to_end(&mut file_contents).map_err(|e| {
-                match verbose {
-                    true => println_red!("{e}"),
-                    false => println!("\r{}\n{file}: {}", red!("×"), format_red!("{e}")),
+                if verbose {
+                    println_red!("{e}")
+                } else {
+                    progress_bar.fail();
+                    println!("{file}: {}", format_red!("{e}"));
                 }
                 e.to_string()
             })?;
 
             fs::write(&(extract_to.to_owned() + &file), file_contents).map_err(|e| {
                 if !verbose {
-                    println!("\r{}\n{file}: {}", red!("×"), format_red!("{e}"));
+                    progress_bar.fail();
+                    println!("{file}: {}", format_red!("{e}"));
                 }
                 e.to_string()
             })?;
@@ -646,7 +634,7 @@ impl Installer {
         }
 
         if !verbose {
-            println!("\r{}", green!("✓"));
+            progress_bar.pass()
         }
 
         Ok(fonts)
@@ -731,6 +719,7 @@ impl Installer {
 
         let mut errors = false;
         let mut files_processed = 0.0;
+        let mut progress_bar = ProgressBar::new("Installing:");
 
         // Move the files specified by the installer into the target directory
         for file in &self.files {
@@ -751,8 +740,7 @@ impl Installer {
                     print!("   {file} ... ");
                     let _ = stdout().flush();
                 }
-                false => bar::show_progress(
-                    "… Installing: ",
+                false => progress_bar.update_progress(
                     files_processed / self.files.len() as f64,
                     &format!(" {files_processed} / {}", self.files.len()),
                 ),
@@ -779,7 +767,7 @@ impl Installer {
         match errors {
             false => {
                 if !verbose {
-                    println!("\r{}", green!("✓"));
+                    progress_bar.pass();
                 }
 
                 installed_fonts
@@ -798,7 +786,7 @@ impl Installer {
             }
             true => {
                 if !verbose {
-                    println!("\r{}", red!("×"));
+                    progress_bar.fail();
                 }
                 println!("\nErrors were encountered while installing {}", self.name)
             }

@@ -1,5 +1,5 @@
 use crate::args::Args;
-use crate::bar;
+use crate::bar::ProgressBar;
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -171,7 +171,7 @@ impl InstalledFonts {
                     &installed_font.files,
                     &dir,
                     dir_name,
-                    "Removing:   ",
+                    "Removing:",
                     false,
                     verbose,
                 ),
@@ -199,18 +199,18 @@ impl InstalledFonts {
         verbose: bool,
     ) -> Result<(), ()> {
         let mut errors = false;
+        let mut messages = String::new();
 
         let mut directories: BTreeSet<String> = [String::new()].into();
         let mut files_processed = 0.0;
-        let mut messages = String::new();
+        let mut progress_bar = ProgressBar::new(output_prefix);
         for file in files {
             if verbose {
                 print!("   {file} ... ");
                 let _ = stdout().flush();
             } else {
                 files_processed += 1.0;
-                bar::show_progress(
-                    &format!("… {output_prefix}"),
+                progress_bar.update_progress(
                     files_processed / files.len() as f64,
                     &format!(" {files_processed} / {}", files.len()),
                 );
@@ -292,14 +292,14 @@ impl InstalledFonts {
         match errors {
             false => {
                 if !verbose {
-                    println!("\r{}", green!("✓"));
+                    progress_bar.pass();
                 }
                 print!("{messages}");
                 Ok(())
             }
             true => {
                 if !verbose {
-                    println!("\r{}", red!("×"));
+                    progress_bar.fail();
                 }
                 print!("{messages}");
                 Err(())
