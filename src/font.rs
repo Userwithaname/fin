@@ -64,18 +64,16 @@ impl Font {
         if let (Some(name), version, None) = (s.next(), s.next(), s.next()) {
             return Ok(Self {
                 name: name.to_string(),
-                installer: match needs_installer {
-                    true => {
-                        match Installer::parse(args, installers_dir!(), name, version, cached_pages)
-                        {
-                            Ok(installer) => Some(installer),
-                            Err(e) => {
-                                eprintln!("{e}");
-                                return Err(FontParseError::Generic(e));
-                            }
+                installer: if needs_installer {
+                    match Installer::parse(&args, installers_dir!(), name, version, cached_pages) {
+                        Ok(installer) => Some(installer),
+                        Err(e) => {
+                            eprintln!("{e}");
+                            return Err(FontParseError::Generic(e));
                         }
                     }
-                    false => None,
+                } else {
+                    None
                 },
                 override_version: version.map(ToString::to_string),
             });

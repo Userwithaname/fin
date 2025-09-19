@@ -58,7 +58,7 @@ enum FileAction {
 
 impl Installer {
     pub fn parse(
-        args: Arc<Args>,
+        args: &Arc<Args>,
         installer_dir: String,
         installer_name: &str,
         override_version: Option<&str>,
@@ -91,7 +91,7 @@ impl Installer {
         let reqwest_client = reqwest::blocking::Client::new();
         installer.font_page = FontPage::get_font_page(
             &installer.url.replace("$tag", &installer.tag),
-            Arc::clone(&args),
+            Arc::clone(args),
             &reqwest_client,
             cached_pages,
         )?
@@ -180,18 +180,18 @@ impl Installer {
     async fn obtain_checksum(&mut self, reqwest_client: &reqwest::Client) -> Result<(), String> {
         match &mut self.check {
             Some(Checksum::SHA256 { file }) => {
-                if file.is_none() {
+                let Some(file) = file.as_mut() else {
                     *file = Some(self.font_page.take().unwrap());
                     return Ok(());
-                }
-
-                let file = file.as_mut().unwrap();
+                };
                 Self::validate_file(file, &self.tag, &self.installer_name)?;
+
                 let file_link = Self::find_direct_link(
                     &self.font_page.take().unwrap(),
                     file,
                     &self.installer_name,
                 )?;
+
                 *file = reqwest_client
                     .get(&file_link)
                     .send()
@@ -200,6 +200,7 @@ impl Installer {
                     .text()
                     .await
                     .map_err(|e| e.to_string())?;
+
                 Ok(())
             }
             None => Ok(()),
@@ -243,7 +244,7 @@ impl Installer {
         let mut stream = remote_data.bytes_stream();
 
         let mut downloaded_bytes = 0;
-        let mut last_len = 0;
+        let mut last_len = 0usize;
 
         while let Some(chunk) = stream.next().await {
             let chunk = chunk.map_err(|e| {
@@ -256,7 +257,7 @@ impl Installer {
             downloaded_bytes += chunk.len();
             let progress_text = Self::format_size(downloaded_bytes as f64);
             let len = progress_text.len();
-            let len_diff = if len < last_len { last_len - len } else { 0 };
+            let len_diff = last_len.saturating_sub(len);
             last_len = len;
 
             bar::show_progress(
@@ -288,7 +289,7 @@ impl Installer {
 
                 let bytes_total_text = Self::format_size(self.data_size);
                 let mut bytes_progress = 0;
-                let mut last_len = 0;
+                let mut last_len = 0usize;
 
                 let mut hasher = Sha256::new();
                 let mut buffer = [0; 8192];
@@ -307,7 +308,7 @@ impl Installer {
                     bytes_progress += bytes_read;
                     let progress_text = Self::format_size(bytes_progress as f64);
                     let len = progress_text.len();
-                    let len_diff = if len < last_len { last_len - len } else { 0 };
+                    let len_diff = last_len.saturating_sub(len);
                     last_len = len;
 
                     bar::show_progress(
@@ -447,7 +448,7 @@ impl Installer {
         }
         let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
             if !verbose {
-                println!("\r{}", red!("×"))
+                println!("\r{}", red!("×"));
             }
             println_red!("Failed to read the archive");
             e.to_string()
@@ -478,7 +479,7 @@ impl Installer {
 
         fs::create_dir_all(extract_to).map_err(|e| {
             if !verbose {
-                println!("\r{}", red!("×"))
+                println!("\r{}", red!("×"));
             }
             println!("Directory creation error: {}", format_red!("{e}"));
             e.to_string()

@@ -10,10 +10,10 @@ mod test_installer {
     #[test]
     fn valid_default_installers() {
         let installer_dir = env!("CARGO_MANIFEST_DIR").to_owned() + "/installers/";
-        let cached_pages = Arc::new(Mutex::new(HashMap::<u64, FontPage>::new()));
+        let cached_pages = Arc::new(Mutex::new(HashMap::<String, FontPage>::new()));
         for file in fs::read_dir(&installer_dir).unwrap() {
             if let Err(e) = Installer::parse(
-                Arc::new(fin::args::Args {
+                &Arc::new(fin::args::Args {
                     action: fin::action::Action::Install,
                     config: Config {
                         cache_timeout: u64::MAX,

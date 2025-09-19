@@ -109,37 +109,34 @@ pub fn perform(
 
     match args.action {
         Action::Install => {
-            let mut fonts = match init_fonts(true, Some("installing"), "Nothing new to install") {
-                Some(fonts) => fonts,
-                None => return Ok(()),
+            let Some(mut fonts) = init_fonts(true, Some("installing"), "Nothing new to install")
+            else {
+                return Ok(());
             };
             InstallAction::run(args, &mut fonts, installed_fonts)?;
         }
         Action::Reinstall => {
-            let mut fonts = match init_fonts(true, Some("reinstalling"), "Nothing to reinstall") {
-                Some(fonts) => fonts,
-                None => return Ok(()),
+            let Some(mut fonts) = init_fonts(true, Some("reinstalling"), "Nothing to reinstall")
+            else {
+                return Ok(());
             };
             ReinstallAction::run(args, &mut fonts, installed_fonts)?;
         }
         Action::Update => {
-            let mut fonts = match init_fonts(true, Some("updating"), "No updates found") {
-                Some(fonts) => fonts,
-                None => return Ok(()),
+            let Some(mut fonts) = init_fonts(true, Some("updating"), "No updates found") else {
+                return Ok(());
             };
             UpdateAction::run(args, &mut fonts, installed_fonts)?;
         }
         Action::Remove => {
-            let fonts = match init_fonts(true, Some("removing"), "Nothing to remove") {
-                Some(fonts) => fonts,
-                None => return Ok(()),
+            let Some(fonts) = init_fonts(true, Some("removing"), "Nothing to remove") else {
+                return Ok(());
             };
             RemoveAction::run(args, &fonts, installed_fonts)?;
         }
         Action::List => {
-            let fonts = match init_fonts(false, None, "") {
-                Some(fonts) => fonts,
-                None => return Ok(()),
+            let Some(fonts) = init_fonts(false, None, "") else {
+                return Ok(());
             };
             ListAction::run(args, &fonts, Arc::clone(installed_fonts));
         }

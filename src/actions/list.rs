@@ -31,26 +31,23 @@ Items:
 
     pub fn run(args: &Args, fonts: &[Font], installed_fonts: Arc<Mutex<InstalledFonts>>) {
         fonts.iter().for_each(|font| {
-            match installed_fonts.lock().unwrap().installed.get(&font.name) {
-                Some(installed) => {
-                    if Font::has_installer(&font.name) {
-                        match fs::exists(&installed.dir).unwrap_or_default() {
-                            true => println_green!("{font}"),
-                            false => println_orange!("{font} (missing directory)"),
-                        }
-                        if args.options.verbose || args.config.verbose_list {
-                            println!(" ↪ {}", installed.dir);
-                        }
-                    } else {
-                        println_orange!("{font} (missing installer)");
-                        if args.options.verbose {
-                            println!(" ↪ {}", installed.dir);
-                        }
+            if let Some(installed) = installed_fonts.lock().unwrap().installed.get(&font.name) {
+                if Font::has_installer(&font.name) {
+                    match fs::exists(&installed.dir).unwrap_or_default() {
+                        true => println_green!("{font}"),
+                        false => println_orange!("{font} (missing directory)"),
+                    }
+                    if args.options.verbose || args.config.verbose_list {
+                        println!(" ↪ {}", installed.dir);
+                    }
+                } else {
+                    println_orange!("{font} (missing installer)");
+                    if args.options.verbose {
+                        println!(" ↪ {}", installed.dir);
                     }
                 }
-                None => {
-                    println!("{font}");
-                }
+            } else {
+                println!("{font}");
             }
         });
     }

@@ -5,10 +5,7 @@ pub fn show_progress(prefix: &str, progress: f64, suffix: &str) {
     use std::io::{stdout, Write};
 
     let cur_pos = (progress * BAR_SIZE_F64).round() as usize;
-    let remainder = match BAR_SIZE > cur_pos {
-        true => BAR_SIZE - cur_pos,
-        false => 0,
-    };
+    let remainder = BAR_SIZE.saturating_sub(cur_pos);
 
     let bar = match progress < 0.999 && cur_pos > 0 {
         true => "—".repeat(cur_pos - 1) + "→" + &" ".repeat(remainder),

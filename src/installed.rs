@@ -265,7 +265,7 @@ impl InstalledFonts {
                 match fs::remove_dir(&target) {
                     Ok(()) => {
                         if verbose {
-                            println_green!("Removed")
+                            println_green!("Removed");
                         }
                     }
                     Err(e) => match verbose {
