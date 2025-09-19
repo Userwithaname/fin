@@ -54,7 +54,7 @@ impl Font {
         args: Arc<Args>,
         name: &str,
         needs_installer: bool,
-        cached_pages: Arc<Mutex<HashMap<u64, FontPage>>>,
+        cached_pages: Arc<Mutex<HashMap<String, FontPage>>>,
     ) -> Result<Self, FontParseError> {
         if name.is_empty() {
             return Err(FontParseError::InvalidName);
@@ -205,7 +205,7 @@ Items:
             }
         };
 
-        let cached_pages = Arc::new(Mutex::new(HashMap::<u64, FontPage>::new()));
+        let cached_pages = Arc::new(Mutex::new(HashMap::<String, FontPage>::new()));
         fs::create_dir_all(page_cache_dir!())
             .map_err(|e| FontParseError::Generic(e.to_string()))?;
 

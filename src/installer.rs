@@ -62,7 +62,7 @@ impl Installer {
         installer_dir: String,
         installer_name: &str,
         override_version: Option<&str>,
-        cached_pages: Arc<Mutex<HashMap<u64, FontPage>>>,
+        cached_pages: Arc<Mutex<HashMap<String, FontPage>>>,
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
             &fs::read_to_string(installer_dir + installer_name).map_err(|err| {
