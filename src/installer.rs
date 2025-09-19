@@ -391,7 +391,7 @@ impl Installer {
                         print!("   {file} ... ");
                         let _ = stdout().flush();
                     }
-                    false => progress_bar.update_progress(0.0, "0 / 1"),
+                    false => progress_bar.update_progress(0.0, " 0 / 1"),
                 }
 
                 self.files.push(file.to_string());
@@ -404,11 +404,10 @@ impl Installer {
                 match verbose {
                     true => println_green!("Done"),
                     false => {
-                        progress_bar.update_progress(1.0, "1 / 1");
+                        progress_bar.update_progress(1.0, " 1 / 1");
                         progress_bar.pass();
                     }
                 }
-                println!();
             }
         }
 
