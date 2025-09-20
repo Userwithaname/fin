@@ -485,8 +485,6 @@ impl Installer {
                 ),
             }
 
-            // FIX: No such file or directory error when using `keep_folders`
-
             let mut file_contents = Vec::new();
             zip_archive
                 .by_name(file)
