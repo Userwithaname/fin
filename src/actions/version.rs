@@ -6,7 +6,7 @@ impl VersionAction {
     pub fn show_help() -> String {
         let help = "\
 Action:
-    Show the current version number and exit
+    Show the current version number
 
 Usage:
     fin version
