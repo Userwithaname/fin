@@ -1,8 +1,8 @@
-macro_rules! temp_dir {
-    () => {
-        std::env::temp_dir().to_str().unwrap().to_owned()
-    };
-}
+// macro_rules! temp_dir {
+//     () => {
+//         std::env::temp_dir().to_str().unwrap().to_owned()
+//     };
+// }
 
 #[macro_export]
 macro_rules! home_dir {
@@ -26,7 +26,7 @@ macro_rules! config_dir {
 #[macro_export]
 macro_rules! cache_dir {
     () => {
-        std::env::var("XDG_CACHE_HOME").unwrap_or_else(|_| temp_dir!()) + "/fin/"
+        std::env::var("XDG_CACHE_HOME").unwrap_or_else(|_| home_dir!() + ".cache") + "/fin/"
     };
 }
 
