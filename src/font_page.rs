@@ -81,9 +81,6 @@ impl FontPage {
             || args.options.refresh
             || system_time.wrapping_sub(font_page.time) >= args.config.cache_timeout
         {
-            if args.options.verbose | args.config.verbose_urls {
-                println!("Updating cache:       {url}");
-            }
             let page = client
                 .get(url)
                 .header(USER_AGENT, "fin")
@@ -92,6 +89,10 @@ impl FontPage {
                     cached_pages.lock().unwrap().remove_entry(&page_name);
                     e.to_string()
                 })?;
+
+            if args.options.verbose | args.config.verbose_urls {
+                println!("Updating cache:       {url}");
+            }
 
             font_page.time = system_time;
             font_page.contents = Some(page.text().map_err(|e| {
