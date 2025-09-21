@@ -204,8 +204,10 @@ Items:
         };
 
         let cached_pages = Arc::new(Mutex::new(HashMap::<String, FontPage>::new()));
-        fs::create_dir_all(page_cache_dir!())
-            .map_err(|e| FontParseError::Generic(e.to_string()))?;
+        fs::create_dir_all(page_cache_dir!()).map_err(|e| {
+            eprintln!("Failed to create directory: {}", page_cache_dir!());
+            FontParseError::Generic(e.to_string())
+        })?;
 
         let mut handles = Vec::new();
         for font in actionable_fonts {

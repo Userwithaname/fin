@@ -34,10 +34,16 @@ impl InstalledFonts {
             });
         }
 
-        let contents = fs::read_to_string(file).map_err(|e| e.to_string())?;
+        let contents = fs::read_to_string(&file).map_err(|e| {
+            eprintln!("Failed to read file: {file}");
+            e.to_string()
+        })?;
 
         Ok(Self {
-            installed: toml::from_str(&contents).map_err(|e| e.to_string())?,
+            installed: toml::from_str(&contents).map_err(|e| {
+                eprintln!("Failed to parse: {file}");
+                e.to_string()
+            })?,
             changed: false,
         })
     }
@@ -54,7 +60,10 @@ impl InstalledFonts {
             e.to_string()
         })?;
 
-        fs::write(installed_file_path!(), contents).map_err(|e| e.to_string())?;
+        fs::write(installed_file_path!(), contents).map_err(|e| {
+            eprintln!("Failed to write: {}", installed_file_path!());
+            e.to_string()
+        })?;
 
         Ok(())
     }

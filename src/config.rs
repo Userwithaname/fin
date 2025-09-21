@@ -68,12 +68,12 @@ impl Config {
             return Ok(Self::default());
         }
 
-        let config: Self = toml::from_str(&fs::read_to_string(config_file).map_err(|err| {
-            eprintln!("Config file could not be read from disk.");
+        let config: Self = toml::from_str(&fs::read_to_string(&config_file).map_err(|err| {
+            eprintln!("Failed to read file: {config_file}");
             err.to_string()
         })?)
         .map_err(|err| {
-            eprintln!("Problems parsing the config file.");
+            eprintln!("Failed to parse: {config_file}");
             err.to_string()
         })?;
         Ok(config)
