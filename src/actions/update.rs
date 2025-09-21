@@ -19,12 +19,9 @@ Action:
 Usage:
     fin update
     fin update [font]
-"
-        .to_string();
-
+";
         print!("{help}");
-
-        help
+        help.to_string()
     }
 
     pub fn run(

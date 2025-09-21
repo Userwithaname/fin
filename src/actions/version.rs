@@ -10,12 +10,9 @@ Action:
 
 Usage:
     fin version
-"
-        .to_string();
-
+";
         print!("{help}");
-
-        help
+        help.to_string()
     }
 
     pub fn run() {

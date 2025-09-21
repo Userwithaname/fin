@@ -17,12 +17,9 @@ Action:
 
 Usage:
     fin reinstall [font]
-"
-        .to_string();
-
+";
         print!("{help}");
-
-        help
+        help.to_string()
     }
 
     pub fn run(

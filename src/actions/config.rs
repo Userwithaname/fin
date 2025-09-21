@@ -19,12 +19,9 @@ Items:
     write-default         Write the default configuration
     delete                Delete the configuration file
     help                  Show this help message
-"
-        .to_string();
-
+";
         print!("{help}");
-
-        help
+        help.to_string()
     }
 
     pub fn run(items: &[String]) -> Result<(), String> {

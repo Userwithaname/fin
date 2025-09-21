@@ -21,12 +21,9 @@ Items:
     staging               Remove the staging directory
     state                 Clear the install state lock
     help                  Show this help message
-"
-        .to_string();
-
+";
         print!("{help}");
-
-        help
+        help.to_string()
     }
 
     pub fn run(args: &Args, items: &[String], lock_state: Option<&String>) -> Result<(), String> {

@@ -21,12 +21,9 @@ Items:
     installed             List installed fonts
     available             List available installers
     all                   List all fonts
-"
-        .to_string();
-
+";
         print!("{help}");
-
-        help
+        help.to_string()
     }
 
     pub fn run(args: &Args, fonts: &[Font], installed_fonts: Arc<Mutex<InstalledFonts>>) {

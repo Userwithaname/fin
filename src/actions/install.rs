@@ -17,12 +17,9 @@ Action:
 Usage:
     fin install [font]
     fin install [font]:[tag]
-"
-        .to_string();
-
+";
         print!("{help}");
-
-        help
+        help.to_string()
     }
 
     pub fn run(
