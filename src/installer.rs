@@ -255,10 +255,15 @@ impl Installer {
             io::copy(&mut chunk.as_ref(), &mut buffer).map_err(|e| e.to_string())?;
 
             downloaded_bytes += chunk.len();
-            let progress_text = Self::format_size(downloaded_bytes as f64);
 
+            let downloaded_bytes = downloaded_bytes as f64;
+            if downloaded_bytes > self.data_size {
+                self.data_size = downloaded_bytes;
+            }
+
+            let progress_text = Self::format_size(downloaded_bytes);
             progress_bar.update_progress(
-                downloaded_bytes as f64 / self.data_size,
+                downloaded_bytes / self.data_size,
                 &format!(" {progress_text} / {file_size}"),
             );
         }
