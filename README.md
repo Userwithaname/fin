@@ -94,7 +94,7 @@ Supported fields are as follows:
         - `url`
             > Note: The URL must end with `$file`
         > Note: Direct links cannot currently detect updates except by
-        > manually changing the `$url`
+        > manually changing the `url`
 - `action`
     > Specify what to do with the file
     - `[action.Extract]`
