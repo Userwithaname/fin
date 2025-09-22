@@ -35,9 +35,9 @@ impl ProgressBar {
         }
     }
 
-    /// Redraws the progress bar with the specified progress and suffi
+    /// Redraws the progress bar with the specified progress and suffix
     ///
-    /// Note: Overwrites the last line of the output
+    /// Note: Overwrites the last line of the output.
     /// If the output shifts, the output will not be as expected.
     pub fn update_progress(&mut self, progress: f64, suffix: &str) {
         let cur_pos = (progress * BAR_SIZE_F64).round() as usize;
