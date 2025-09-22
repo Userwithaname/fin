@@ -1,0 +1,9 @@
+name = "Geist"
+
+[source.GitHub]
+author = "vercel"
+project = "geist-font"
+
+[action.Extract]
+file = "geist-font-*.zip"
+include = [ "*variable/*", "*.txt" ]

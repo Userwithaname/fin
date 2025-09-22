@@ -1,10 +1,12 @@
 name = "ShureTechMono Nerd Font"
-tag = "latest"
-url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/$tag"
+
+[source.GitHub]
+author = "ryanoasis"
+project = "nerd-fonts"
+
+[action.Extract]
 file = "ShareTechMono.zip"
+include = [ "*" ]
 
 [check.SHA256]
 file = "SHA-256.txt"
-
-[action.Extract]
-include = [ "*" ]

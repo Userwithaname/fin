@@ -1,6 +1,8 @@
 name = "Cozette"
-tag = "latest"
-url = "https://api.github.com/repos/the-moonwitch/Cozette/releases/$tag"
-file = "CozetteVector.ttf"
+
+[source.GitHub]
+author = "the-moonwitch"
+project = "Cozette"
 
 [action.SingleFile]
+file = "CozetteVector.ttf"

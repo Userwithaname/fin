@@ -198,7 +198,6 @@ pub fn match_wildcards_multi(
     let mut matches = HashMap::<String, Vec<String>>::new();
     for pattern in patterns {
         for input in inputs {
-            // TODO: Multi-threading?
             if !match_wildcard(input, pattern) {
                 continue;
             }

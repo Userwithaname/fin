@@ -1,0 +1,10 @@
+name = "Mona Sans"
+
+[source.GitHub]
+author = "github"
+project = "mona-sans"
+
+[action.Extract]
+file = "MonaSans.zip"
+include = [ "*LICENSE", "*variable/*" ]
+exclude = [ "__*" ]

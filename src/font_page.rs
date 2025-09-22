@@ -19,7 +19,7 @@ pub struct FontPage {
 impl FontPage {
     pub fn get_font_page(
         url: &str,
-        args: Arc<Args>,
+        args: &Arc<Args>,
         client: &reqwest::blocking::Client,
         cached_pages: Arc<Mutex<HashMap<String, FontPage>>>,
     ) -> Result<Self, String> {

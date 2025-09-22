@@ -1,7 +1,9 @@
 name = "JetBrains Mono"
-tag = "latest"
-url = "https://api.github.com/repos/JetBrains/JetBrainsMono/releases/$tag"
-file = "JetBrainsMono-*.zip"
+
+[source.GitHub]
+author = "JetBrains"
+project = "JetBrainsMono"
 
 [action.Extract]
+file = "JetBrainsMono-*.zip"
 include = [ "*.txt", "*variable/*.ttf" ]

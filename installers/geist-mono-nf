@@ -1,11 +1,11 @@
-name = "0xProto Nerd Font"
+name = "GeistMono Nerd Font"
 
 [source.GitHub]
 author = "ryanoasis"
 project = "nerd-fonts"
 
 [action.Extract]
-file = "0xProto.zip"
+file = "GeistMono.zip"
 include = [ "*" ]
 
 [check.SHA256]

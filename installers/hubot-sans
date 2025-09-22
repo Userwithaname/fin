@@ -1,0 +1,10 @@
+name = "Hubot Sans"
+
+[source.GitHub]
+author = "github"
+project = "hubot-sans"
+
+[action.Extract]
+file = "Hubot-Sans.zip"
+include = [ "*LICENSE", "*.ttf" ]
+exclude = [ "__*", "*TTF/*" ]

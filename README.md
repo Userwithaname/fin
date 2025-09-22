@@ -67,56 +67,99 @@ and install the font on your system.
 
 Supported fields are as follows:
 
-- `name` - name of the font, used for the installation directory
-- `tag` - the tag/version of the font to install
-- `url` - the URL to the font's download page (append `$file` for direct links)
-- `file` - the name of the file to download
-- `action` - what to do with the file:
-    - `[action.Extract]` - extract files from the archive
-        - `include` - specify which files within the archive to install
-        - `exclude` - specify which files to ignore (takes precedence over `include`, defaults to none)
-        - `keep_folders` - follow the same directory structure as the archive (defaults to `false`)
-    - `[action.SingleFile]` - place the downloaded file into the installation directory directly
-- `check` - optionally specify an integrity check method
+- `name`
+    > The name of the font, used for the installation directory
+- `source`
+    > Where to obtain the font from
+    - `[source.GitHub]`:
+        > Download releases of a GitHub project
+        - `tag`
+            > Tag/version of the font to install
+            > (optional, defaults to "latest")
+        - `author`
+            > GitHub project author
+        - `project`
+            > GitHub project name
+    - `[source.Webpage]`:
+        > Download from a webpage
+        - `tag`
+            > Arbitrary value (optional unless other fields use `$tag`)
+        - `url`
+            > Download page URL, which must contain a download link to
+            > `file` within its source
+    - `[source.Direct]`:
+        > Specify a direct link to `file`
+        - `tag`
+            > Arbitrary value (optional unless other fields use `$tag`)
+        - `url`
+            > Note: The URL must end with `$file`
+        > Note: Direct links cannot currently detect updates except by
+        > manually changing the `$url`
+- `action`
+    > Specify what to do with the file
+    - `[action.Extract]`
+        > Use to extract files from the `$file` archive
+        - `file`
+            > Name of the file to download and extract from
+            > (supports wildcards, except for direct links)
+        - `include`
+            > Specify which files within the archive to install
+        - `exclude`
+            > Specify which files to ignore
+            > (optional: takes precedence over `include`, defaults to none)
+        - `keep_folders`
+            > Follow the same directory structure as the archive
+            > (optional, defaults to `false`)
+        > Note: The `include` and `exclude` fields support wildcards
+    - `[action.SingleFile]`
+        > Use to install the downloaded file with no processing action
+        - `file`
+            > Name of the file to download
+            > (supports wildcards)
+- `check`
+    > Optionally specify an integrity check method
     - `[check.SHA256]`
-        - `file` - (optional) file containing the checksum string — 
-        if unspecified, the checksum is assumed to exist within the
-        page contents
-
-> [!IMPORTANT]
-> Unless using direct links, Fin looks for the font's download
-> link within the webpage source. If the site layout, links, or
-> files change, the installer may need to be updated as well.
-> Note that in order for installers to work, the download link
-> must be accessible without JavaScript.
-
-> [!NOTE]
-> Installers using direct links currently cannot detect updates
-> without changing the installer.
-
-> [!NOTE]
-> You can use `$name` or `$tag` as placeholders for their values
-> in all fields except `name` or `tag`.
-
-> [!NOTE]
-> The `file`/`include`/`exclude` fields support wildcards.
-> Wildcards are not supported inside direct link URLs.
+        > Specify the file on the webpage containing the checksum string, or
+        > leave unspecified to look for the checksum within the page contents
+        - `file`
+            > The checksum file to download (optional)
+    > Note: Not supported for direct download links
 
 ## Example installer
 
-Creating a `maple-mono` file in `~/.config/fin/installers/` with the
-following contents will allow you to install the latest version of
-[Maple Mono](https://github.com/subframe7536/maple-font) from GitHub
-by running `fin install maple-mono`:
+A file in `~/.config/fin/installers/` named `maple-mono` with the following
+contents would enable Fin to install the latest release of
+[Maple Mono](https://github.com/subframe7536/maple-font) directly from GitHub
+by running `fin install maple-mono`, and keep it updated using `fin update`:
 
 ```toml
 name = "Maple Mono"
+
+[source.GitHub]
 tag = "latest"
-url = "https://api.github.com/repos/subframe7536/maple-font/releases/$tag"
-file = "MapleMono-Variable.zip"
+author = "subframe7536"
+project = "maple-font"
 
 [action.Extract]
+file = "MapleMono-Variable.zip"
 include = [ "LICENSE.txt", "*.ttf" ]
+
+[check.SHA256]
+file = "MapleMono-Variable.sha256"
+```
+
+Fin is able to install from other sources as well. For example, `geist-mono-nf`
+from the [Nerd Fonts](https://www.nerdfonts.com/) website:
+
+```toml
+name = "GeistMono Nerd Font"
+
+[source.Webpage]
+url = "https://www.nerdfonts.com/font-downloads"
+
+[action.Extract]
+file = "GeistMono.zip"
+include = [ "*" ]
 ````
 
 # Configuration

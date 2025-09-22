@@ -1,59 +1,42 @@
 use crate::bar::ProgressBar;
+use crate::checksum::Checksum;
+use crate::file_action::FileAction;
 use crate::font_page::FontPage;
 use crate::installed::{InstalledFont, InstalledFonts};
-use crate::wildcards::*;
+use crate::source::Source;
 use crate::Args;
+use crate::{format_size, wildcards::*};
 
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
-use std::io::{self, stdout, Read, Write};
+use std::io::{self, stdout, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use futures::stream::StreamExt;
 use reqwest::header::USER_AGENT;
 
-use flate2::read::GzDecoder;
-use sha2::{Digest, Sha256};
-use tar::Archive;
-
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct Installer {
     pub name: String,
-    #[serde(default)]
-    tag: String,
-    pub url: String,
-    file: String,
+    pub source: Source,
+    pub action: FileAction,
     check: Option<Checksum>,
-    action: FileAction,
 
     #[serde(default, skip_serializing)]
-    installer_name: String,
+    pub installer_name: String,
+
+    // TODO: Re-think how the below fields are stored
     #[serde(default, skip_serializing)]
-    data: Option<Vec<u8>>,
+    pub data: Option<Vec<u8>>,
     #[serde(default, skip_serializing)]
-    data_size: f64,
+    pub data_size: f64,
     #[serde(default, skip_serializing)]
-    files: Vec<String>,
+    pub files: Vec<String>,
     #[serde(skip_serializing)]
-    font_page: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-enum Checksum {
-    SHA256 { file: Option<String> },
-}
-
-#[derive(Debug, Deserialize)]
-enum FileAction {
-    Extract {
-        include: Box<[String]>,
-        exclude: Option<Box<[String]>>,
-        keep_folders: Option<bool>,
-    },
-    SingleFile,
+    pub font_page: Option<String>,
 }
 
 impl Installer {
@@ -66,37 +49,29 @@ impl Installer {
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
             &fs::read_to_string(installer_dir + installer_name).map_err(|err| {
-                eprintln!("Error reading the installer: {installer_name}");
+                eprintln!("Error reading installer: {installer_name}");
                 err.to_string()
             })?,
         )
         .map_err(|err| {
-            eprintln!("Error parsing the installer: {installer_name}");
+            eprintln!("Error parsing installer: {installer_name}");
             err.to_string()
         })?;
 
         installer.installer_name = installer_name.to_string();
         Self::validate_name(&installer.name, installer_name)?;
-        Self::validate_tag(&mut installer.tag, override_version);
-        Self::validate_file(&mut installer.file, &installer.tag, installer_name)?;
-        Self::validate_action(&mut installer.action, &installer.tag, installer_name)?;
 
-        // For direct download links
-        if installer.url.ends_with("$file") {
-            // TODO: Get the redirected URL for direct links
-            installer.url = installer.url.replace("$file", &installer.file);
-            return Ok(installer);
+        installer.source = {
+            let mut source = installer.source.take();
+            source.validate_tag(override_version);
+            installer
+                .action
+                .validate(source.ref_tag()?, installer_name)?;
+            source.validate(installer.action.ref_file()?, installer_name)?;
+            source.into_direct_url(&mut installer, args, override_version, cached_pages)?;
+            source
         };
 
-        let reqwest_client = reqwest::blocking::Client::new();
-        installer.font_page = FontPage::get_font_page(
-            &installer.url.replace("$tag", &installer.tag),
-            Arc::clone(args),
-            &reqwest_client,
-            cached_pages,
-        )?
-        .contents;
-        installer.validate_url(installer_name)?;
         Ok(installer)
     }
 
@@ -106,116 +81,6 @@ impl Installer {
         }
         Ok(())
     }
-    fn validate_tag(tag: &mut String, override_version: Option<&str>) {
-        if let Some(version) = override_version {
-            *tag = version.to_string();
-        }
-    }
-    fn validate_file(file: &mut String, tag: &str, font_name: &str) -> Result<(), String> {
-        if !match_wildcard(file, "*.*") {
-            return Err(format!(
-                "{font_name}: File must specify an extension: \"{file}\"",
-            ));
-        }
-        if file.ends_with('*') {
-            return Err(format!(
-                "{font_name}: File must not end with a '*': \"{file}\"",
-            ));
-        }
-        if file.len() < 2 {
-            return Err(format!("{font_name}: Invalid file: \"{file}\"",));
-        }
-        *file = file.replace("$tag", tag);
-        Ok(())
-    }
-    fn validate_action(action: &mut FileAction, tag: &str, font_name: &str) -> Result<(), String> {
-        match action {
-            FileAction::Extract {
-                include, exclude, ..
-            } => {
-                if include.is_empty() {
-                    return Err(format!("{font_name}: The include field must not be empty"));
-                }
-                *include = include.iter().map(|p| p.replace("$tag", tag)).collect();
-                *exclude = exclude.as_ref().map_or_else(
-                    || None,
-                    |p| Some(p.iter().map(|p| p.replace("$tag", tag)).collect()),
-                );
-                Ok(())
-            }
-            FileAction::SingleFile => Ok(()),
-        }
-    }
-    fn validate_url(&mut self, font_name: &str) -> Result<(), String> {
-        if !match_wildcard(&self.url, "*://*.*/*") {
-            return Err(format!("{font_name}: Invalid URL: \"{}\"", self.url));
-        }
-        self.url = Self::find_direct_link(
-            self.font_page.as_ref().unwrap(),
-            &self.file,
-            &self.installer_name,
-        )?;
-        Ok(())
-    }
-
-    /// Returns a direct link to the `file` found within `font_page`
-    fn find_direct_link(
-        font_page_contents: &str,
-        file: &str,
-        name: &str,
-    ) -> Result<String, String> {
-        font_page_contents
-            .split('"')
-            .find_map(|line| wildcard_substring(line, &(String::from("https://*") + file), b""))
-            .map_or_else(
-                || {
-                    Err(format!(
-                        "{name}: File \"{file}\" could not be found within the webpage"
-                    ))
-                },
-                |link| Ok(link.to_string()),
-            )
-    }
-
-    async fn obtain_checksum(&mut self, reqwest_client: &reqwest::Client) -> Result<(), String> {
-        match &mut self.check {
-            Some(Checksum::SHA256 { file }) => {
-                let Some(file) = file.as_mut() else {
-                    *file = Some(self.font_page.take().unwrap());
-                    return Ok(());
-                };
-                Self::validate_file(file, &self.tag, &self.installer_name)?;
-
-                let file_link = Self::find_direct_link(
-                    &self.font_page.take().unwrap(),
-                    file,
-                    &self.installer_name,
-                )?;
-
-                *file = reqwest_client
-                    .get(&file_link)
-                    .send()
-                    .await
-                    .map_err(|e| e.to_string())?
-                    .text()
-                    .await
-                    .map_err(|e| e.to_string())?;
-
-                Ok(())
-            }
-            None => Ok(()),
-        }
-    }
-
-    fn format_size(mut num_bytes: f64) -> String {
-        const UNITS: &[&str] = &["bytes", "KB", "MB", "GB"];
-        let mut unit_index = 0;
-        while num_bytes > 1023.0 && unit_index < UNITS.len() {
-            num_bytes /= 1024.0;
-            unit_index += 1;
-        }
-        format!("{num_bytes:.1} {}", UNITS[unit_index])
-    }
 
     pub async fn download_font(&mut self) -> Result<&mut Self, String> {
         let mut progress_bar = ProgressBar::new("Downloading:");
@@ -224,12 +89,21 @@ impl Installer {
         print!("… Downloading…",);
         let _ = stdout().flush();
 
-        self.obtain_checksum(&reqwest_client)
-            .await
-            .inspect_err(|_| progress_bar.fail())?;
+        let font_page = self.font_page.take();
+        if let Some(checksum) = &mut self.check {
+            checksum
+                .obtain_checksum(
+                    font_page,
+                    self.source.ref_tag()?,
+                    &reqwest_client,
+                    &self.installer_name,
+                )
+                .await
+                .inspect_err(|_| progress_bar.fail())?;
+        }
 
         let remote_data = reqwest_client
-            .get(&self.url)
+            .get(self.source.ref_direct_url()?)
             .header(USER_AGENT, "fin")
             .send()
             .await
@@ -239,7 +113,7 @@ impl Installer {
             })?;
 
         self.data_size = remote_data.content_length().unwrap_or_default() as f64;
-        let file_size = Self::format_size(self.data_size);
+        let file_size = format_size(self.data_size);
 
         let mut downloaded_bytes = 0;
 
@@ -261,7 +135,7 @@ impl Installer {
                 self.data_size = downloaded_bytes;
             }
 
-            let progress_text = Self::format_size(downloaded_bytes);
+            let progress_text = format_size(downloaded_bytes);
             progress_bar.update_progress(
                 downloaded_bytes / self.data_size,
                 &format!(" {progress_text} / {file_size}"),
@@ -276,419 +150,31 @@ impl Installer {
     }
 
     pub fn verify_download(&mut self) -> Result<&mut Self, String> {
-        let mut data = self.data.as_ref().unwrap().as_slice();
-
+        let data = self.data.as_ref().unwrap().as_slice();
         match self.check.take() {
-            Some(Checksum::SHA256 { file }) => {
-                let filename = &self.url.split('/').next_back().unwrap_or_default();
-                print!("… Verifying:   {filename}");
-                let _ = stdout().flush();
-
-                let bytes_total_text = Self::format_size(self.data_size);
-                let mut bytes_progress = 0;
-                let mut progress_bar = ProgressBar::new("Verifying:");
-
-                let mut hasher = Sha256::new();
-                let mut buffer = [0; 8192];
-
-                loop {
-                    let bytes_read = data.read(&mut buffer).map_err(|e| {
-                        progress_bar.fail();
-                        e.to_string()
-                    })?;
-
-                    if bytes_read == 0 {
-                        break;
-                    }
-                    hasher.update(&buffer[..bytes_read]);
-
-                    bytes_progress += bytes_read;
-
-                    progress_bar.update_progress(
-                        bytes_progress as f64 / self.data_size,
-                        &format!(
-                            " {} / {bytes_total_text}",
-                            Self::format_size(bytes_progress as f64)
-                        ),
-                    );
-                }
-
-                let sum = hasher.finalize();
-                if file.as_ref().unwrap().contains(&format!("{sum:x}")) {
-                    progress_bar.pass();
-                    Ok(self)
-                } else {
-                    progress_bar.fail();
-                    Err(format!("{filename}: Integrity check failed: sum mismatch"))
-                }
-            }
+            Some(mut checksum) => checksum
+                .check(data, self.data_size, &self.source)
+                .map(|()| self),
             None => Ok(self),
         }
     }
 
     pub fn prepare_install(&mut self, args: &Args) -> Result<&Self, String> {
-        let data = self.data.take();
-        if data.is_none() {
+        let Some(data) = self.data.take() else {
             return Err(format!(
                 "{}: {}",
                 self.installer_name,
-                red!("Attempted extraction with no downloaded data"),
+                red!("No data downloaded"),
             ));
-        }
+        };
 
         let extract_to = staging_dir!() + &self.name + "/";
         let _ = fs::remove_dir_all(&extract_to);
-        match &mut self.action {
-            FileAction::Extract {
-                include,
-                exclude,
-                keep_folders,
-            } => {
-                let reader = std::io::Cursor::new(data.unwrap());
-                match self.file.split('.').next_back() {
-                    Some("zip") => {
-                        self.files = Self::extract_zip(
-                            args,
-                            reader,
-                            &extract_to,
-                            include,
-                            &exclude.take().unwrap_or_else(|| [].into()),
-                            keep_folders.unwrap_or_default(),
-                        )?;
-                    }
-                    Some("tar") => {}
-                    Some("gz") => {
-                        self.files = Self::extract_tar_gz(
-                            args,
-                            reader,
-                            &extract_to,
-                            include,
-                            &exclude.take().unwrap_or_else(|| [].into()),
-                            keep_folders.unwrap_or_default(),
-                        )?;
-                    }
-                    Some("xz") => {
-                        self.files = Self::extract_tar_xz(
-                            args,
-                            reader,
-                            &extract_to,
-                            include,
-                            &exclude.take().unwrap_or_else(|| [].into()),
-                            keep_folders.unwrap_or_default(),
-                        )?;
-                    }
-                    Some(_) => return Err(format!("Unsupported archive extension: {}", self.file)),
-                    None => {
-                        return Err(format!("Archive requires a file extension: {}", self.file))
-                    }
-                }
-            }
-            FileAction::SingleFile => {
-                let verbose = args.options.verbose || args.config.verbose_files;
-                fs::create_dir_all(&extract_to).map_err(|e| e.to_string())?;
-                let file = self.url.split('/').next_back().unwrap();
 
-                let mut progress_bar = ProgressBar::new("Staging:");
-
-                match verbose {
-                    true => {
-                        println!("Staging:");
-                        print!("   {file} ... ");
-                        let _ = stdout().flush();
-                    }
-                    false => progress_bar.update_progress(0.0, " 0 / 1"),
-                }
-
-                self.files.push(file.to_string());
-                fs::write(extract_to + file, data.unwrap()).map_err(|e| {
-                    progress_bar.fail();
-                    println_red!("{e}");
-                    e.to_string()
-                })?;
-
-                match verbose {
-                    true => println_green!("Done"),
-                    false => {
-                        progress_bar.update_progress(1.0, " 1 / 1");
-                        progress_bar.pass();
-                    }
-                }
-            }
-        }
-
+        self.action
+            .take()
+            .stage_install(self, data, extract_to, args)?;
         Ok(self)
-    }
-
-    fn extract_zip(
-        args: &Args,
-        reader: std::io::Cursor<Vec<u8>>,
-        extract_to: &str,
-        include: &[String],
-        exclude: &[String],
-        keep_folders: bool,
-    ) -> Result<Vec<String>, String> {
-        let verbose = args.options.verbose || args.config.verbose_files;
-        match verbose {
-            true => println!("Staging:"),
-            false => print!("… Staging…"),
-        }
-
-        let mut progress_bar = ProgressBar::new("Staging:");
-
-        let mut zip_archive = zip::ZipArchive::new(reader).map_err(|e| {
-            if !verbose {
-                progress_bar.fail();
-            }
-            println_red!("Failed to read the archive");
-            e.to_string()
-        })?;
-
-        let mut file_count = 0.0;
-        let mut files: Vec<String> = zip_archive
-            .file_names()
-            .map(ToString::to_string)
-            .filter(|file| {
-                if file.ends_with('/') {
-                    if keep_folders {
-                        // NOTE: This creates all paths, regardless if they're included or not
-                        let _ = fs::create_dir_all(extract_to.to_owned() + file).inspect_err(|e| {
-                            println!("   Directory creation error: {}", format_red!("{e}"));
-                        });
-                    }
-                    return false;
-                }
-                if match_any_wildcard(file, include) && !match_any_wildcard(file, exclude) {
-                    file_count += 1.0;
-                    true
-                } else {
-                    false
-                }
-            })
-            .collect();
-
-        fs::create_dir_all(extract_to).map_err(|e| {
-            if !verbose {
-                progress_bar.fail();
-            }
-            println!("Directory creation error: {}", format_red!("{e}"));
-            e.to_string()
-        })?;
-
-        let mut files_processed = 0.0;
-
-        for file in &mut files {
-            files_processed += 1.0;
-
-            match verbose {
-                true => {
-                    print!("   {file} ... ");
-                    let _ = stdout().flush();
-                }
-                false => progress_bar.update_progress(
-                    files_processed / file_count,
-                    &format!(" {files_processed} / {file_count}"),
-                ),
-            }
-
-            let mut file_contents = Vec::new();
-            zip_archive
-                .by_name(file)
-                .map_err(|e| {
-                    match verbose {
-                        true => println_red!("{e}"),
-                        false => progress_bar.fail(),
-                    }
-                    e.to_string()
-                })?
-                .read_to_end(&mut file_contents)
-                .map_err(|e| {
-                    match verbose {
-                        true => println_red!("{e}"),
-                        false => progress_bar.fail(),
-                    }
-                    e.to_string()
-                })?;
-
-            if !keep_folders {
-                *file = file.split('/').next_back().unwrap().to_owned();
-            }
-
-            fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
-                match verbose {
-                    true => println_red!("{e}"),
-                    false => progress_bar.fail(),
-                }
-                e.to_string()
-            })?;
-
-            if verbose {
-                println_green!("Done");
-            }
-        }
-
-        if !verbose {
-            progress_bar.pass();
-        }
-
-        Ok(files)
-    }
-
-    fn extract_tar<R: io::Read>(
-        args: &Args,
-        mut archive: Archive<R>,
-        extract_to: &str,
-        include: &[String],
-        exclude: &[String],
-        keep_folders: bool,
-    ) -> Result<Vec<String>, String> {
-        let verbose = args.options.verbose || args.config.verbose_files;
-        match verbose {
-            true => println!("Staging:"),
-            false => {
-                print!("… Staging…");
-                let _ = stdout().flush();
-            }
-        }
-
-        let mut progress_bar = ProgressBar::new("Staging:");
-
-        fs::create_dir_all(extract_to).map_err(|e| {
-            if !verbose {
-                progress_bar.fail();
-            }
-            println!("Directory creation error: {}", format_red!("{e}"));
-            e.to_string()
-        })?;
-
-        let mut files_processed = 0.0;
-        let mut fonts = Vec::new();
-        let entries = archive.entries().map_err(|e| e.to_string())?;
-        for mut entry in entries {
-            let entry = entry.as_mut().unwrap();
-            let file = match keep_folders {
-                true => entry.path().unwrap().to_str().unwrap().to_owned(),
-                false => entry
-                    .path()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .split('/')
-                    .next_back()
-                    .unwrap()
-                    .to_string(),
-            };
-
-            if !match_any_wildcard(&file, include) || match_any_wildcard(&file, exclude) {
-                continue;
-            }
-
-            match verbose {
-                true => {
-                    print!("   {file} ... ");
-                    let _ = stdout().flush();
-                }
-                false => {
-                    files_processed += 1.0;
-                    progress_bar
-                        .update_progress(1.0, &format!(" {files_processed} / {files_processed}"));
-                }
-            }
-
-            if file.is_empty() || file.ends_with('/') {
-                if keep_folders {
-                    // NOTE: This creates all paths, regardless if they're included or not
-                    fs::create_dir_all(extract_to.to_owned() + &file).map_err(|e| {
-                        if verbose {
-                            println_red!("{e}")
-                        } else {
-                            progress_bar.fail();
-                            println!("{file}: {}", format_red!("{e}"));
-                        }
-                        e.to_string()
-                    })?;
-                }
-                continue;
-            }
-
-            let mut file_contents = Vec::new();
-            entry.read_to_end(&mut file_contents).map_err(|e| {
-                if verbose {
-                    println_red!("{e}")
-                } else {
-                    progress_bar.fail();
-                    println!("{file}: {}", format_red!("{e}"));
-                }
-                e.to_string()
-            })?;
-
-            fs::write(&(extract_to.to_owned() + &file), file_contents).map_err(|e| {
-                if !verbose {
-                    progress_bar.fail();
-                    println!("{file}: {}", format_red!("{e}"));
-                }
-                e.to_string()
-            })?;
-            fonts.push(file);
-
-            if verbose {
-                println_green!("Done");
-            }
-        }
-
-        if !verbose {
-            progress_bar.pass()
-        }
-
-        Ok(fonts)
-    }
-
-    fn extract_tar_gz(
-        args: &Args,
-        reader: std::io::Cursor<Vec<u8>>,
-        extract_to: &str,
-        include: &[String],
-        exclude: &[String],
-        keep_folders: bool,
-    ) -> Result<Vec<String>, String> {
-        let _ = stdout().flush();
-
-        let mut tar_gz_archive = GzDecoder::new(reader);
-
-        Self::extract_tar(
-            args,
-            Archive::new(&mut tar_gz_archive),
-            extract_to,
-            include,
-            exclude,
-            keep_folders,
-        )
-    }
-
-    fn extract_tar_xz(
-        _args: &Args,
-        _reader: std::io::Cursor<Vec<u8>>,
-        _extract_to: &str,
-        _include: &[String],
-        _exclude: &[String],
-        _keep_folders: bool,
-    ) -> Result<Vec<String>, String> {
-        todo!("XZ format is currently unsupported");
-
-        // NOTE: `tar.xz` support is currently disabled due to
-        // outdated `xz` crate dependencies for `zip` and `bzip2`
-
-        // let _ = stdout().flush();
-
-        // let mut tar_xz_archive = XzDecoder::new(reader);
-
-        // Self::extract_tar(
-        //     args,
-        //     Archive::new(&mut tar_gz_archive),
-        //     extract_to,
-        //     include,
-        //     exclude,
-        //     keep_folders,
-        // )
     }
 
     pub fn finalize_install(
@@ -778,8 +264,8 @@ impl Installer {
                     .update_entry(
                         &self.installer_name,
                         InstalledFont {
-                            url: self.url.clone(),
-                            dir: target_dir.to_string(),
+                            url: self.source.ref_direct_url()?.to_owned(),
+                            dir: target_dir.to_owned(),
                             files: self.files.clone(),
                         },
                     )
@@ -888,7 +374,8 @@ impl Installer {
             .installed
             .get(&self.installer_name)
             .is_none_or(|installed| {
-                self.url != installed.url || !fs::exists(&installed.dir).unwrap_or_default()
+                self.source.ref_direct_url().unwrap() != installed.url
+                    || !fs::exists(&installed.dir).unwrap_or_default()
             })
     }
 }

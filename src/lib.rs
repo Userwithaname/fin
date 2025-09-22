@@ -22,10 +22,13 @@ pub mod action;
 pub mod actions;
 pub mod args;
 pub mod bar;
+pub mod checksum;
 pub mod config;
+pub mod file_action;
 pub mod font_page;
 pub mod installer;
 pub mod options;
+pub mod source;
 pub mod wildcards;
 
 mod font;
@@ -100,4 +103,15 @@ pub fn user_prompt(message: &str, args: &Args) -> bool {
         "n\n" | "no\n" | "nope\n" => false,
         _ => user_prompt(message, args),
     }
+}
+
+#[must_use]
+pub fn format_size(mut num_bytes: f64) -> String {
+    const UNITS: &[&str] = &["B", "KB", "MB", "GB"];
+    let mut unit_index = 0;
+    while num_bytes > 1023.0 && unit_index < UNITS.len() {
+        num_bytes /= 1024.0;
+        unit_index += 1;
+    }
+    format!("{num_bytes:.1} {}", UNITS[unit_index])
 }

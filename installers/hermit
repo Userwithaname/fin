@@ -1,7 +1,9 @@
 name = "Hermit"
+
+[source.Direct]
 tag = "2.0"
 url = "https://pcaro.es/d/$file"
-file = "otf-hermit-$tag.tar.gz"
 
 [action.Extract]
+file = "otf-hermit-$tag.tar.gz"
 include = [ "*" ]
