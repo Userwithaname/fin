@@ -68,7 +68,7 @@ and install the font on your system.
 Supported fields are as follows:
 
 - `name`
-    > The name of the font, used for the installation directory
+    > The name of the font, used as the installation directory
 - `source`
     > Where to obtain the font from
     - `[source.GitHub]`:
@@ -125,7 +125,7 @@ Supported fields are as follows:
             > The checksum file to download (optional)
     > Note: Not supported for direct download links
 
-## Example installer
+## Example installers
 
 A file in `~/.config/fin/installers/` named `maple-mono` with the following
 contents would enable Fin to install the latest release of
@@ -148,8 +148,8 @@ include = [ "LICENSE.txt", "*.ttf" ]
 file = "MapleMono-Variable.sha256"
 ```
 
-Fin is able to install from other sources as well. For example, `geist-mono-nf`
-from the [Nerd Fonts](https://www.nerdfonts.com/) website:
+Fin is able to install from other sources as well. For example, GeistMono
+Nerd Font from the [Nerd Fonts](https://www.nerdfonts.com/) website:
 
 ```toml
 name = "GeistMono Nerd Font"
