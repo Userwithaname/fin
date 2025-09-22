@@ -1,8 +1,7 @@
-use crate::Installer;
-
 use crate::font_page::FontPage;
 use crate::wildcards::*;
 use crate::Args;
+use crate::Installer;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -89,7 +88,6 @@ impl Source {
         &mut self,
         installer: &mut Installer,
         args: &Arc<Args>,
-        override_version: Option<&str>,
         cached_pages: Arc<Mutex<HashMap<String, FontPage>>>,
     ) -> Result<(), String> {
         match self {
@@ -105,7 +103,7 @@ impl Source {
                     },
                 };
                 self.validate(installer.action.ref_file()?, &installer.installer_name)?;
-                self.into_direct_url(installer, args, override_version, cached_pages)
+                self.into_direct_url(installer, args, cached_pages)
             }
             Source::Webpage { url, .. } => {
                 installer.font_page = Self::get_font_page(args, url, cached_pages)?.contents;

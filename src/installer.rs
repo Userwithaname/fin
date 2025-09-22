@@ -68,7 +68,7 @@ impl Installer {
                 .action
                 .validate(source.ref_tag()?, installer_name)?;
             source.validate(installer.action.ref_file()?, installer_name)?;
-            source.into_direct_url(&mut installer, args, override_version, cached_pages)?;
+            source.into_direct_url(&mut installer, args, cached_pages)?;
             source
         };
 

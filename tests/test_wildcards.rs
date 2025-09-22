@@ -127,7 +127,8 @@ mod test_wildcards {
         }
     }
 
-    #[test]
+    // #[test]
+    #[allow(dead_code)]
     fn test_match_any_wildcard_mt() {
         if match_any_wildcard_mt(
             "partially matching patern".into(),

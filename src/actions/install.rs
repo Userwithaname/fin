@@ -85,7 +85,7 @@ fn download_and_install(
     installer: &mut Installer,
     installed_fonts: &Arc<Mutex<InstalledFonts>>,
 ) -> Result<(), String> {
-    let url = &installer.source.ref_direct_url()?;
+    let url = installer.source.ref_direct_url()?;
     match args.options.verbose || args.config.verbose_urls {
         true => println!("\n{} ({}): ", installer.name, url),
         false => println!("\n{}:", installer.name),
