@@ -30,11 +30,15 @@ impl ProgressBar {
     pub fn new(prefix: &str) -> Self {
         Self {
             state: State::InProgress,
-            prefix: prefix.to_owned() + &" ".repeat(PREFIX_LENGTH - prefix.len()),
+            prefix: prefix.to_owned() + &" ".repeat(PREFIX_LENGTH.saturating_sub(prefix.len())),
             last_len: 0,
         }
     }
 
+    /// Redraws the progress bar with the specified progress and suffi
+    ///
+    /// Note: Overwrites the last line of the output
+    /// If the output shifts, the output will not be as expected.
     pub fn update_progress(&mut self, progress: f64, suffix: &str) {
         let cur_pos = (progress * BAR_SIZE_F64).round() as usize;
         let remainder = BAR_SIZE.saturating_sub(cur_pos);
@@ -51,23 +55,29 @@ impl ProgressBar {
         );
         print!(
             "{output}{}",
+            // Overwrite previous output using spaces
             " ".repeat(self.last_len.saturating_sub(output.len()))
         );
         let _ = stdout().flush();
         self.last_len = output.len();
     }
 
+    /// Updates the progress bar state and status icon
     pub fn update_state(&mut self, state: State) {
         print!("\r{}", state.status_symbol());
         let _ = stdout().flush();
         self.state = state;
     }
 
+    /// Changes the status symbol to indicate successful completion
+    /// Progress bar should not be updated after calling this function
     pub fn pass(&mut self) {
         self.state = State::Passed;
         println!("\r{}", self.state.status_symbol());
     }
 
+    /// Changes the status symbol to indicate a failed operation
+    /// Progress bar should not be updated after calling this function
     pub fn fail(&mut self) {
         self.state = State::Failed;
         println!("\r{}", self.state.status_symbol());

@@ -82,6 +82,7 @@ impl Installer {
         Ok(())
     }
 
+    /// Downloads the font and stores its contents in `self.data`
     pub async fn download_font(&mut self) -> Result<&mut Self, String> {
         let mut progress_bar = ProgressBar::new("Downloading:");
         let reqwest_client = reqwest::Client::new();
@@ -92,7 +93,7 @@ impl Installer {
         let font_page = self.font_page.take();
         if let Some(checksum) = &mut self.check {
             checksum
-                .obtain_checksum(
+                .obtain(
                     font_page,
                     self.source.ref_tag()?,
                     &reqwest_client,
@@ -149,6 +150,7 @@ impl Installer {
         Ok(self)
     }
 
+    /// Verifies dowbloaded data integrity using a checksum
     pub fn verify_download(&mut self) -> Result<&mut Self, String> {
         let data = self.data.as_ref().unwrap().as_slice();
         match self.check.take() {
@@ -159,6 +161,8 @@ impl Installer {
         }
     }
 
+    /// Prepares the font for installation by writing its
+    /// files to a staging directory (`paths::staging_dir`)
     pub fn prepare_install(&mut self, args: &Args) -> Result<&Self, String> {
         let Some(data) = self.data.take() else {
             return Err(format!(
@@ -177,6 +181,7 @@ impl Installer {
         Ok(self)
     }
 
+    /// Moves the files from `paths::staging_dir` into the installation directory
     pub fn finalize_install(
         &self,
         args: &Args,
@@ -366,6 +371,9 @@ impl Installer {
         installed.iter().map(ToString::to_string).collect()
     }
 
+    /// Returns `true` if the font's download URL changes,
+    /// or if the installation directory is missing.
+    /// Otherwise returns `false`
     #[must_use]
     pub fn has_updates(&self, installed_fonts: &Arc<Mutex<InstalledFonts>>) -> bool {
         installed_fonts

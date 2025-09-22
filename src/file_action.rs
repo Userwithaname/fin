@@ -127,6 +127,8 @@ impl FileAction {
         FileType::Unsupported
     }
 
+    /// Prepares the font for installation by writing its
+    /// files to a staging directory (`paths::staging_dir`)
     pub fn stage_install(
         &mut self,
         installer: &mut Installer,

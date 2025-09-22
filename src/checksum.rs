@@ -11,7 +11,8 @@ pub enum Checksum {
     SHA256 { file: Option<String> },
 }
 impl Checksum {
-    pub async fn obtain_checksum(
+    /// Obtains the checksum and assigns it to `file`
+    pub async fn obtain(
         &mut self,
         font_page: Option<String>,
         tag: Option<&str>,
@@ -46,6 +47,8 @@ impl Checksum {
         }
     }
 
+    /// Computes the hash sum of `data` and compares it to `file`.
+    /// Returns `Ok` if file contains the same sum string, or `Err` if not
     pub fn check(&mut self, data: &[u8], data_size: f64, source: &Source) -> Result<(), String> {
         let mut data = data;
         let filename = source

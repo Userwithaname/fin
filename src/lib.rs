@@ -77,6 +77,8 @@ pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
     result
 }
 
+/// Prompts the user to approve or deny, and waits for an answer.
+/// Returns `true` if 'yes', or `false` if 'no'
 #[inline]
 #[must_use]
 pub fn user_prompt(message: &str, args: &Args) -> bool {
@@ -105,6 +107,7 @@ pub fn user_prompt(message: &str, args: &Args) -> bool {
     }
 }
 
+/// Converts bytes into more useful units and returns a formatted string
 #[must_use]
 pub fn format_size(mut num_bytes: f64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB"];
