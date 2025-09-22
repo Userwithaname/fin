@@ -71,7 +71,7 @@ Supported fields are as follows:
     > The name of the font, used as the installation directory
 - `source`
     > Where to obtain the font from
-    - `[source.GitHub]`:
+    - `[source.GitHub]`
         > Download releases of a GitHub project
         - `tag`
             > Tag/version of the font to install
@@ -80,14 +80,14 @@ Supported fields are as follows:
             > GitHub project author
         - `project`
             > GitHub project name
-    - `[source.Webpage]`:
+    - `[source.Webpage]`
         > Download from a webpage
         - `tag`
             > Arbitrary value (optional unless other fields use `$tag`)
         - `url`
             > Download page URL, which must contain a download link to
             > `file` within its source
-    - `[source.Direct]`:
+    - `[source.Direct]`
         > Specify a direct link to `file`
         - `tag`
             > Arbitrary value (optional unless other fields use `$tag`)
