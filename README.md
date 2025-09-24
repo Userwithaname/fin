@@ -213,9 +213,6 @@ verbose_urls = false
     - Run `./target/debug/fin` from the `fin` directory, or
     - Run it using Cargo: `cargo run -- [action] [items]`
 
-> [!NOTE]
-> Building may require `openssl-devel` to be installed on your system.
-
 To learn more, see the Cargo documentation for
 [`cargo build`](https://doc.rust-lang.org/cargo/commands/cargo-build.html)
 and [`cargo run`](https://doc.rust-lang.org/cargo/commands/cargo-run.html).
