@@ -42,13 +42,13 @@ pub struct Installer {
 impl Installer {
     pub fn parse(
         args: &Arc<Args>,
-        installer_dir: String,
+        installer_dir: &str,
         installer_name: &str,
         override_version: Option<&str>,
         cached_pages: Arc<Mutex<HashMap<String, FontPage>>>,
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
-            &fs::read_to_string(installer_dir + installer_name).map_err(|err| {
+            &fs::read_to_string(format!("{installer_dir}{installer_name}")).map_err(|err| {
                 eprintln!("Error reading installer: {installer_name}");
                 err.to_string()
             })?,

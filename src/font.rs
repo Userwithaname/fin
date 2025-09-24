@@ -65,7 +65,7 @@ impl Font {
             return Ok(Self {
                 name: name.to_string(),
                 installer: if needs_installer {
-                    match Installer::parse(&args, installers_dir!(), name, version, cached_pages) {
+                    match Installer::parse(&args, &installers_dir!(), name, version, cached_pages) {
                         Ok(installer) => Some(installer),
                         Err(e) => {
                             eprintln!("{e}");
