@@ -90,15 +90,15 @@ impl FontPage {
                     e.to_string()
                 })?;
 
-            if args.options.verbose | args.config.verbose_urls {
-                println!("Updating cache:       {url}");
-            }
-
             font_page.time = system_time;
             font_page.contents = Some(page.text().map_err(|e| {
                 cached_pages.lock().unwrap().remove_entry(&page_name);
                 e.to_string()
             })?);
+
+            if args.options.verbose | args.config.verbose_urls {
+                println!("Updating cache:       {url}");
+            }
 
             fs::write(
                 &cache_file,
