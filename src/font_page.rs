@@ -1,3 +1,4 @@
+use crate::paths::page_cache_dir;
 use crate::Args;
 
 use reqwest::header::USER_AGENT;
@@ -66,7 +67,7 @@ impl FontPage {
             return FontPage::get_font_page(url, args, client, cached_pages);
         }
 
-        let cache_file = format!("{}{}", page_cache_dir!(), &page_name);
+        let cache_file = [page_cache_dir(), &page_name[..]].concat();
         let mut font_page: FontPage =
             toml::from_str(&fs::read_to_string(&cache_file).unwrap_or_default())
                 .unwrap_or_default();

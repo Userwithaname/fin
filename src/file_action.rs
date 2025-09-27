@@ -265,7 +265,7 @@ impl FileAction {
                 if file.ends_with('/') {
                     if keep_folders {
                         // NOTE: This creates all paths, regardless if they're included or not
-                        let _ = fs::create_dir_all(extract_to.to_owned() + file).inspect_err(|e| {
+                        let _ = fs::create_dir_all([extract_to, file].concat()).inspect_err(|e| {
                             println!("   Directory creation error: {}", format_red!("{e}"));
                         });
                     }
@@ -327,7 +327,7 @@ impl FileAction {
                 *file = file.split('/').next_back().unwrap().to_owned();
             }
 
-            fs::write(extract_to.to_owned() + file, file_contents).map_err(|e| {
+            fs::write([extract_to, file].concat(), file_contents).map_err(|e| {
                 match verbose {
                     true => println_red!("{e}"),
                     false => progress_bar.fail(),
@@ -411,7 +411,7 @@ impl FileAction {
             if file.is_empty() || file.ends_with('/') {
                 if keep_folders {
                     // NOTE: This creates all paths, regardless if they're included or not
-                    fs::create_dir_all(extract_to.to_owned() + &file).map_err(|e| {
+                    fs::create_dir_all([extract_to, &file].concat()).map_err(|e| {
                         if verbose {
                             println_red!("{e}");
                         } else {
@@ -435,7 +435,7 @@ impl FileAction {
                 e.to_string()
             })?;
 
-            fs::write(&(extract_to.to_owned() + &file), file_contents).map_err(|e| {
+            fs::write([extract_to, &file].concat(), file_contents).map_err(|e| {
                 if !verbose {
                     progress_bar.fail();
                     println!("{file}: {}", format_red!("{e}"));

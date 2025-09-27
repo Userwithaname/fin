@@ -1,5 +1,6 @@
+use crate::action::Action;
 use crate::font_page::FontPage;
-use crate::Action;
+use crate::paths::{installers_dir, page_cache_dir};
 use crate::Args;
 use crate::InstalledFonts;
 use crate::Installer;
@@ -65,7 +66,7 @@ impl Font {
             return Ok(Self {
                 name: name.to_string(),
                 installer: if needs_installer {
-                    match Installer::parse(&args, &installers_dir!(), name, version, cached_pages) {
+                    match Installer::parse(&args, installers_dir(), name, version, cached_pages) {
                         Ok(installer) => Some(installer),
                         Err(e) => {
                             eprintln!("{e}");
@@ -204,8 +205,8 @@ Items:
         };
 
         let cached_pages = Arc::new(Mutex::new(HashMap::<String, FontPage>::new()));
-        fs::create_dir_all(page_cache_dir!()).map_err(|e| {
-            eprintln!("Failed to create directory: {}", page_cache_dir!());
+        fs::create_dir_all(page_cache_dir()).map_err(|e| {
+            eprintln!("Failed to create directory: {}", page_cache_dir());
             FontParseError::Generic(e.to_string())
         })?;
 
@@ -243,6 +244,6 @@ Items:
 
     #[must_use]
     pub fn has_installer(name: &str) -> bool {
-        Path::new(&(installers_dir!() + name)).exists()
+        Path::new(&[installers_dir(), name].concat()).exists()
     }
 }

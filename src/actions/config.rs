@@ -1,5 +1,6 @@
 use std::fs;
 
+use crate::paths::config_file_path;
 use crate::{default_config, Config};
 
 pub struct ConfigAction;
@@ -32,8 +33,8 @@ Items:
 
         match items[0].as_str() {
             "show" => {
-                let target = config_file_path!();
-                println!("{}", fs::read_to_string(&target).unwrap_or_default().trim());
+                let target = config_file_path();
+                println!("{}", fs::read_to_string(target).unwrap_or_default().trim());
             }
             "show-default" => {
                 print!("{}", default_config!());
@@ -42,13 +43,13 @@ Items:
                 Config::write_default_config()?;
                 println!(
                     "Created a new configuration file on disk:\n{}",
-                    config_file_path!()
+                    config_file_path()
                 );
             }
             "delete" => {
-                let target = config_file_path!();
-                if fs::exists(&target).unwrap_or_default() {
-                    fs::remove_file(&target).map_err(|e| e.to_string())?;
+                let target = config_file_path();
+                if fs::exists(target).unwrap_or_default() {
+                    fs::remove_file(target).map_err(|e| e.to_string())?;
                     println!("Deleted the configuration file:\n{target}");
                 } else {
                     println!("The configuration file does not exist");

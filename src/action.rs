@@ -3,6 +3,7 @@ use crate::actions::{
     list::ListAction, reinstall::ReinstallAction, remove::RemoveAction, update::UpdateAction,
     version::VersionAction,
 };
+use crate::paths::{cache_dir, lock_file_path};
 
 use crate::Args;
 use crate::Font;
@@ -87,8 +88,8 @@ pub fn perform(
                 panic!("Lock file exists; refusing to continue");
             }
 
-            let _ = fs::create_dir_all(cache_dir!());
-            let _ = fs::write(lock_file_path!(), lock_action);
+            let _ = fs::create_dir_all(cache_dir());
+            let _ = fs::write(lock_file_path(), lock_action);
         }
 
         let fonts: Box<[Font]> =

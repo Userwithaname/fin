@@ -1,9 +1,9 @@
-use crate::action::Action;
 use crate::args::Args;
 use crate::config::Config;
 use crate::font::Font;
 use crate::installed::InstalledFonts;
 use crate::installer::Installer;
+use crate::paths::lock_file_path;
 
 use core::error::Error;
 use core::sync::atomic::{AtomicBool, Ordering};
@@ -15,8 +15,6 @@ use std::thread;
 
 #[macro_use]
 pub mod colors;
-#[macro_use]
-pub mod paths;
 
 pub mod action;
 pub mod actions;
@@ -28,6 +26,7 @@ pub mod file_action;
 pub mod font_page;
 pub mod installer;
 pub mod options;
+pub mod paths;
 pub mod source;
 pub mod wildcards;
 
@@ -70,7 +69,7 @@ pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
     };
 
     if lock_state.is_none() {
-        let _ = fs::remove_file(lock_file_path!());
+        let _ = fs::remove_file(lock_file_path());
     }
 
     installed_fonts.lock().unwrap().write()?;

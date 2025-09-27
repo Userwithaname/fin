@@ -1,7 +1,7 @@
+use crate::action::Action;
 use crate::font::Font;
 use crate::options::Options;
-use crate::wildcards::wildcard_substring;
-use crate::Action;
+use crate::paths;
 use crate::Config;
 
 use std::env;
@@ -33,10 +33,7 @@ impl Args {
 
         let mut config = Config::load()?;
         let options = Options::build(&flags, &mut config)?;
-
-        if wildcard_substring(&config.install_dir, "^~/", b"").is_some() {
-            config.install_dir = home_dir!() + &config.install_dir[1..]
-        }
+        paths::expand_tilde(&mut config.install_dir);
 
         Ok((
             Args {

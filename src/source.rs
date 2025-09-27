@@ -75,10 +75,10 @@ impl Source {
                     *tag = override_version.map(|v| v.to_string());
                 } else if tag.is_none() {
                     *tag = Some("latest".to_string());
-                };
+                }
             }
             Self::Webpage { tag, .. } | Self::Direct { tag, .. } => {
-                override_version.inspect(|v| *tag = Some(v.to_string()));
+                override_version.inspect(|&v| *tag = Some(v.to_string()));
             }
             Self::None => (),
         }
@@ -168,7 +168,7 @@ impl Source {
             Source::GitHub { tag, .. }
             | Source::Webpage { tag, .. }
             | Source::Direct { tag, .. } => Ok(tag.as_deref()),
-            Source::None => Err(format!("Cannot obtain field `tag` from `{:?}`", self)),
+            Source::None => Err(format!("Cannot obtain field `tag` from `{self:?}`")),
         }
     }
 

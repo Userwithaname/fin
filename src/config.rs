@@ -1,3 +1,4 @@
+use crate::paths::{config_dir, config_file_path};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
@@ -63,12 +64,12 @@ verbose_urls = false
 
 impl Config {
     pub fn load() -> Result<Self, String> {
-        let config_file = config_file_path!();
+        let config_file = config_file_path();
         if !Path::new(&config_file).exists() {
             return Ok(Self::default());
         }
 
-        let config: Self = toml::from_str(&fs::read_to_string(&config_file).map_err(|err| {
+        let config: Self = toml::from_str(&fs::read_to_string(config_file).map_err(|err| {
             eprintln!("Failed to read file: {config_file}");
             err.to_string()
         })?)
@@ -80,15 +81,15 @@ impl Config {
     }
 
     pub fn write_default_config() -> Result<(), String> {
-        fs::create_dir_all(config_dir!()).map_err(|e| e.to_string())?;
+        fs::create_dir_all(config_dir()).map_err(|e| e.to_string())?;
 
-        let config_file_path = config_file_path!();
-        let config_file = Path::new(&config_file_path);
+        let config_file_path = config_file_path();
+        let config_file = Path::new(config_file_path);
         if config_file.exists() {
-            let _ = fs::rename(config_file, Path::new(&(config_file_path!() + "~")));
+            let _ = fs::rename(config_file, Path::new(&format!("{config_file_path}~")));
         }
 
-        fs::write(config_file_path!(), default_config!()).map_err(|e| e.to_string())
+        fs::write(config_file_path, default_config!()).map_err(|e| e.to_string())
     }
 
     pub fn panic_if_invalid(&self) {

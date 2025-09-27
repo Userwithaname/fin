@@ -3,6 +3,7 @@ use crate::checksum::Checksum;
 use crate::file_action::FileAction;
 use crate::font_page::FontPage;
 use crate::installed::{InstalledFont, InstalledFonts};
+use crate::paths::{installers_dir, staging_dir};
 use crate::source::Source;
 use crate::Args;
 use crate::{format_size, wildcards::*};
@@ -48,7 +49,7 @@ impl Installer {
         cached_pages: Arc<Mutex<HashMap<String, FontPage>>>,
     ) -> Result<Self, String> {
         let mut installer: Self = toml::from_str(
-            &fs::read_to_string(format!("{installer_dir}{installer_name}")).map_err(|err| {
+            &fs::read_to_string([installer_dir, installer_name].concat()).map_err(|err| {
                 eprintln!("Error reading installer: {installer_name}");
                 err.to_string()
             })?,
@@ -172,7 +173,7 @@ impl Installer {
             ));
         };
 
-        let extract_to = staging_dir!() + &self.name + "/";
+        let extract_to = [staging_dir(), &self.name, "/"].concat();
         let _ = fs::remove_dir_all(&extract_to);
 
         self.action
@@ -189,7 +190,7 @@ impl Installer {
     ) -> Result<(), String> {
         let verbose = args.options.verbose | args.config.verbose_files;
 
-        let staging_dir = format!("{}/{}/", staging_dir!(), &self.name);
+        let staging_dir = format!("{}/{}/", staging_dir(), &self.name);
         let (target_dir, old_files) = &installed_fonts
             .lock()
             .unwrap()
@@ -291,8 +292,8 @@ impl Installer {
     /// Returns the installer names of all available installers matched
     /// by any of the provided filter patterns
     pub fn filter_installers(filters: &[String]) -> Result<Vec<String>, String> {
-        let installers_dir = installers_dir!();
-        if !Path::new(&installers_dir).exists() {
+        let installers_dir = installers_dir();
+        if !Path::new(installers_dir).exists() {
             return Err(format!(
                 "Installers directory does not exist: {installers_dir}"
             ));

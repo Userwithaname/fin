@@ -1,5 +1,6 @@
 use crate::args::Args;
 use crate::bar::ProgressBar;
+use crate::paths::installed_file_path;
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -25,7 +26,7 @@ impl InstalledFonts {
     /// Reads from `~/.config/fin/installed` and builds an
     /// instance of `InstalledFonts` from it
     pub fn read() -> Result<Self, String> {
-        let file = installed_file_path!();
+        let file = installed_file_path();
 
         if !Path::new(&file).exists() {
             return Ok(Self {
@@ -34,7 +35,7 @@ impl InstalledFonts {
             });
         }
 
-        let contents = fs::read_to_string(&file).map_err(|e| {
+        let contents = fs::read_to_string(file).map_err(|e| {
             eprintln!("Failed to read file: {file}");
             e.to_string()
         })?;
@@ -60,8 +61,8 @@ impl InstalledFonts {
             e.to_string()
         })?;
 
-        fs::write(installed_file_path!(), contents).map_err(|e| {
-            eprintln!("Failed to write: {}", installed_file_path!());
+        fs::write(installed_file_path(), contents).map_err(|e| {
+            eprintln!("Failed to write: {}", installed_file_path());
             e.to_string()
         })?;
 
@@ -265,7 +266,7 @@ impl InstalledFonts {
                 let _ = stdout().flush();
             }
 
-            let target = dir.to_owned() + subdir;
+            let target = [dir, subdir].concat();
             if fs::read_dir(&target).is_ok_and(|remaining| remaining.count() == 0) {
                 match fs::remove_dir(&target) {
                     Ok(()) => {

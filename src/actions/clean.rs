@@ -1,3 +1,4 @@
+use crate::paths::{cache_dir, lock_file_path, page_cache_dir, staging_dir};
 use std::fs;
 
 use crate::args::Args;
@@ -41,30 +42,30 @@ Items:
         for item in items {
             match item.as_str() {
                 "all" => {
-                    let target = cache_dir!();
-                    if fs::exists(&target).unwrap_or(true) {
-                        fs::remove_dir_all(&target).map_err(|e| e.to_string())?;
+                    let target = cache_dir();
+                    if fs::exists(target).unwrap_or(true) {
+                        fs::remove_dir_all(target).map_err(|e| e.to_string())?;
                         println!("Removed the cache directory: {target}");
                     }
                 }
                 "pages" => {
-                    let target = page_cache_dir!();
-                    if fs::exists(&target).unwrap_or(true) {
-                        fs::remove_dir_all(&target).map_err(|e| e.to_string())?;
+                    let target = page_cache_dir();
+                    if fs::exists(target).unwrap_or(true) {
+                        fs::remove_dir_all(target).map_err(|e| e.to_string())?;
                         println!("Removed the page cache directory: {target}");
                     }
                 }
                 "staging" => {
-                    let target = staging_dir!();
-                    if fs::exists(&target).unwrap_or(true) {
-                        fs::remove_dir_all(&target).map_err(|e| e.to_string())?;
+                    let target = staging_dir();
+                    if fs::exists(target).unwrap_or(true) {
+                        fs::remove_dir_all(target).map_err(|e| e.to_string())?;
                         println!("Removed the staging directory: {target}");
                     }
                 }
                 "state" => {
-                    let target = lock_file_path!();
-                    if fs::exists(&target).unwrap_or(true) {
-                        fs::remove_file(&target).map_err(|e| e.to_string())?;
+                    let target = lock_file_path();
+                    if fs::exists(target).unwrap_or(true) {
+                        fs::remove_file(target).map_err(|e| e.to_string())?;
                         println!("Removed the lock file: {target}");
                     }
                 }
