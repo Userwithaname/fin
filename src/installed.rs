@@ -119,8 +119,7 @@ impl InstalledFonts {
                 return Ok(());
             }
 
-            let installed_dir = installed_font.get_dir();
-            let mut dir_iter = installed_dir.split('/');
+            let mut dir_iter = installed_font.dir.split('/');
             dir_iter.next_back();
             let dir_name = dir_iter.next_back().unwrap_or("(unknown)");
 
