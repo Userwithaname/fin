@@ -1,6 +1,6 @@
 use crate::args::Args;
 use crate::bar::ProgressBar;
-use crate::paths::installed_file_path;
+use crate::paths::{expand_home, installed_file_path};
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -15,6 +15,14 @@ pub struct InstalledFont {
     pub url: String,
     pub dir: String,
     pub files: Vec<String>,
+}
+
+impl InstalledFont {
+    pub fn get_dir(&self) -> String {
+        let mut path = self.dir.clone();
+        expand_home(&mut path);
+        path
+    }
 }
 
 pub struct InstalledFonts {
@@ -111,7 +119,8 @@ impl InstalledFonts {
                 return Ok(());
             }
 
-            let mut dir_iter = installed_font.dir.split('/');
+            let installed_dir = installed_font.get_dir();
+            let mut dir_iter = installed_dir.split('/');
             dir_iter.next_back();
             let dir_name = dir_iter.next_back().unwrap_or("(unknown)");
 
@@ -122,7 +131,7 @@ impl InstalledFonts {
 
             Self::remove_files(
                 &stray_files,
-                &installed_font.dir,
+                &installed_font.get_dir(),
                 dir_name,
                 "Cleaning up:",
                 false,
@@ -143,7 +152,7 @@ impl InstalledFonts {
     pub fn uninstall(&mut self, args: &Args, font: &str) -> Result<Option<String>, String> {
         let verbose = args.options.verbose || args.config.verbose_files;
         if let Some(installed_font) = self.installed.get(font) {
-            let dir = installed_font.dir.clone();
+            let dir = installed_font.get_dir();
 
             let mut dir_iter = dir.split('/');
             dir_iter.next_back();

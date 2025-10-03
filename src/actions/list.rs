@@ -30,7 +30,7 @@ Items:
         fonts.iter().for_each(|font| {
             if let Some(installed) = installed_fonts.lock().unwrap().installed.get(&font.name) {
                 if Font::has_installer(&font.name) {
-                    match fs::exists(&installed.dir).unwrap_or_default() {
+                    match fs::exists(&installed.get_dir()).unwrap_or_default() {
                         true => println_green!("{font}"),
                         false => println_orange!("{font} (missing directory)"),
                     }

@@ -2,10 +2,14 @@ use crate::wildcards::wildcard_substring;
 use std::env;
 use std::sync::OnceLock;
 
-pub fn expand_tilde(path: &mut String) {
+pub fn expand_home(path: &mut String) {
     if wildcard_substring(path, "^~/", b"").is_some() {
         path.replace_range(..2, home_dir());
     }
+}
+
+pub fn collapse_home(path: &str) -> String {
+    path.replace(home_dir(), "~/")
 }
 
 fn home_dir() -> &'static String {

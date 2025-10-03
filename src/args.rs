@@ -33,7 +33,7 @@ impl Args {
 
         let mut config = Config::load()?;
         let options = Options::build(&flags, &mut config)?;
-        paths::expand_tilde(&mut config.install_dir);
+        paths::expand_home(&mut config.install_dir);
 
         Ok((
             Args {

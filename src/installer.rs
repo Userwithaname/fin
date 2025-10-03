@@ -3,7 +3,7 @@ use crate::checksum::Checksum;
 use crate::file_action::FileAction;
 use crate::font_page::FontPage;
 use crate::installed::{InstalledFont, InstalledFonts};
-use crate::paths::{installers_dir, staging_dir};
+use crate::paths::{collapse_home, installers_dir, staging_dir};
 use crate::source::Source;
 use crate::Args;
 use crate::{format_size, wildcards::*};
@@ -198,7 +198,7 @@ impl Installer {
             .get(&self.installer_name)
             .map_or_else(
                 || (format!("{}/{}/", args.config.install_dir, &self.name), None),
-                |installed| (installed.dir.clone(), Some(installed.files.clone())),
+                |installed| (installed.get_dir(), Some(installed.files.clone())),
             );
 
         fs::create_dir_all(target_dir).map_err(|err| err.to_string())?;
@@ -271,7 +271,7 @@ impl Installer {
                         &self.installer_name,
                         InstalledFont {
                             url: self.source.ref_direct_url()?.to_owned(),
-                            dir: target_dir.to_owned(),
+                            dir: collapse_home(target_dir),
                             files: self.files.clone(),
                         },
                     )
@@ -384,7 +384,7 @@ impl Installer {
             .get(&self.installer_name)
             .is_none_or(|installed| {
                 self.source.ref_direct_url().unwrap() != installed.url
-                    || !fs::exists(&installed.dir).unwrap_or_default()
+                    || !fs::exists(&installed.get_dir()).unwrap_or_default()
             })
     }
 }
