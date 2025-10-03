@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 
 pub fn expand_tilde(path: &mut String) {
     if wildcard_substring(path, "^~/", b"").is_some() {
-        path.replace_range(..1, home_dir());
+        path.replace_range(..2, home_dir());
     }
 }
 
