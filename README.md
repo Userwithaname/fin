@@ -11,11 +11,10 @@
 # About Fin
 
 Fin is a font manager which allows you to install and manage fonts using
-custom installers. Installers tell Fin how each font should be obtained
-and how to install it. This allows fonts to be installed directly from
-the source (such as release assets of GitHub repositories).
-Fonts can be managed using the `install`/`update`/`remove` commands, akin
-to a standard package manager.
+custom installers. Installers tell Fin where each font can be obtained
+from and how to install it. This allows fonts to be installed directly
+from the source (such as release assets of GitHub repositories).
+Fonts can be managed using the `install`/`update`/`remove` commands.
 
 "Fin" is a contraction of "font installer".
 
@@ -59,13 +58,52 @@ Note that you will also need an installer for any font you wish to install.
 # Installers
 
 Fin relies on TOML files (located in `~/.config/fin/installers/`) to specify
-how each font should be installed. You can find a few examples in the
-`installers/` directory of this repository.
+how each font should be installed. Installers allow Fin to download fonts and
+install them on your system.
 
-Using the installers, Fin will attempt to locate and download the font archive,
-and install the font on your system.
+## Example installers
 
-Supported fields are as follows:
+A file in `~/.config/fin/installers/` named `maple-mono` with the following
+contents would enable Fin to install the latest release of
+[Maple Mono](https://github.com/subframe7536/maple-font) directly from GitHub
+by running `fin install maple-mono`, and keep it updated using `fin update`:
+
+```toml
+name = "Maple Mono"
+
+[source.GitHub]
+tag = "latest"
+author = "subframe7536"
+project = "maple-font"
+
+[action.Extract]
+file = "MapleMono-Variable.zip"
+include = [ "LICENSE.txt", "*.ttf" ]
+
+[check.SHA256]
+file = "MapleMono-Variable.sha256"
+```
+
+Fin is able to install from other sources as well. For example, GeistMono
+Nerd Font from the [Nerd Fonts](https://www.nerdfonts.com/) website:
+
+```toml
+name = "GeistMono Nerd Font"
+
+[source.Webpage]
+url = "https://www.nerdfonts.com/font-downloads"
+
+[action.Extract]
+file = "GeistMono.zip"
+include = [ "*" ]
+````
+
+> [!NOTE]
+> See the `installers/` directory of this repository for more examples
+
+## Installer fields
+
+This is the full list of fields available to installers:
 
 - `name`
     > The name of the font, used as the installation directory
@@ -124,43 +162,6 @@ Supported fields are as follows:
         - `file`
             > The checksum file to download (optional)
     > Note: Not supported for direct download links
-
-## Example installers
-
-A file in `~/.config/fin/installers/` named `maple-mono` with the following
-contents would enable Fin to install the latest release of
-[Maple Mono](https://github.com/subframe7536/maple-font) directly from GitHub
-by running `fin install maple-mono`, and keep it updated using `fin update`:
-
-```toml
-name = "Maple Mono"
-
-[source.GitHub]
-tag = "latest"
-author = "subframe7536"
-project = "maple-font"
-
-[action.Extract]
-file = "MapleMono-Variable.zip"
-include = [ "LICENSE.txt", "*.ttf" ]
-
-[check.SHA256]
-file = "MapleMono-Variable.sha256"
-```
-
-Fin is able to install from other sources as well. For example, GeistMono
-Nerd Font from the [Nerd Fonts](https://www.nerdfonts.com/) website:
-
-```toml
-name = "GeistMono Nerd Font"
-
-[source.Webpage]
-url = "https://www.nerdfonts.com/font-downloads"
-
-[action.Extract]
-file = "GeistMono.zip"
-include = [ "*" ]
-````
 
 # Configuration
 
