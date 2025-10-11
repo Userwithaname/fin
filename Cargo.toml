@@ -12,7 +12,7 @@ sha2 = "0.10.9"
 tar = "0.4.44"
 tokio = { version = "1.0.0", features = ["rt-multi-thread"] }
 toml = "0.9.5"
-zip = "^5.0.0"
+zip = "^6.0.0"
 
 [dependencies.reqwest]
 version = "0.12.23"
