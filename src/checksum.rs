@@ -53,9 +53,9 @@ impl Checksum {
         let mut data = data;
         let filename = source
             .ref_direct_url()?
-            .split('/')
-            .next_back()
-            .unwrap_or_default();
+            .rsplit_once('/')
+            .unwrap_or_default()
+            .1;
         match self {
             Self::SHA256 { file } => {
                 print!("… Verifying:   {filename}");

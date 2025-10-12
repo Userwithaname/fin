@@ -312,8 +312,9 @@ impl Installer {
 
         let mut matches = HashMap::<String, Vec<String>>::new();
         for filter in filters {
-            let mut p_t = filter.split(':');
-            let (pattern, tag) = (p_t.next().unwrap(), p_t.next());
+            let (pattern, tag) = filter
+                .split_once(':')
+                .map_or_else(|| (filter.as_ref(), None), |s| (s.0, Some(s.1)));
 
             for input in &installers {
                 if !match_wildcard(input, pattern) {
@@ -384,7 +385,7 @@ impl Installer {
             .get(&self.installer_name)
             .is_none_or(|installed| {
                 self.source.ref_direct_url().unwrap() != installed.url
-                    || !fs::exists(&installed.get_dir()).unwrap_or_default()
+                    || !fs::exists(installed.get_dir()).unwrap_or_default()
             })
     }
 }

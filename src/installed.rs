@@ -119,9 +119,10 @@ impl InstalledFonts {
                 return Ok(());
             }
 
-            let mut dir_iter = installed_font.dir.split('/');
-            dir_iter.next_back();
-            let dir_name = dir_iter.next_back().unwrap_or("(unknown)");
+            let dir_name = installed_font.dir.rsplit_once('/').map_or_else(
+                || "(unknown)",
+                |s| s.0.rsplit_once('/').map_or_else(|| s.0, |s| s.1),
+            );
 
             let verbose = args.options.verbose | args.config.verbose_files;
             if verbose {

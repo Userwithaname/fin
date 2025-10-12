@@ -24,17 +24,17 @@ mod test_config {
         let mut count = 0;
         for line in default_config!().lines() {
             for cmp_line in cmp_lines.clone() {
-                let mut components = cmp_line.split('=');
-                if let (Some(key), Some(value)) = (components.next(), components.next()) {
-                    let cmp = &format!("{key}={value}");
-                    if line.replace("# ", "").starts_with(cmp) {
-                        count += 1;
-                    } else if line.starts_with(key) {
-                        println!(
-                            "Non-match:\n	{} <--- default_config!()\n	{} <--- Config::default()",
-                            line, cmp
-                        );
-                    }
+                let Some((key, value)) = cmp_line.split_once('=') else {
+                    return;
+                };
+                let cmp = &format!("{key}={value}");
+                if line.replace("# ", "").starts_with(cmp) {
+                    count += 1;
+                } else if line.starts_with(key) {
+                    println!(
+                        "Non-match:\n	{} <--- default_config!()\n	{} <--- Config::default()",
+                        line, cmp
+                    );
                 }
             }
         }

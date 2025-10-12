@@ -101,8 +101,10 @@ impl FileAction {
     }
 
     pub fn get_file_type(file: &str) -> FileType {
-        let mut ext = file.split('.');
-        match ext.next_back().unwrap() {
+        let Some(ext) = file.rsplit_once('.') else {
+            return FileType::Unsupported;
+        };
+        match ext.1 {
             "zip" => return FileType::Zip,
             "tar" => {
                 println!(
@@ -112,13 +114,13 @@ impl FileAction {
                 return FileType::Tar;
             }
             "gz" => {
-                if ext.next_back().unwrap() == "tar" {
+                if ext.0.ends_with(".tar") {
                     return FileType::TarGz;
                 }
             }
             "xz" => {
                 // Currently disabled
-                // if *ext.iter().next_back().unwrap() == "tar" {
+                // if ext.0.ends_with(".tar") {
                 //     return FileType::TarXz;
                 // }
             }
@@ -197,9 +199,9 @@ impl FileAction {
                 let file = installer
                     .source
                     .ref_direct_url()?
-                    .split('/')
-                    .next_back()
-                    .unwrap();
+                    .rsplit_once('/')
+                    .unwrap()
+                    .1;
 
                 let mut progress_bar = ProgressBar::new("Staging:");
 
