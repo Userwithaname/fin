@@ -11,6 +11,7 @@ pub enum State {
 }
 
 impl State {
+    #[must_use]
     pub fn status_symbol(&self) -> String {
         match self {
             State::InProgress => "…".to_owned(),
@@ -27,6 +28,7 @@ pub struct ProgressBar {
 }
 
 impl ProgressBar {
+    #[must_use]
     pub fn new(prefix: &str) -> Self {
         Self {
             state: State::InProgress,

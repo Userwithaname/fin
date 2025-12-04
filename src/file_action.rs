@@ -100,6 +100,7 @@ impl FileAction {
         Ok(())
     }
 
+    #[must_use]
     pub fn get_file_type(file: &str) -> FileType {
         let Some(ext) = file.rsplit_once('.') else {
             return FileType::Unsupported;

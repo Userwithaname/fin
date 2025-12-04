@@ -8,6 +8,7 @@ pub fn expand_home(path: &mut String) {
     }
 }
 
+#[must_use]
 pub fn collapse_home(path: &str) -> String {
     path.replace(home_dir(), "~/")
 }

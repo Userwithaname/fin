@@ -99,7 +99,7 @@ impl Source {
                     tag: if let Source::GitHub { tag, .. } = self.take() {
                         tag
                     } else {
-                        panic!() // Unreachable
+                        unreachable!()
                     },
                 };
                 self.validate(installer.action.ref_file()?, &installer.installer_name)?;
@@ -113,7 +113,7 @@ impl Source {
                     &installer.installer_name,
                 )?;
                 let Source::Webpage { tag, .. } = self.take() else {
-                    panic!() // Unreachable
+                    unreachable!()
                 };
                 *self = Self::Direct { url, tag };
                 Ok(())
