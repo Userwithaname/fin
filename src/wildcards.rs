@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
-use std::thread;
 
 pub struct WildcardPattern {
     index: usize,
@@ -75,7 +73,7 @@ impl WildcardPattern {
 /// Returns `true` if the pattern matches the input
 ///
 /// Supported special characters:
-///   '*' matches any number of any character(s)
+/// - `*` matches any number of any character(s)
 #[must_use]
 pub fn match_wildcard(input: &str, pattern: &str) -> bool {
     if pattern.is_empty() {
@@ -107,7 +105,7 @@ pub fn match_wildcard(input: &str, pattern: &str) -> bool {
 /// Returns `true` if any of the patterns match the input
 ///
 /// Supported special characters:
-///   '*' matches any number of any character(s)
+/// - `*` matches any number of any character(s)
 #[must_use]
 pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
     if patterns.is_empty() {
@@ -147,49 +145,12 @@ pub fn match_any_wildcard(input: &str, patterns: &[String]) -> bool {
     false
 }
 
-/// Returns `true` if any of the patterns match the input
-/// This is a multi-threaded version of `match_any_wildcard()`
-///
-/// Supported special characters:
-///   '*' matches any number of any character(s)
-#[must_use]
-pub fn match_any_wildcard_mt(input: Arc<str>, patterns: Arc<[String]>) -> bool {
-    let mut threads = Vec::new();
-
-    for i in 0..patterns.len() {
-        let input = Arc::clone(&input);
-        let patterns = Arc::clone(&patterns);
-
-        threads.push(thread::spawn(move || match_wildcard(&input, &patterns[i])));
-    }
-
-    let mut i = 0;
-    loop {
-        if threads.is_empty() {
-            break;
-        }
-
-        if threads[i].is_finished() {
-            if threads.remove(i).join().unwrap() {
-                return true;
-            }
-            continue;
-        }
-        i += 1;
-
-        if i == threads.len() {
-            i = 0;
-        }
-    }
-    false
-}
-
 /// Returns a `HashMap` of all matches.
 /// Key: original `String` pattern
 /// Value: `Vec<String>` of matches
 ///
 /// Supported special characters:
-///   '*' matches any number of any character(s)
+/// - `*` matches any number of any character(s)
 #[must_use]
 pub fn match_wildcards_multi(
     inputs: &[String],
@@ -213,9 +174,9 @@ pub fn match_wildcards_multi(
 /// Returns a portion of the input text matched by the wildcard pattern
 ///
 /// Supported special characters:
-///   '*' matches any number of any characters
-///   '^' matches the start of the input
-///   '$' matches the end of the input
+/// - `*` matches any number of any characters
+/// - `^` matches the start of the input
+/// - `$` matches the end of the input
 #[must_use]
 pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> Option<&'a str> {
     if pattern.is_empty() {
