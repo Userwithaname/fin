@@ -167,7 +167,7 @@ impl FileAction {
                             include,
                             &exclude.take().unwrap_or_else(|| [].into()),
                             keep_folders.unwrap_or_default(),
-                        )?
+                        )?;
                     }
                     FileType::TarGz => {
                         installer.files = Self::extract_tar_gz(

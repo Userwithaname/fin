@@ -5,12 +5,9 @@ use crate::installed::InstalledFonts;
 use crate::installer::Installer;
 use crate::paths::lock_file_path;
 
-use core::error::Error;
-use core::sync::atomic::{AtomicBool, Ordering};
-use core::time::Duration;
 use std::fs;
 use std::io::{stdin, stdout, Write};
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 
 #[macro_use]
@@ -33,40 +30,30 @@ pub mod wildcards;
 mod font;
 mod installed;
 
-pub fn run(lock_state: Option<String>) -> Result<(), Box<dyn Error>> {
-    let interrupt_signal = Arc::new(AtomicBool::new(false));
-    ctrlc::set_handler({
-        let interrupt_signal = Arc::clone(&interrupt_signal);
-        move || {
-            interrupt_signal.store(true, Ordering::Relaxed);
-        }
-    })
-    .expect("Error setting Ctrl-C handler");
-
+pub fn run(lock_state: Option<String>) -> Result<(), String> {
+    let (interrupt, result) = mpsc::channel::<Result<(), String>>();
     let installed_fonts = Arc::new(Mutex::new(InstalledFonts::read()?));
-    let handle = thread::Builder::new()
+
+    thread::Builder::new()
         .name("fin".to_string())
         .spawn({
+            let interrupt = interrupt.clone();
             let (args, items) = Args::build()?;
             let lock_state = lock_state.clone();
             let installed_fonts = Arc::clone(&installed_fonts);
-            move || action::perform(&args, &items, lock_state.as_ref(), &installed_fonts)
+            move || {
+                let result = action::perform(&args, &items, lock_state.as_ref(), &installed_fonts);
+                interrupt.send(result).unwrap();
+            }
         })
         .unwrap();
 
-    let result = loop {
-        thread::sleep(Duration::from_millis(20));
-        if handle.is_finished() {
-            break handle
-                .join()
-                .unwrap_or_else(|_| Err("Thread panicked".to_string()))
-                .map_err(|e| e.into());
-        }
-        if interrupt_signal.load(Ordering::Relaxed) {
-            drop(handle);
-            break Ok(());
-        }
-    };
+    ctrlc::set_handler(move || {
+        interrupt.send(Err("Interrupted by user".into())).unwrap();
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    let result = result.recv().unwrap();
 
     if lock_state.is_none() {
         let _ = fs::remove_file(lock_file_path());
