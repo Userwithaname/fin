@@ -148,49 +148,46 @@ impl FileAction {
                 file_type,
             } => {
                 let reader = std::io::Cursor::new(data);
-                match file_type {
-                    FileType::Zip => {
-                        installer.files = Self::extract_zip(
-                            args,
-                            reader,
-                            &extract_to,
-                            include,
-                            &exclude.take().unwrap_or_else(|| [].into()),
-                            keep_folders.unwrap_or_default(),
-                        )?;
-                    }
-                    FileType::Tar => {
-                        installer.files = Self::extract_tar(
-                            args,
-                            Archive::new(reader),
-                            &extract_to,
-                            include,
-                            &exclude.take().unwrap_or_else(|| [].into()),
-                            keep_folders.unwrap_or_default(),
-                        )?;
-                    }
-                    FileType::TarGz => {
-                        installer.files = Self::extract_tar_gz(
-                            args,
-                            reader,
-                            &extract_to,
-                            include,
-                            &exclude.take().unwrap_or_else(|| [].into()),
-                            keep_folders.unwrap_or_default(),
-                        )?;
-                    }
-                    FileType::TarXz => {
-                        installer.files = Self::extract_tar_xz(
-                            args,
-                            reader,
-                            &extract_to,
-                            include,
-                            &exclude.take().unwrap_or_else(|| [].into()),
-                            keep_folders.unwrap_or_default(),
-                        )?;
-                    }
+                installer.files = match file_type {
+                    FileType::Zip => Self::extract_zip(
+                        args,
+                        reader,
+                        &extract_to,
+                        include,
+                        &exclude.take().unwrap_or_else(|| [].into()),
+                        keep_folders.unwrap_or_default(),
+                    )?,
+                    FileType::Tar => Self::extract_tar(
+                        args,
+                        Archive::new(reader),
+                        &extract_to,
+                        include,
+                        &exclude.take().unwrap_or_else(|| [].into()),
+                        keep_folders.unwrap_or_default(),
+                    )?,
+                    FileType::TarGz => Self::extract_tar_gz(
+                        args,
+                        reader,
+                        &extract_to,
+                        include,
+                        &exclude.take().unwrap_or_else(|| [].into()),
+                        keep_folders.unwrap_or_default(),
+                    )?,
+                    FileType::TarXz => Self::extract_tar_xz(
+                        args,
+                        reader,
+                        &extract_to,
+                        include,
+                        &exclude.take().unwrap_or_else(|| [].into()),
+                        keep_folders.unwrap_or_default(),
+                    )?,
                     FileType::Unsupported => {
                         return Err(format!("Unsupported archive extension: {file}"))
+                    }
+                };
+                for file in &mut installer.files {
+                    if file.starts_with("./") {
+                        *file = file[2..].to_string();
                     }
                 }
             }
