@@ -34,7 +34,7 @@ pub fn run(lock_state: Option<String>) -> Result<(), String> {
     let (interrupt, result) = mpsc::channel::<Result<(), String>>();
     let installed_fonts = Arc::new(Mutex::new(InstalledFonts::read()?));
 
-    thread::Builder::new()
+    let handle = thread::Builder::new()
         .name("fin".to_string())
         .spawn({
             let interrupt = interrupt.clone();
@@ -55,11 +55,12 @@ pub fn run(lock_state: Option<String>) -> Result<(), String> {
 
     let result = result.recv().unwrap();
 
+    drop(handle);
     if lock_state.is_none() {
         let _ = fs::remove_file(lock_file_path());
     }
-
     installed_fonts.lock().unwrap().write()?;
+
     result
 }
 
