@@ -207,12 +207,13 @@ verbose_urls = false
 1. [Install Rust and Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 2. Clone this repository: `git clone https://github.com/Userwithaname/fin.git`
 3. Enter the cloned directory: `cd fin`
-4. Build it using `cargo build` — the program binary will appear in `…/target/debug/fin`
+4. Build it using `cargo build --release` — the program binary will appear in
+`…/target/release/fin`
 5. To run it, either:
     - Put the program binary into a location within your `$PATH` to run it
     using the `fin` command, or
-    - Run `./target/debug/fin` from the `fin` directory, or
-    - Run it using Cargo: `cargo run -- [action] [items]`
+    - Run `./target/release/fin` from the `fin` directory, or
+    - Run it using Cargo: `cargo run --release -- [action] [items]`
 
 To learn more, see the Cargo documentation for
 [`cargo build`](https://doc.rust-lang.org/cargo/commands/cargo-build.html)

@@ -106,28 +106,12 @@ impl FileAction {
             return FileType::Unsupported;
         };
         match ext.1 {
-            "zip" => return FileType::Zip,
-            "tar" => {
-                println!(
-                    "{}: `tar` support has not yet been tested",
-                    orange!("WARNING")
-                );
-                return FileType::Tar;
-            }
-            "gz" => {
-                if ext.0.ends_with(".tar") {
-                    return FileType::TarGz;
-                }
-            }
-            "xz" => {
-                // Currently disabled
-                // if ext.0.ends_with(".tar") {
-                //     return FileType::TarXz;
-                // }
-            }
-            _ => (),
+            "zip" => FileType::Zip,
+            "tar" => FileType::Tar,
+            "gz" if ext.0.ends_with(".tar") => FileType::TarGz,
+            // "xz" if ext.0.ends_with(".tar") => FileType::TarXz,
+            _ => FileType::Unsupported,
         }
-        FileType::Unsupported
     }
 
     /// Prepares the font for installation by writing its

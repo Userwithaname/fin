@@ -6,8 +6,8 @@ use crate::installer::Installer;
 use crate::paths::lock_file_path;
 
 use std::fs;
-use std::io::{stdin, stdout, Write};
-use std::sync::{mpsc, Arc, Mutex};
+use std::io::{Write, stdin, stdout};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 
 #[macro_use]
@@ -49,6 +49,7 @@ pub fn run(lock_state: Option<String>) -> Result<(), String> {
         .unwrap();
 
     ctrlc::set_handler(move || {
+        println!();
         interrupt.send(Err("Interrupted by user".into())).unwrap();
     })
     .expect("Error setting Ctrl-C handler");
