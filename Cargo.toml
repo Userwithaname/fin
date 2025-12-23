@@ -11,7 +11,21 @@ serde   = { version = "1.0.219", default-features = false, features = ["derive"]
 sha2    = { version = "0.10.9",  default-features = false }
 tar     = { version = "0.4.44",  default-features = false }
 tokio   = { version = "1.0.0",   features = ["rt-multi-thread"] }
-zip     = { version = "6.0.0" }
+
+[dependencies.zip]
+version = "7.0.0"
+default-features = false
+features = [
+  "deflate",
+  "deflate-flate2",
+  "deflate-zopfli",
+  "deflate64",
+  "lzma",
+  "bzip2",
+  "ppmd",
+  "xz",
+  "zstd",
+] 
 
 [dependencies.toml]
 version = "0.9.5"
