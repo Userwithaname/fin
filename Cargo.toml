@@ -16,12 +16,12 @@ tokio   = { version = "1.0.0",   features = ["rt-multi-thread"] }
 version = "7.0.0"
 default-features = false
 features = [
+  "bzip2",
   "deflate",
+  "deflate64",
   "deflate-flate2",
   "deflate-zopfli",
-  "deflate64",
   "lzma",
-  "bzip2",
   "ppmd",
   "xz",
   "zstd",
@@ -36,3 +36,25 @@ features = ["parse", "serde", "display"]
 version = "0.12.23"
 default-features = false
 features = ["blocking", "stream", "rustls-tls"]
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+
+[profile.release.package."*"]
+codegen-units = 1
+debug = false
+strip = true
