@@ -1,7 +1,7 @@
-use crate::font_page::FontPage;
-use crate::wildcards::*;
 use crate::Args;
 use crate::Installer;
+use crate::font_page::FontPage;
+use crate::wildcards::*;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -173,8 +173,6 @@ impl Source {
     }
 
     pub const fn take(&mut self) -> Self {
-        let mut output = Self::None;
-        std::mem::swap(self, &mut output);
-        output
+        std::mem::replace(self, Self::None)
     }
 }

@@ -1,10 +1,10 @@
+use crate::Args;
 use crate::bar::ProgressBar;
 use crate::installer::Installer;
 use crate::wildcards::*;
-use crate::Args;
 
 use std::fs;
-use std::io::{self, stdout, Read, Write};
+use std::io::{self, Read, Write, stdout};
 
 use flate2::read::GzDecoder;
 use tar::Archive;
@@ -166,7 +166,7 @@ impl FileAction {
                         keep_folders.unwrap_or_default(),
                     )?,
                     FileType::Unsupported => {
-                        return Err(format!("Unsupported archive extension: {file}"))
+                        return Err(format!("Unsupported archive extension: {file}"));
                     }
                 };
                 for file in &mut installer.files {
@@ -500,8 +500,6 @@ impl FileAction {
     }
 
     pub const fn take(&mut self) -> Self {
-        let mut output = Self::None;
-        std::mem::swap(self, &mut output);
-        output
+        std::mem::replace(self, Self::None)
     }
 }
