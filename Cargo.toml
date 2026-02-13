@@ -28,7 +28,7 @@ features = [
 ] 
 
 [dependencies.toml]
-version = "0.9.5"
+version = "1.0.0"
 default-features = false
 features = ["parse", "serde", "display"] 
 
