@@ -56,8 +56,8 @@ impl Checksum {
         }
     }
 
-    /// Computes the hash sum of `data` and compares it to `file`.
-    /// Returns `Ok` if file contains the same sum string, or `Err` if not
+    /// Computes the hash sum of `data` and compares it to `self.file`.
+    /// Returns `Ok` if the checksums match, or `Err` if they do not.
     pub fn check(&mut self, data: &[u8], data_size: f64, source: &Source) -> Result<(), String> {
         let filename = source
             .ref_direct_url()?
@@ -88,6 +88,9 @@ impl Checksum {
         }
     }
 
+    /// Computes the hash sum for the input `data`, and compares it to the `expected_sum`.
+    /// Returns `Ok` if the `expected_sum` contains the newly calculated sum, or `Err`
+    /// if it does not.
     fn sha_check<H>(
         expected_sum: &mut Option<String>,
         mut hasher: H,
