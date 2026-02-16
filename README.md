@@ -156,7 +156,7 @@ This is the full list of fields available to installers:
             > (supports wildcards)
 - `check`
     > Optionally specify an integrity check method
-    - `[check.SHA256]`
+    - `[check.SHA224]`/`[check.SHA256]`/`[check.SHA384]`/`[check.SHA512]`
         > Specify the file on the webpage containing the checksum string, or
         > leave unspecified to look for the checksum within the page contents
         - `file`
