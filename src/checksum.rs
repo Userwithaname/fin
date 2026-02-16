@@ -68,22 +68,26 @@ impl Checksum {
             Self::SHA224 { file } => {
                 print!("… Verifying:   {filename}");
                 let _ = stdout().flush();
-                Self::sha_check(file, Sha224::new(), data, data_size, filename)
+                let expected_sum = file.as_ref().unwrap();
+                Self::sha_check(expected_sum, Sha224::new(), data, data_size, filename)
             }
             Self::SHA256 { file } => {
                 print!("… Verifying:   {filename}");
                 let _ = stdout().flush();
-                Self::sha_check(file, Sha256::new(), data, data_size, filename)
+                let expected_sum = file.as_ref().unwrap();
+                Self::sha_check(expected_sum, Sha256::new(), data, data_size, filename)
             }
             Self::SHA384 { file } => {
                 print!("… Verifying:   {filename}");
                 let _ = stdout().flush();
-                Self::sha_check(file, Sha384::new(), data, data_size, filename)
+                let expected_sum = file.as_ref().unwrap();
+                Self::sha_check(expected_sum, Sha384::new(), data, data_size, filename)
             }
             Self::SHA512 { file } => {
                 print!("… Verifying:   {filename}");
                 let _ = stdout().flush();
-                Self::sha_check(file, Sha512::new(), data, data_size, filename)
+                let expected_sum = file.as_ref().unwrap();
+                Self::sha_check(expected_sum, Sha512::new(), data, data_size, filename)
             }
         }
     }
@@ -92,7 +96,7 @@ impl Checksum {
     /// Returns `Ok` if the `expected_sum` contains the newly calculated sum, or `Err`
     /// if it does not.
     fn sha_check<H>(
-        expected_sum: &mut Option<String>,
+        expected_sum: &str,
         mut hasher: H,
         mut data: &[u8],
         data_size: f64,
@@ -131,7 +135,7 @@ impl Checksum {
         }
 
         let sum = hasher.finalize();
-        if expected_sum.as_ref().unwrap().contains(&format!("{sum:x}")) {
+        if expected_sum.contains(&format!("{sum:x}")) {
             progress_bar.pass();
             Ok(())
         } else {
