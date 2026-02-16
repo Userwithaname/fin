@@ -64,28 +64,22 @@ impl Checksum {
             .rsplit_once('/')
             .unwrap_or_default()
             .1;
+        print!("… Verifying:   {filename}");
+        let _ = stdout().flush();
         match self {
             Self::SHA224 { file } => {
-                print!("… Verifying:   {filename}");
-                let _ = stdout().flush();
                 let expected_sum = file.as_ref().unwrap();
                 Self::sha_check(expected_sum, Sha224::new(), data, data_size, filename)
             }
             Self::SHA256 { file } => {
-                print!("… Verifying:   {filename}");
-                let _ = stdout().flush();
                 let expected_sum = file.as_ref().unwrap();
                 Self::sha_check(expected_sum, Sha256::new(), data, data_size, filename)
             }
             Self::SHA384 { file } => {
-                print!("… Verifying:   {filename}");
-                let _ = stdout().flush();
                 let expected_sum = file.as_ref().unwrap();
                 Self::sha_check(expected_sum, Sha384::new(), data, data_size, filename)
             }
             Self::SHA512 { file } => {
-                print!("… Verifying:   {filename}");
-                let _ = stdout().flush();
                 let expected_sum = file.as_ref().unwrap();
                 Self::sha_check(expected_sum, Sha512::new(), data, data_size, filename)
             }
