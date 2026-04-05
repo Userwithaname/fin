@@ -178,7 +178,7 @@ pub fn match_wildcards_multi(
 /// - `^` matches the start of the input
 /// - `$` matches the end of the input
 #[must_use]
-pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> Option<&'a str> {
+pub fn wildcard_substring<'a>(input: &'a str, pattern: &str) -> Option<&'a str> {
     if pattern.is_empty() {
         return None;
     }
@@ -192,12 +192,6 @@ pub fn wildcard_substring<'a>(input: &'a str, pattern: &str, exclude: &[u8]) -> 
         'iter: loop {
             match wc_pattern.bytes[wc_pattern.index] {
                 b'*' => {
-                    if exclude.contains(&input_bytes[input_index]) {
-                        wc_pattern.jumpback_index = None;
-                        wc_pattern.index = 0;
-                        start = None;
-                        break 'iter;
-                    }
                     if wc_pattern.index < wc_pattern.bytes.len() - 1 {
                         wc_pattern.jumpback_index = Some(wc_pattern.index);
                         wc_pattern.index += 1;

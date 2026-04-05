@@ -131,8 +131,8 @@ impl Checksum {
 
         // NOTE: Ideally this would just be `format!("sum:x")` without the wildcard or sub-slicing,
         // but I could not get it to work with this version of the `sha2` crate. This is an ugly
-        // workaround which re-formats the debug formatting: "Array([b2, 5a, …])" -> "b25a…"
-        if let Some(sum) = wildcard_substring(&format!("{sum:x?}").replace(", ", ""), "[*]", &[])
+        // workaround which re-formats the debug string: "Array([b2, 5a, …])" -> "b25a…"
+        if let Some(sum) = wildcard_substring(&format!("{sum:x?}").replace(", ", ""), "[*]")
             && expected_sum.contains(&sum[1..sum.len() - 1])
         {
             progress_bar.pass();

@@ -138,7 +138,7 @@ impl Source {
     ) -> Result<String, String> {
         font_page_contents
             .split('"')
-            .find_map(|line| wildcard_substring(line, &(String::from("https://*") + file), b""))
+            .find_map(|line| wildcard_substring(line, &(String::from("https://*") + file)))
             .map_or_else(
                 || {
                     Err(format!(

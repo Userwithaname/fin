@@ -3,7 +3,7 @@ use std::env;
 use std::sync::OnceLock;
 
 pub fn expand_home(path: &mut String) {
-    if wildcard_substring(path, "^~/", b"").is_some() {
+    if wildcard_substring(path, "^~/").is_some() {
         path.replace_range(..2, home_dir());
     }
 }

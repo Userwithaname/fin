@@ -5,48 +5,40 @@ mod test_wildcards {
 
     #[test]
     fn test_wildcard_substring() {
-        assert_eq!(wildcard_substring("", "something", b""), None);
-        assert_eq!(wildcard_substring("something", "", b""), None);
-        assert_eq!(wildcard_substring("some random text", "potato", b""), None);
+        assert_eq!(wildcard_substring("", "something"), None);
+        assert_eq!(wildcard_substring("something", ""), None);
+        assert_eq!(wildcard_substring("some random text", "potato"), None);
         assert_eq!(
-            wildcard_substring("surrounding (test) characters", "(*)", b""),
+            wildcard_substring("surrounding (test) characters", "(*)"),
             Some("(test)")
         );
         assert_eq!(
-            wildcard_substring("the beginning of the string", "*ng", b""),
+            wildcard_substring("the beginning of the string", "*ng"),
             Some("the beginning")
         );
         assert_eq!(
-            wildcard_substring("the end of the string", "end*", b""),
+            wildcard_substring("the end of the string", "end*"),
             Some("end of the string")
         );
         assert_eq!(
-            wildcard_substring("match from start to hat ^ but no further", "^*^", b""),
+            wildcard_substring("match from start to hat ^ but no further", "^*^"),
             Some("match from start to hat ^")
         );
         assert_eq!(
-            wildcard_substring("match from beginning to end of string", "^match*ing$", b""),
+            wildcard_substring("match from beginning to end of string", "^match*ing$"),
             Some("match from beginning to end of string")
         );
         assert_eq!(
-            wildcard_substring("match early end of string", "*end$", b""),
+            wildcard_substring("match early end of string", "*end$"),
             None
         );
         assert_eq!(
-            wildcard_substring("zero-length match star", "zero-length match *star", b""),
+            wildcard_substring("zero-length match star", "zero-length match *star"),
             Some("zero-length match star")
         );
         assert_eq!(
-            wildcard_substring("zero-length match star at the end", "*end*", b""),
+            wildcard_substring("zero-length match star at the end", "*end*"),
             Some("zero-length match star at the end")
-        );
-        assert_eq!(
-            wildcard_substring(
-                "disallowed_underscore disallowed underscore",
-                "disallowed*underscore",
-                &[b'_']
-            ),
-            Some("disallowed underscore")
         );
     }
 
