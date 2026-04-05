@@ -1,9 +1,10 @@
 use crate::format_size;
 use crate::source::Source;
-use crate::wildcards::wildcard_substring;
 use crate::{bar::ProgressBar, file_action::FileAction};
 
 use serde::Deserialize;
+
+use sha2::digest::generic_array::ArrayLength;
 use sha2::digest::{FixedOutput, HashMarker, OutputSizeUser, Update};
 use sha2::{Digest, Sha224, Sha256, Sha384, Sha512};
 use std::io::{Read, Write, stdout};
@@ -99,6 +100,7 @@ impl Checksum {
     where
         H: FixedOutput + Default + Update + HashMarker,
         <H as OutputSizeUser>::OutputSize: Add,
+        <<H as OutputSizeUser>::OutputSize as Add>::Output: ArrayLength<u8>,
     {
         let mut progress_bar = ProgressBar::new("Verifying:");
         let bytes_total_text = format_size(data_size);
@@ -128,13 +130,7 @@ impl Checksum {
         }
 
         let sum = hasher.finalize();
-
-        // NOTE: Ideally this would just be `format!("sum:x")` without the wildcard or sub-slicing,
-        // but I could not get it to work with this version of the `sha2` crate. This is an ugly
-        // workaround which re-formats the debug string: "Array([b2, 5a, …])" -> "b25a…"
-        if let Some(sum) = wildcard_substring(&format!("{sum:x?}").replace(", ", ""), "[*]")
-            && expected_sum.contains(&sum[1..sum.len() - 1])
-        {
+        if expected_sum.contains(&format!("{sum:x}")) {
             progress_bar.pass();
             Ok(())
         } else {
