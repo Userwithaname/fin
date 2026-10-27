@@ -4,11 +4,9 @@ use crate::{bar::ProgressBar, file_action::FileAction};
 
 use serde::Deserialize;
 
-use sha2::digest::generic_array::ArrayLength;
-use sha2::digest::{FixedOutput, HashMarker, OutputSizeUser, Update};
+use sha2::digest::{FixedOutput, HashMarker, Update};
 use sha2::{Digest, Sha224, Sha256, Sha384, Sha512};
 use std::io::{Read, Write, stdout};
-use std::ops::Add;
 
 #[derive(Debug, Deserialize)]
 pub enum Checksum {
@@ -99,8 +97,6 @@ impl Checksum {
     ) -> Result<(), String>
     where
         H: FixedOutput + Default + Update + HashMarker,
-        <H as OutputSizeUser>::OutputSize: Add,
-        <<H as OutputSizeUser>::OutputSize as Add>::Output: ArrayLength<u8>,
     {
         let mut progress_bar = ProgressBar::new("Verifying:");
         let bytes_total_text = format_size(data_size);
@@ -130,7 +126,7 @@ impl Checksum {
         }
 
         let sum = hasher.finalize();
-        if expected_sum.contains(&format!("{sum:x}")) {
+        if expected_sum.contains(&hex::encode(sum)) {
             progress_bar.pass();
             Ok(())
         } else {

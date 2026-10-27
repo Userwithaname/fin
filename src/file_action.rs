@@ -244,22 +244,24 @@ impl FileAction {
         let mut file_count = 0.0;
         let mut files: Vec<String> = zip_archive
             .file_names()
-            .map(ToString::to_string)
-            .filter(|file| {
+            .filter_map(|file| {
+                let Ok(file) = file else {
+                    return None;
+                };
                 if file.ends_with('/') {
                     if keep_folders {
                         // NOTE: This creates all paths, regardless if they're included or not
-                        let _ = fs::create_dir_all([extract_to, file].concat()).inspect_err(|e| {
+                        let _ = fs::create_dir_all([extract_to, &file].concat()).inspect_err(|e| {
                             println!("   Directory creation error: {}", format_red!("{e}"));
                         });
                     }
-                    return false;
+                    return None;
                 }
-                if match_any_wildcard(file, include) && !match_any_wildcard(file, exclude) {
+                if match_any_wildcard(&file, include) && !match_any_wildcard(&file, exclude) {
                     file_count += 1.0;
-                    true
+                    Some(file.to_string())
                 } else {
-                    false
+                    None
                 }
             })
             .collect();
