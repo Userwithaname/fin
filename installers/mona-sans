@@ -5,6 +5,6 @@ author = "github"
 project = "mona-sans"
 
 [action.Extract]
-file = "MonaSans*.zip"
-include = [ "*LICENSE", "*variable/*" ]
+file = "mona-sans-variable*.zip"
+include = [ "*" ]
 exclude = [ "__*" ]
