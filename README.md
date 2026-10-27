@@ -1,12 +1,7 @@
-> [!CAUTION]
-> This software is still in active development, and may or may not maintain
-> backward/forward compatibility. Some configurations may be untested.
-
 > [!NOTE]
-> Fin is a learning project, and my first actual project written in Rust.
-> As such, the code quality may not be up-to-par with your expectations.
-> Feel free to try it in a VM, report the issues you encounter, share
-> ideas, suggest improvements, etc, etc. Enjoy and have fun! 😄
+> Fin's primary purpose was to help me learn Rust, and will likely
+> receive minimal maintenance going forward. If you find it useful,
+> do feel free to open issues or discussions. Enjoy and have fun! 😄
 
 # About Fin
 
@@ -207,7 +202,8 @@ verbose_urls = false
 1. [Install Rust and Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 2. Clone this repository: `git clone https://github.com/Userwithaname/fin.git`
 3. Enter the cloned directory: `cd fin`
-4. To build and install it, run: `cargo install --path .`
+4. Optionally run `cargo update` to update dependencies before building
+5. To build and install it, run: `cargo install --path .`
 This will install Fin to your Cargo bin directory (usually `~/.cargo/bin`).
 You may need to add the directory to your `$PATH` in order to use it.
 
