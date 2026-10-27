@@ -126,7 +126,10 @@ impl Checksum {
         }
 
         let sum = hasher.finalize();
-        if expected_sum.contains(&hex::encode(sum)) {
+        let mut sum_hex = vec![0u8; sum.len() * 2];
+        if faster_hex::hex_encode(&sum, &mut sum_hex)
+            .is_ok_and(|sum_hex| expected_sum.contains(&*sum_hex))
+        {
             progress_bar.pass();
             Ok(())
         } else {
